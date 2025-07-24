@@ -19,44 +19,46 @@ type GLTFResult = GLTF & {
 };
 
 // Export the component with forwardRef to allow parent components to access the mesh
-export const ModernWardrobe = forwardRef<THREE.Mesh, ThreeElements["group"]>(
-  (props, ref) => {
-    const { nodes, materials } = useGLTF(
-      "/models/01687.gltf"
-    ) as unknown as GLTFResult;
+export const ModernWardrobe = forwardRef<
+  THREE.Mesh,
+  ThreeElements["group"] & { onClick?: (event: any) => void }
+>((props, ref) => {
+  const { nodes, materials } = useGLTF(
+    "/models/01687.gltf"
+  ) as unknown as GLTFResult;
 
-    // Get real product dimensions from products.json
-    const scaleFactor = useMemo(() => {
-      const product = productsData.products.find(
-        (p) => p.model === "components/W-01687"
-      );
-      if (!product) {
-        console.warn("Product dimensions not found for W-01687");
-        return 1.0; // Fallback to no scaling
-      }
-
-      // Testing with scale factor of 1.0 (double the previous 0.5)
-      // Target: 200cm wardrobe should be ~2.0 R3F units to be shorter than 250cm walls (2.5 units)
-      // This should give us the correct proportions
-      return 1.0; // Testing with larger scale
-    }, []);
-
-    return (
-      <group {...props} dispose={null}>
-        <group scale={scaleFactor}>
-          <mesh
-            ref={ref}
-            castShadow
-            receiveShadow
-            geometry={nodes["01687"].geometry}
-            material={materials["Gloss White"]}
-            // position={[0.321, 0.948, -0.158]}
-          />
-        </group>
-      </group>
+  // Get real product dimensions from products.json
+  const scaleFactor = useMemo(() => {
+    const product = productsData.products.find(
+      (p) => p.model === "components/W-01687"
     );
-  }
-);
+    if (!product) {
+      console.warn("Product dimensions not found for W-01687");
+      return 1.0; // Fallback to no scaling
+    }
+
+    // Testing with scale factor of 1.0 (double the previous 0.5)
+    // Target: 200cm wardrobe should be ~2.0 R3F units to be shorter than 250cm walls (2.5 units)
+    // This should give us the correct proportions
+    return 1.0; // Testing with larger scale
+  }, []);
+
+  return (
+    <group {...props} dispose={null} onClick={props.onClick}>
+      <group scale={scaleFactor}>
+        <mesh
+          ref={ref}
+          castShadow
+          receiveShadow
+          geometry={nodes["01687"].geometry}
+          material={materials["Gloss White"]}
+          onClick={props.onClick}
+          // position={[0.321, 0.948, -0.158]}
+        />
+      </group>
+    </group>
+  );
+});
 
 ModernWardrobe.displayName = "ModernWardrobe";
 

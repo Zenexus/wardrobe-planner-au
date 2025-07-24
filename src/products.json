@@ -7,9 +7,9 @@
       "height": 200,
       "depth": 97,
       "color": "White",
-      "desc": "Mix. Match. Make It Yours with the Flexi Storage Wardrobe range.",
+      "desc": "WARNING! TIPPING HAZARD – Children have died from furniture tipping over.\nALWAYS anchor your furniture to the wall with an anti-tip device.\nNEVER place a TV on any furniture other than a media/TV bench intended for this purpose. ALWAYS secure your TV by using an anchoring device.\nNEVER allow children to stand, climb, or hang on drawers, doors or shelves.\nNEVER open more than one drawer at the time.\nALWAYS place heaviest items in the lowest drawers.",
       "price": 200.0,
-      "type": "Frame",
+      "type": "corner",
       "category": "Core Wardrobe Range",
       "thumbnail": "/thumbnails/L-wardrobe.jpeg",
       "model": "components/W-01687"
@@ -23,7 +23,7 @@
       "color": "White",
       "desc": "This Wardrobe is constructed with 18mm thick boards and features 6 height adjustable shelves allowing you to arrange your space to fit your storage needs.",
       "price": 100.0,
-      "type": "Frame",
+      "type": "normal",
       "category": "Core Wardrobe Range",
       "thumbnail": "/thumbnails/single-wardrobe.jpeg",
       "model": "components/W-01684"

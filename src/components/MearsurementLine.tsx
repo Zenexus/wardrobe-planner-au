@@ -1,4 +1,5 @@
 // FIXME: Currently, this component not in use.
+// this measurement line is worked for top view only.
 
 import { Vector3, LineCurve3 } from "three";
 import { Html } from "@react-three/drei";

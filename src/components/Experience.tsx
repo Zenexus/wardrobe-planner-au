@@ -17,13 +17,16 @@ import * as THREE from "three";
 import { useStore } from "../store";
 import { cmToR3F } from "../utils/scaling";
 import { RapierRigidBody } from "@react-three/rapier";
+import { WardrobeInstance } from "../types";
 import { WoodFloor } from "./WoodFloor";
-import { WallPaper } from "./WallPaper";
+import { WallPaper, Ceiling } from "./WallPaper";
 import { detectClosestWalls, Wall } from "../helper/closestWallDetector";
 import { ClassicWardrobe } from "./W-01684";
 import { ModernWardrobe } from "./W-01687";
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import WallMeasurements from "@/components/WallMeasurements";
+import WardrobeMeasurements from "@/components/WardrobeMeasurements";
+import FocusedWardrobePanel from "./FocusedWardrobePanel";
 
 interface DraggableObjectProps {
   position: [number, number, number];
@@ -32,6 +35,12 @@ interface DraggableObjectProps {
   objectRefs: MutableRefObject<{ [key: string]: THREE.Object3D }>;
   children?: ReactNode;
   scale?: [number, number, number];
+  onPositionChange?: (
+    id: string,
+    newPosition: [number, number, number]
+  ) => void;
+  setFocusedWardrobeInstance?: (instance: WardrobeInstance | null) => void;
+  wardrobeInstances?: WardrobeInstance[];
 }
 
 const DraggableObject: React.FC<DraggableObjectProps> = ({
@@ -41,6 +50,9 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
   objectRefs,
   children,
   scale = [1, 1, 1],
+  onPositionChange,
+  setFocusedWardrobeInstance,
+  wardrobeInstances,
 }) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
@@ -72,6 +84,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
     y: 0,
   });
   const [wasClick, setWasClick] = useState<boolean>(true);
+  const [mouseDownTime, setMouseDownTime] = useState<number>(0);
 
   const handlePointerDown = useCallback(
     (event: ThreeEvent<PointerEvent>) => {
@@ -88,6 +101,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         y: event.nativeEvent.clientY,
       });
       setWasClick(true);
+      setMouseDownTime(Date.now());
 
       // Convert mouse coordinates to normalized device coordinates
       const rect = gl.domElement.getBoundingClientRect();
@@ -128,20 +142,6 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         // Fallback to the old method if mesh intersection fails
         dragPlane.current.constant = -currentPos.y;
         setDragOffset(new THREE.Vector3(0, 0, 0)); // CHANGE: No offset for narrow objects instead of calculating intersection
-        // if (
-        //   raycaster.current.ray.intersectPlane(
-        //     dragPlane.current,
-        //     intersectionPoint.current
-        //   )
-        // ) {
-        //   setDragOffset(
-        //     new THREE.Vector3(
-        //       intersectionPoint.current.x - currentPos.x,
-        //       0,
-        //       intersectionPoint.current.z - currentPos.z
-        //     )
-        //   );
-        // }
       }
 
       // Keep in dynamic mode but disable gravity temporarily and add high damping
@@ -174,6 +174,13 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         // Select the object when dragging actually starts
         if (selectedObjectId !== id) {
           setSelectedObjectId(id);
+          // Also set focused wardrobe instance if this is a wardrobe
+          if (wardrobeInstances && setFocusedWardrobeInstance) {
+            const wardrobeInstance = wardrobeInstances.find((w) => w.id === id);
+            if (wardrobeInstance) {
+              setFocusedWardrobeInstance(wardrobeInstance);
+            }
+          }
         }
       }
 
@@ -237,6 +244,16 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
           // Stop any residual movement
           rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
         }
+
+        // Real-time position update during drag for measurements
+        if (onPositionChange && !wasClick) {
+          const currentPosition = rigidBodyRef.current.translation();
+          onPositionChange(id, [
+            currentPosition.x,
+            currentPosition.y,
+            currentPosition.z,
+          ]);
+        }
       }
     },
     [
@@ -250,6 +267,8 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       selectedObjectId,
       setSelectedObjectId,
       id,
+      onPositionChange,
+      wasClick,
     ]
   );
 
@@ -279,9 +298,43 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         }
       }, 100);
 
+      // Final position update (optional since we update during drag)
+      // This ensures we have the exact final position even if there's any physics settling
+      if (onPositionChange && !wasClick) {
+        const finalPosition = rigidBodyRef.current.translation();
+        onPositionChange(id, [
+          finalPosition.x,
+          finalPosition.y,
+          finalPosition.z,
+        ]);
+      }
+
       // Handle selection/deselection on click (not drag)
-      if (wasClick) {
-        setSelectedObjectId(selectedObjectId === id ? null : id);
+      // Use both wasClick flag and time-based detection for better reliability
+      const clickDuration = Date.now() - mouseDownTime;
+      const wasActualClick = wasClick && clickDuration < 300; // Click should be under 300ms
+
+      if (wasActualClick) {
+        console.log(`Wardrobe clicked and selected: ${id}`);
+        const isCurrentlySelected = selectedObjectId === id;
+
+        if (isCurrentlySelected) {
+          // If already selected, deselect and unfocus
+          setSelectedObjectId(null);
+          if (setFocusedWardrobeInstance) {
+            setFocusedWardrobeInstance(null);
+          }
+        } else {
+          // If not selected, select and focus
+          setSelectedObjectId(id);
+          // Find the wardrobe instance for this id
+          if (wardrobeInstances && setFocusedWardrobeInstance) {
+            const wardrobeInstance = wardrobeInstances.find((w) => w.id === id);
+            if (wardrobeInstance) {
+              setFocusedWardrobeInstance(wardrobeInstance);
+            }
+          }
+        }
       }
 
       gl.domElement.style.cursor = "auto";
@@ -291,10 +344,14 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       setGlobalHasDragging,
       setDraggedObjectId,
       wasClick,
+      mouseDownTime,
       gl.domElement.style,
       setSelectedObjectId,
       selectedObjectId,
       id,
+      onPositionChange,
+      setFocusedWardrobeInstance,
+      wardrobeInstances,
     ]
   );
 
@@ -365,6 +422,34 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
           ref={meshRef}
           scale={scale}
           onPointerDown={handlePointerDown}
+          onClick={(event) => {
+            // Handle click selection as backup if child components don't handle it
+            if (!isDragging && wasClick) {
+              event.stopPropagation();
+
+              const isCurrentlySelected = selectedObjectId === id;
+
+              if (isCurrentlySelected) {
+                // If already selected, deselect and unfocus
+                setSelectedObjectId(null);
+                if (setFocusedWardrobeInstance) {
+                  setFocusedWardrobeInstance(null);
+                }
+              } else {
+                // If not selected, select and focus
+                setSelectedObjectId(id);
+                // Find the wardrobe instance for this id
+                if (wardrobeInstances && setFocusedWardrobeInstance) {
+                  const wardrobeInstance = wardrobeInstances.find(
+                    (w) => w.id === id
+                  );
+                  if (wardrobeInstance) {
+                    setFocusedWardrobeInstance(wardrobeInstance);
+                  }
+                }
+              }
+            }
+          }}
           onPointerOver={() =>
             !isDragging && (gl.domElement.style.cursor = "grab")
           }
@@ -397,9 +482,11 @@ const Experience: React.FC = () => {
     setDraggedObjectId,
     selectedObjectId,
     setSelectedObjectId,
-    selectedWardrobe,
-    wardrobeSelectionCount,
     customizeMode,
+    wardrobeInstances,
+    updateWardrobePosition,
+    focusedWardrobeInstance,
+    setFocusedWardrobeInstance,
   } = useStore();
 
   // Store refs for all draggable objects
@@ -411,14 +498,7 @@ const Experience: React.FC = () => {
   // State for camera transitions
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
-  // State for wardrobe objects
-  const [wardrobeObjects, setWardrobeObjects] = useState<
-    Array<{
-      id: string;
-      position: [number, number, number];
-      model: string;
-    }>
-  >([]);
+  // Note: Wardrobe objects are now managed in the store as wardrobeInstances
 
   // Get camera reference
   const { camera } = useThree();
@@ -566,48 +646,6 @@ const Experience: React.FC = () => {
     };
   }, [roomDimensions]);
 
-  // Create walls array for measurements (using real CM dimensions)
-  const walls = useMemo<Wall[]>(() => {
-    const { roomWidth, roomDepth, roomHeight } = roomDimensions;
-    const halfWidth = roomWidth / 2;
-    const halfDepth = roomDepth / 2;
-
-    return [
-      {
-        id: "right",
-        start: [halfWidth, 0, -halfDepth],
-        end: [halfWidth, 0, halfDepth],
-        normal: [-1, 0, 0],
-        label: roomDepth,
-        position: [halfWidth, roomHeight / 2, 0],
-      },
-      {
-        id: "left",
-        start: [-halfWidth, 0, halfDepth],
-        end: [-halfWidth, 0, -halfDepth],
-        normal: [1, 0, 0],
-        label: roomDepth,
-        position: [-halfWidth, roomHeight / 2, 0],
-      },
-      {
-        id: "back",
-        start: [-halfWidth, 0, halfDepth],
-        end: [halfWidth, 0, halfDepth],
-        normal: [0, 0, -1],
-        label: roomWidth,
-        position: [0, roomHeight / 2, halfDepth],
-      },
-      {
-        id: "front",
-        start: [halfWidth, 0, -halfDepth],
-        end: [-halfWidth, 0, -halfDepth],
-        normal: [0, 0, 1],
-        label: roomWidth,
-        position: [0, roomHeight / 2, -halfDepth],
-      },
-    ];
-  }, [roomDimensions]);
-
   // Create walls array for detection (matches the detectClosestWalls interface)
   const wallsForDetection = useMemo(() => {
     return [
@@ -634,6 +672,7 @@ const Experience: React.FC = () => {
   const handleBackgroundClick = useCallback(() => {
     // Always reset selection and dragging state when clicking background
     setSelectedObjectId(null);
+    setFocusedWardrobeInstance(null);
 
     // Ensure dragging state is properly reset (in case it wasn't reset properly)
     if (globalHasDragging) {
@@ -645,6 +684,7 @@ const Experience: React.FC = () => {
   }, [
     globalHasDragging,
     setSelectedObjectId,
+    setFocusedWardrobeInstance,
     setGlobalHasDragging,
     setDraggedObjectId,
   ]);
@@ -713,42 +753,23 @@ const Experience: React.FC = () => {
     }
   }, [globalHasDragging, customizeMode, handleControlsChange, isTransitioning]);
 
-  // Add a new wardrobe when selectedWardrobe changes or wardrobeSelectionCount changes
-  useEffect(() => {
-    if (selectedWardrobe) {
-      // Generate a unique ID for the new wardrobe
-      const newId = `wardrobe-${Date.now()}`;
-
-      // Calculate proper y-position so wardrobe sits on floor
-      // Wardrobe height is 200cm = 2.0 R3F units with scale factor 1.0
-      // Position wardrobe so its bottom sits on floor (y = half height)
-      const wardrobeHeight = 2.0; // 200cm in R3F units
-      const yPosition = wardrobeHeight / 2; // 1.0 - exactly on floor
-
-      // Add the new wardrobe to the state
-      setWardrobeObjects((prev) => [
-        ...prev,
-        {
-          id: newId,
-          position: [0, yPosition, 0], // Positioned properly on floor
-          model: selectedWardrobe.model,
-        },
-      ]);
-    }
-  }, [selectedWardrobe, wardrobeSelectionCount]);
+  // Note: Wardrobe addition is now handled directly in ProductSelection via store.addWardrobeInstance
 
   // Helper function to determine which wardrobe component to render
-  const getWardrobeComponent = (modelPath: string) => {
+  const getWardrobeComponent = (
+    modelPath: string,
+    onClick?: (event: any) => void
+  ) => {
     //FIXME: here we need change later on
     // Based on the model path, return the appropriate wardrobe component
     switch (modelPath) {
       case "components/W-01684":
-        return <ClassicWardrobe />;
+        return <ClassicWardrobe onClick={onClick} />;
       case "components/W-01687":
-        return <ModernWardrobe />;
+        return <ModernWardrobe onClick={onClick} />;
       default:
         console.warn(`Unknown model path: ${modelPath}`);
-        return <ModernWardrobe />;
+        return <ModernWardrobe onClick={onClick} />;
     }
   };
 
@@ -862,6 +883,25 @@ const Experience: React.FC = () => {
           )}
         </RigidBody>
 
+        {/* Ceiling */}
+        <RigidBody type="fixed" position={[0, roomDimensions.height, 0]}>
+          {/* Explicit collider that matches ceiling dimensions */}
+          <CuboidCollider
+            args={[
+              roomDimensions.width / 2,
+              roomDimensions.thickness / 2,
+              roomDimensions.depth / 2,
+            ]}
+            position={[0, 0, 0]}
+          />
+          <Ceiling
+            position={[0, 0, 0]}
+            args={[roomDimensions.width, roomDimensions.depth]}
+            camera={camera}
+            roomHeight={roomDimensions.height}
+          />
+        </RigidBody>
+
         <EffectComposer autoClear={false}>
           <Outline
             selection={
@@ -879,23 +919,46 @@ const Experience: React.FC = () => {
         </EffectComposer>
 
         {/* Dynamically added wardrobe objects */}
-        {wardrobeObjects.map((wardrobe) => (
+        {wardrobeInstances.map((instance) => (
           <DraggableObject
-            key={wardrobe.id}
-            id={wardrobe.id}
-            position={wardrobe.position}
+            key={instance.id}
+            id={instance.id}
+            position={instance.position}
             objectRefs={objectRefs}
             scale={[1, 1, 1]} // Use real wardrobe scale - wardrobes should handle their own scaling
+            onPositionChange={(id, newPosition) => {
+              updateWardrobePosition(id, newPosition);
+            }}
+            setFocusedWardrobeInstance={setFocusedWardrobeInstance}
+            wardrobeInstances={wardrobeInstances}
           >
-            {getWardrobeComponent(wardrobe.model)}
+            {getWardrobeComponent(instance.product.model, (event) => {
+              // Simple click handler - main logic is now in DraggableObject
+              event.stopPropagation();
+              // Let the DraggableObject handle the selection logic
+            })}
           </DraggableObject>
         ))}
 
+        {/* Wardrobe measurements - moved outside DraggableObject to avoid ref interference */}
+        {wardrobeInstances.map((instance) => (
+          <WardrobeMeasurements
+            key={`measurements-${instance.id}`}
+            wardrobeId={instance.id}
+            position={instance.position} // Use absolute position since it's outside DraggableObject
+            modelPath={instance.product.model}
+          />
+        ))}
+
         {/* Wall Measurements - only shown in customize mode */}
-        <WallMeasurements walls={walls} />
+        {/* <WallMeasurements walls={walls} /> */}
       </Physics>
 
-      <CustomiseRoomPanel />
+      {focusedWardrobeInstance ? (
+        <FocusedWardrobePanel />
+      ) : (
+        <CustomiseRoomPanel />
+      )}
 
       {!globalHasDragging && (
         <OrbitControls
@@ -906,6 +969,12 @@ const Experience: React.FC = () => {
           enableRotate={!customizeMode}
           minPolarAngle={customizeMode ? 0 : 0}
           maxPolarAngle={customizeMode ? 0.1 : Math.PI / 2}
+          enableDamping={true}
+          dampingFactor={0.05}
+          // Reduce click sensitivity to prevent interference
+          rotateSpeed={0.5}
+          panSpeed={0.8}
+          zoomSpeed={0.8}
         />
       )}
     </>

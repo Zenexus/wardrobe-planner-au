@@ -1,12 +1,17 @@
 import create from "zustand";
-import { Product } from "./types";
+import { Product, WardrobeInstance } from "./types";
+import {
+  findAvailablePosition,
+  getSuggestedPositions,
+  hasAvailableSpace,
+} from "./helper/wardrobePlacement";
 
 // Real-world dimension constants (in CM)
 export const ROOM_DIMENSIONS = {
   DEFAULT_WIDTH: 500, // 500cm = 5 meters
   DEFAULT_DEPTH: 400, // 400cm = 4 meters
   DEFAULT_HEIGHT: 250, // 250cm = 2.5 meters
-  WALL_THICKNESS: 10, // 10cm wall thickness
+  WALL_THICKNESS: 5, // 5cm wall thickness
 };
 
 export const DIMENSION_LIMITS = {
@@ -43,13 +48,42 @@ interface StoreState {
   setDraggedObjectId: (draggedObjectId: string | null) => void;
   selectedObjectId: string | null;
   setSelectedObjectId: (selectedObjectId: string | null) => void;
-  selectedWardrobe: Product | null;
-  setSelectedWardrobe: (selectedWardrobe: Product | null) => void;
-  wardrobeSelectionCount: number;
-  incrementWardrobeSelectionCount: () => void;
+
+  // Wardrobe instances management
+  wardrobeInstances: WardrobeInstance[];
+  addWardrobeInstance: (
+    product: Product,
+    position?: [number, number, number]
+  ) => { success: boolean; id?: string; message: string };
+  removeWardrobeInstance: (id: string) => void;
+  updateWardrobePosition: (
+    id: string,
+    position: [number, number, number]
+  ) => void;
+  updateWardrobeInstance: (
+    id: string,
+    updates: Partial<WardrobeInstance>
+  ) => void;
+  getWardrobeInstance: (id: string) => WardrobeInstance | undefined;
+  getSuggestedPositions: (
+    targetInstanceId: string,
+    productModel: string
+  ) => [number, number, number][];
+  checkSpaceAvailability: (productModel: string) => boolean;
+
   // the customise mode is a button that allows the user to customize the room size and wall height
   customizeMode: boolean;
   setCustomizeMode: (customizeMode: boolean) => void;
+
+  // Focused wardrobe instance
+  focusedWardrobeInstance: WardrobeInstance | null;
+  setFocusedWardrobeInstance: (
+    focusedWardrobeInstance: WardrobeInstance | null
+  ) => void;
+
+  // Show wardrobe measurements toggle
+  showWardrobeMeasurements: boolean;
+  setShowWardrobeMeasurements: (showWardrobeMeasurements: boolean) => void;
   // Wall dimensions for 4 sides
   wallsDimensions: WallsDimensions;
   setWallDimensions: (
@@ -69,16 +103,116 @@ export const useStore = create<StoreState>((set, get) => ({
   selectedObjectId: null,
   setSelectedObjectId: (selectedObjectId: string | null) =>
     set({ selectedObjectId }),
-  selectedWardrobe: null,
-  setSelectedWardrobe: (selectedWardrobe: Product | null) =>
-    set({ selectedWardrobe }),
-  wardrobeSelectionCount: 0,
-  incrementWardrobeSelectionCount: () =>
+
+  // Wardrobe instances management
+  wardrobeInstances: [],
+  addWardrobeInstance: (
+    product: Product,
+    position?: [number, number, number]
+  ) => {
+    const state = get();
+
+    // Calculate room dimensions from walls (convert cm to R3F units)
+    const roomDimensions = {
+      width: state.wallsDimensions.front.length * 0.01, // Convert cm to R3F units
+      depth: state.wallsDimensions.left.length * 0.01,
+    };
+
+    // Check if there's available space for this wardrobe
+    if (
+      !hasAvailableSpace(product.model, state.wardrobeInstances, roomDimensions)
+    ) {
+      return {
+        success: false,
+        message: `No space available to place ${product.name}. Try removing or moving existing wardrobes to create space.`,
+      };
+    }
+
+    // Use smart placement to find available position
+    const smartPosition = findAvailablePosition(
+      product.model,
+      state.wardrobeInstances,
+      position, // Use provided position as preferred if given
+      roomDimensions
+    );
+
+    // Double check that placement was successful
+    if (!smartPosition) {
+      return {
+        success: false,
+        message: `Unable to find a suitable position for ${product.name}. Room may be too crowded.`,
+      };
+    }
+
+    const newId = `wardrobe-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    const newInstance: WardrobeInstance = {
+      id: newId,
+      product,
+      position: smartPosition,
+      addedAt: new Date(),
+    };
+
     set((state) => ({
-      wardrobeSelectionCount: state.wardrobeSelectionCount + 1,
+      wardrobeInstances: [...state.wardrobeInstances, newInstance],
+    }));
+
+    return {
+      success: true,
+      id: newId,
+      message: `${product.name} added successfully!`,
+    };
+  },
+  removeWardrobeInstance: (id: string) =>
+    set((state) => ({
+      wardrobeInstances: state.wardrobeInstances.filter((w) => w.id !== id),
     })),
+  updateWardrobePosition: (id: string, position: [number, number, number]) =>
+    set((state) => ({
+      wardrobeInstances: state.wardrobeInstances.map((w) =>
+        w.id === id ? { ...w, position } : w
+      ),
+    })),
+  updateWardrobeInstance: (id: string, updates: Partial<WardrobeInstance>) =>
+    set((state) => ({
+      wardrobeInstances: state.wardrobeInstances.map((w) =>
+        w.id === id ? { ...w, ...updates } : w
+      ),
+    })),
+  getWardrobeInstance: (id: string) => {
+    return get().wardrobeInstances.find((w) => w.id === id);
+  },
+  getSuggestedPositions: (targetInstanceId: string, productModel: string) => {
+    const state = get();
+    return getSuggestedPositions(
+      targetInstanceId,
+      productModel,
+      state.wardrobeInstances
+    );
+  },
+  checkSpaceAvailability: (productModel: string) => {
+    const state = get();
+    const roomDimensions = {
+      width: state.wallsDimensions.front.length * 0.01,
+      depth: state.wallsDimensions.left.length * 0.01,
+    };
+    return hasAvailableSpace(
+      productModel,
+      state.wardrobeInstances,
+      roomDimensions
+    );
+  },
   customizeMode: false,
   setCustomizeMode: (customizeMode: boolean) => set({ customizeMode }),
+  focusedWardrobeInstance: null,
+  setFocusedWardrobeInstance: (
+    focusedWardrobeInstance: WardrobeInstance | null
+  ) => set({ focusedWardrobeInstance }),
+  showWardrobeMeasurements: false,
+  setShowWardrobeMeasurements: (showWardrobeMeasurements: boolean) =>
+    set({ showWardrobeMeasurements }),
   // Wall dimensions - now using real CM values
   wallsDimensions: {
     front: {

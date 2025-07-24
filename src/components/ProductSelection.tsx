@@ -9,26 +9,40 @@ const ProductSelection = () => {
     (product) => product.category === "Core Wardrobe Range"
   );
 
-  const { setSelectedWardrobe } = useStore();
+  const { addWardrobeInstance, checkSpaceAvailability, wardrobeInstances } =
+    useStore();
 
   const handleAddToDesign = (product: Product) => {
-    // Set the selected wardrobe in the store
-    setSelectedWardrobe(product);
-    console.log(`Adding product to design: ${product.name}`);
+    // Add the wardrobe instance directly to the store
+    const result = addWardrobeInstance(product);
+
+    if (result.success) {
+      console.log(
+        `Added product to design: ${product.name} (ID: ${result.id})`
+      );
+    } else {
+      // Show error toast when no space is available
+
+      console.warn(`Failed to add ${product.name}: ${result.message}`);
+    }
   };
 
   return (
     <>
-      <div className="text-4xl font-bold">Design your PAX</div>
+      <div className="text-2xl font-semibold">Design your Flexi Wardrobe</div>
       <div className="font-bold">Core Wardrobe Range</div>
       <div className="grid grid-cols-2 gap-4 mt-2">
-        {coreWardrobeProducts.map((product) => (
-          <ProductCard
-            key={product.itemNumber}
-            product={product}
-            onAddToDesign={handleAddToDesign}
-          />
-        ))}
+        {coreWardrobeProducts.map((product) => {
+          const hasSpace = checkSpaceAvailability(product.model);
+          return (
+            <ProductCard
+              key={product.itemNumber}
+              product={product}
+              onAddToDesign={handleAddToDesign}
+              hasSpace={hasSpace}
+            />
+          );
+        })}
       </div>
       <div className="font-bold">400mm Wardrobe Range</div>
     </>

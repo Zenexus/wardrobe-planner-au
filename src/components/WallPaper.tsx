@@ -1,7 +1,7 @@
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "@/store";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 // this WallPaper component include the texture and top view's wall
 const wallPaperTextureProps = {
@@ -21,12 +21,70 @@ type WallPaperProps = {
   scale?: [number, number, number];
 };
 
+type CeilingProps = {
+  position?: [number, number, number];
+  args?: [number, number];
+  camera: THREE.Camera;
+  roomHeight: number;
+};
+
 type PlaceholderWallProps = {
   position?: [number, number, number];
   rotation?: [number, number, number];
   args?: [number, number, number];
   scale?: [number, number, number];
 };
+
+export function Ceiling({
+  position = [0, 0, 0],
+  args = [1, 1],
+  camera,
+  roomHeight,
+}: CeilingProps) {
+  const { customizeMode } = useStore();
+  const [isVisible, setIsVisible] = useState(false);
+
+  const textures = useLoader(
+    THREE.TextureLoader,
+    wallPaperTextureProps.files.map(
+      (file) => `${wallPaperTextureProps.path}${file}`
+    )
+  );
+
+  const [colorMap, normalMap, roughnessMap] = textures;
+
+  // Configure texture repeats based on ceiling size
+  const textureRepeat = Math.max(2, Math.min(args[0], args[1]) / 200);
+
+  // Set repeat and wrapping for all textures
+  textures.forEach((texture) => {
+    texture.repeat.set(textureRepeat, textureRepeat);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  });
+
+  // Simple effect to handle customize mode toggle
+  useEffect(() => {
+    setIsVisible(!customizeMode);
+  }, [customizeMode]);
+
+  if (!isVisible) return null;
+
+  return (
+    <mesh
+      position={position}
+      rotation={[-Math.PI / 2, 0, 0]} // Rotate to be horizontal (ceiling)
+    >
+      <planeGeometry args={args} />
+      <meshStandardMaterial
+        map={colorMap}
+        normalMap={normalMap}
+        roughnessMap={roughnessMap}
+        normalScale={new THREE.Vector2(0.5, 0.5)}
+        side={THREE.BackSide} // This handles camera position visibility automatically
+      />
+    </mesh>
+  );
+}
 
 export function WallPaper({
   position,
