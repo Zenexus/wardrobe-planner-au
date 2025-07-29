@@ -30,24 +30,33 @@ export const ClassicWardrobe = forwardRef<
   ) as unknown as GLTFResult;
 
   // Get real product dimensions from products.json
-  const scaleFactor = useMemo(() => {
+  const { scaleFactor, yOffset } = useMemo(() => {
     const product = productsData.products.find(
       (p) => p.model === "components/W-01684"
     );
     if (!product) {
       console.warn("Product dimensions not found for W-01684");
-      return 1.0; // Fallback to no scaling
+      return { scaleFactor: 1.0, yOffset: 0 }; // Fallback
     }
 
-    // Testing with scale factor of 1.0 (double the previous 0.5)
-    // Target: 200cm wardrobe should be ~2.0 R3F units to be shorter than 250cm walls (2.5 units)
-    // This should give us the correct proportions
-    return 1.0; // Testing with larger scale
+    // Calculate scale factor based on actual product dimensions
+    // The model should be scaled to match the real-world dimensions
+    // Assuming the model is designed for 200cm height, we scale it to match the product height
+    const targetHeight = product.height / 100; // Convert cm to R3F units (1 R3F unit = 100cm)
+    const modelHeight = 2.0; // Assuming the model is 2 units tall in its original scale
+    const scaleFactor = targetHeight / modelHeight;
+
+    // Counteract the built-in Y translation in the GLTF model (0.8250895142555237)
+    // to place the wardrobe bottom at Y=0
+    const modelBuiltInYOffset = 0.84;
+    const yOffset = modelBuiltInYOffset * scaleFactor;
+
+    return { scaleFactor, yOffset };
   }, []);
 
   return (
     <group {...props} dispose={null} onClick={props.onClick}>
-      <group scale={scaleFactor}>
+      <group scale={scaleFactor} position={[0, yOffset, 0]}>
         <mesh
           ref={ref}
           castShadow

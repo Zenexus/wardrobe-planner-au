@@ -1,4 +1,4 @@
-// FIXME: Currently, this component not in use.
+// FIXME: Obsolete component.
 // this measurement line is worked for top view only.
 
 import { Vector3, LineCurve3 } from "three";

@@ -914,6 +914,7 @@ const Experience: React.FC = () => {
             }
             blur={false}
             visibleEdgeColor={0x0000ff}
+            hiddenEdgeColor={0x0000ff}
             edgeStrength={10}
           />
         </EffectComposer>

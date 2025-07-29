@@ -14,7 +14,7 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
   position,
   modelPath,
 }) => {
-  const { showWardrobeMeasurements } = useStore();
+  const { showWardrobeMeasurements, wallsDimensions } = useStore();
 
   // Get wardrobe dimensions from products.json
   const wardrobeDimensions = useMemo(() => {
@@ -46,55 +46,131 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
   const [x, y, z] = position; // Now relative to wardrobe center
   const offset = 0.1;
 
-  // Calculate measurement line positions relative to wardrobe center
+  // Calculate room dimensions and wall positions
+  const roomWidth = wallsDimensions.front.length * r3fScale; // Convert cm to R3F units
+  const roomDepth = wallsDimensions.left.length * r3fScale;
+
+  // Wall positions (center of room is at 0,0,0)
+  const leftWallX = -roomWidth / 2;
+  const rightWallX = roomWidth / 2;
+  const backWallZ = roomDepth / 2;
+  const frontWallZ = -roomDepth / 2;
+
+  // Calculate distances from wardrobe edges to walls
+  const distanceToLeftWall = x - widthR3F / 2 - leftWallX;
+  const distanceToRightWall = rightWallX - (x + widthR3F / 2);
+  const distanceToBackWall = backWallZ - (z + depthR3F / 2);
+  const distanceToFrontWall = z - depthR3F / 2 - frontWallZ; // Optional: usually not needed
+
+  // Calculate measurement line positions - wardrobe bottom is at Y=0, top is at Y=heightR3F
   const measurements = [
     // Width measurement (left to right) - positioned at top front side
     {
       start: [
         x - widthR3F / 2,
-        y + heightR3F / 2 + offset,
+        y + heightR3F + offset, // Top of wardrobe + offset
         z - depthR3F / 2 - offset,
       ] as [number, number, number],
       end: [
         x + widthR3F / 2,
-        y + heightR3F / 2 + offset,
+        y + heightR3F + offset, // Top of wardrobe + offset
         z - depthR3F / 2 - offset,
       ] as [number, number, number],
       label: "",
       value: wardrobeDimensions.width,
       color: "#fff",
+      lineColor: "black",
+      labelColor: "black",
     },
     // Height measurement (bottom to top) - positioned at left front side
     {
       start: [
         x - widthR3F / 2 - offset,
-        y - heightR3F / 2,
+        y, // Bottom of wardrobe (floor level)
         z - depthR3F / 2 - offset,
       ] as [number, number, number],
       end: [
         x - widthR3F / 2 - offset,
-        y + heightR3F / 2,
+        y + heightR3F, // Top of wardrobe
         z - depthR3F / 2 - offset,
       ] as [number, number, number],
       label: "",
       value: wardrobeDimensions.height,
       color: "#fff",
+      lineColor: "black",
+      labelColor: "black",
     },
     // Depth measurement (front to back) - positioned at right bottom side
     {
       start: [
         x + widthR3F / 2 + offset,
-        y - heightR3F / 2 + offset,
+        y + offset, // Just above floor level
         z - depthR3F / 2,
       ] as [number, number, number],
       end: [
         x + widthR3F / 2 + offset,
-        y - heightR3F / 2 + offset,
+        y + offset, // Just above floor level
         z + depthR3F / 2,
       ] as [number, number, number],
       label: "",
       value: wardrobeDimensions.depth,
       color: "#fff",
+      lineColor: "black",
+      labelColor: "black",
+    },
+    // Distance to left wall - horizontal line from left edge of wardrobe to left wall
+    {
+      start: [
+        leftWallX,
+        y + heightR3F / 2, // Middle height of wardrobe
+        z,
+      ] as [number, number, number],
+      end: [
+        x - widthR3F / 2, // Left edge of wardrobe
+        y + heightR3F / 2, // Middle height of wardrobe
+        z,
+      ] as [number, number, number],
+      label: "to left wall",
+      value: Math.round(distanceToLeftWall * 100), // Convert back to cm and round
+      color: "#fff",
+      lineColor: "blue",
+      labelColor: "blue",
+    },
+    // Distance to right wall - horizontal line from right edge of wardrobe to right wall
+    {
+      start: [
+        x + widthR3F / 2, // Right edge of wardrobe
+        y + heightR3F / 2, // Middle height of wardrobe
+        z,
+      ] as [number, number, number],
+      end: [
+        rightWallX,
+        y + heightR3F / 2, // Middle height of wardrobe
+        z,
+      ] as [number, number, number],
+      label: "to right wall",
+      value: Math.round(distanceToRightWall * 100), // Convert back to cm and round
+      color: "#fff",
+      lineColor: "blue",
+      labelColor: "blue",
+    },
+    // Distance to back wall - horizontal line from back edge of wardrobe to back wall
+    {
+      start: [
+        x,
+        y + heightR3F / 2, // Middle height of wardrobe
+        z + depthR3F / 2, // Back edge of wardrobe
+      ] as [number, number, number],
+      end: [
+        x,
+        y + heightR3F / 2, // Middle height of wardrobe
+        backWallZ,
+      ] as [number, number, number],
+      label: "to back wall",
+      value: Math.round(distanceToBackWall * 100), // Convert back to cm and round
+      color: "#fff",
+      lineColor: "blue",
+      labelColor: "blue",
     },
   ];
 
@@ -108,6 +184,8 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
           label={measurement.label}
           value={measurement.value}
           color={measurement.color}
+          lineColor={measurement.lineColor}
+          labelColor={measurement.labelColor}
         />
       ))}
     </group>

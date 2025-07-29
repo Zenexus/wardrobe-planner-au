@@ -8,16 +8,18 @@ interface WardrobeMeasurementProps {
   label: string;
   value: number; // Value in cm
   color?: string;
+  lineColor?: string; // Color for the measurement lines
+  labelColor?: string; // Background color for the label
   offset?: number; // Offset from the wardrobe surface
 }
 
 const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
   start,
   end,
-  label,
   value,
-  color = "#007acc",
-  offset = 0.2,
+  color,
+  lineColor = "black", // Default to black if not specified
+  labelColor = "black", // Default to black if not specified
 }) => {
   const startVec = new Vector3(...start);
   const endVec = new Vector3(...end);
@@ -73,7 +75,7 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
         object={
           new Line(
             lineGeometry,
-            new LineBasicMaterial({ color: "black", linewidth: 3 })
+            new LineBasicMaterial({ color: lineColor, linewidth: 3 })
           )
         }
       />
@@ -83,7 +85,7 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
         object={
           new Line(
             startCapGeometry,
-            new LineBasicMaterial({ color: "black", linewidth: 3 })
+            new LineBasicMaterial({ color: lineColor, linewidth: 3 })
           )
         }
       />
@@ -93,7 +95,7 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
         object={
           new Line(
             endCapGeometry,
-            new LineBasicMaterial({ color: "black", linewidth: 3 })
+            new LineBasicMaterial({ color: lineColor, linewidth: 3 })
           )
         }
       />
@@ -106,8 +108,9 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
         pointerEvents="none"
       >
         <div
-          className="bg-black px-3 py-2 rounded-sm shadow-md text-sm font-medium whitespace-nowrap"
+          className="px-3 py-2 rounded-sm shadow-md text-sm font-medium whitespace-nowrap"
           style={{
+            backgroundColor: labelColor,
             borderColor: color,
             color: color,
             fontSize: "12px",

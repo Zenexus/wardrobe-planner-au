@@ -1,8 +1,8 @@
 import { WardrobeInstance } from "../types";
 import productsData from "../products.json";
+import { R3F_SCALE } from "../store";
 
 // R3F Scaling factor: 1 R3F unit = 100cm
-const R3F_SCALE = 0.01;
 
 export interface BoundingBox {
   minX: number;
@@ -20,9 +20,9 @@ export function getWardrobeBoundingBox(
   const product = instance.product;
   const [x, y, z] = instance.position;
 
-  // Convert cm to R3F units
-  const width = product.width * R3F_SCALE;
-  const depth = product.depth * R3F_SCALE;
+  // Convert cm to R3F units (1 R3F unit = 100cm, so divide by 100)
+  const width = product.width / R3F_SCALE;
+  const depth = product.depth / R3F_SCALE;
 
   return {
     minX: x - width / 2,
@@ -93,8 +93,9 @@ export function hasAvailableSpace(
   const product = productsData.products.find((p) => p.model === productModel);
   if (!product) return false;
 
-  const wardrobeHeight = 2.0;
-  const yPosition = wardrobeHeight / 2;
+  // Calculate actual wardrobe height from product dimensions
+  const wardrobeHeight = product.height / R3F_SCALE;
+  const yPosition = 0; // Position wardrobe directly on floor
 
   // Quick check: if no existing wardrobes, space is available
   if (existingInstances.length === 0) return true;
@@ -139,11 +140,12 @@ export function findAvailablePosition(
   const product = productsData.products.find((p) => p.model === productModel);
   if (!product) {
     console.warn(`Product not found: ${productModel}`);
-    return [0, 1, 0]; // Fallback position
+    return [0, 0, 0]; // Fallback position - on floor
   }
 
-  const wardrobeHeight = 2.0; // 200cm in R3F units
-  const yPosition = wardrobeHeight / 2;
+  // Calculate actual wardrobe height from product dimensions
+  const wardrobeHeight = product.height / R3F_SCALE;
+  const yPosition = 0; // Position wardrobe directly on floor
 
   // If no existing wardrobes, use center or preferred position
   if (existingInstances.length === 0) {
@@ -218,8 +220,8 @@ export function getSuggestedPositions(
   const targetBox = getWardrobeBoundingBox(targetInstance);
 
   // Calculate spacing based on both wardrobes' dimensions
-  const newWidth = product.width * R3F_SCALE;
-  const newDepth = product.depth * R3F_SCALE;
+  const newWidth = product.width / R3F_SCALE;
+  const newDepth = product.depth / R3F_SCALE;
   const spacing = 0.3; // Minimum gap between wardrobes
 
   // Suggested positions: left, right, front, back of target wardrobe
