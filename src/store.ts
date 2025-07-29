@@ -5,6 +5,7 @@ import {
   getSuggestedPositions,
   hasAvailableSpace,
 } from "./helper/wardrobePlacement";
+import { snapToWall, requiresWallAttachment } from "./helper/wallConstraints";
 
 // Real-world dimension constants (in CM)
 export const ROOM_DIMENSIONS = {
@@ -60,6 +61,7 @@ interface StoreState {
     id: string,
     position: [number, number, number]
   ) => void;
+  updateWardrobeRotation: (id: string, rotation: number) => void;
   updateWardrobeInstance: (
     id: string,
     updates: Partial<WardrobeInstance>
@@ -118,6 +120,14 @@ export const useStore = create<StoreState>((set, get) => ({
       depth: state.wallsDimensions.left.length * 0.01,
     };
 
+    // Enhanced room dimensions for wall constraint calculations
+    const wallRoomDimensions = {
+      width: roomDimensions.width,
+      depth: roomDimensions.depth,
+      height: state.wallsDimensions.front.height * 0.01, // Convert cm to R3F
+      thickness: state.wallsDimensions.front.depth * 0.01, // Convert cm to R3F
+    };
+
     // Check if there's available space for this wardrobe
     if (
       !hasAvailableSpace(product.model, state.wardrobeInstances, roomDimensions)
@@ -133,7 +143,8 @@ export const useStore = create<StoreState>((set, get) => ({
       product.model,
       state.wardrobeInstances,
       position, // Use provided position as preferred if given
-      roomDimensions
+      roomDimensions,
+      wallRoomDimensions // Pass enhanced dimensions for better wall placement
     );
 
     // Double check that placement was successful
@@ -148,10 +159,28 @@ export const useStore = create<StoreState>((set, get) => ({
       .toString(36)
       .substr(2, 9)}`;
 
+    // For traditional wardrobes, snap to the closest wall
+    let finalPosition = smartPosition;
+    let finalRotation = 0;
+
+    if (requiresWallAttachment(product.model)) {
+      const tempInstance: WardrobeInstance = {
+        id: newId,
+        product,
+        position: smartPosition,
+        addedAt: new Date(),
+      };
+
+      const snapResult = snapToWall(tempInstance, wallRoomDimensions);
+      finalPosition = snapResult.position;
+      finalRotation = snapResult.rotation;
+    }
+
     const newInstance: WardrobeInstance = {
       id: newId,
       product,
-      position: smartPosition,
+      position: finalPosition,
+      rotation: finalRotation,
       addedAt: new Date(),
     };
 
@@ -169,10 +198,41 @@ export const useStore = create<StoreState>((set, get) => ({
     set((state) => ({
       wardrobeInstances: state.wardrobeInstances.filter((w) => w.id !== id),
     })),
-  updateWardrobePosition: (id: string, position: [number, number, number]) =>
+  updateWardrobePosition: (id: string, position: [number, number, number]) => {
+    const state = get();
+    const instance = state.wardrobeInstances.find((w) => w.id === id);
+
+    let finalPosition = position;
+    let finalRotation = instance?.rotation || 0;
+
+    // For traditional wardrobes, maintain wall constraints
+    if (instance && requiresWallAttachment(instance.product.model)) {
+      const wallRoomDimensions = {
+        width: state.wallsDimensions.front.length * 0.01,
+        depth: state.wallsDimensions.left.length * 0.01,
+        height: state.wallsDimensions.front.height * 0.01,
+        thickness: state.wallsDimensions.front.depth * 0.01,
+      };
+
+      const updatedInstance = { ...instance, position };
+      const snapResult = snapToWall(updatedInstance, wallRoomDimensions);
+      finalPosition = snapResult.position;
+      finalRotation = snapResult.rotation;
+    }
+
     set((state) => ({
       wardrobeInstances: state.wardrobeInstances.map((w) =>
-        w.id === id ? { ...w, position } : w
+        w.id === id
+          ? { ...w, position: finalPosition, rotation: finalRotation }
+          : w
+      ),
+    }));
+  },
+
+  updateWardrobeRotation: (id: string, rotation: number) =>
+    set((state) => ({
+      wardrobeInstances: state.wardrobeInstances.map((w) =>
+        w.id === id ? { ...w, rotation } : w
       ),
     })),
   updateWardrobeInstance: (id: string, updates: Partial<WardrobeInstance>) =>

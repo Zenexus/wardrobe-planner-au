@@ -1,6 +1,13 @@
 import { WardrobeInstance } from "../types";
 import productsData from "../products.json";
 import { R3F_SCALE } from "../store";
+import {
+  requiresWallAttachment,
+  getClosestWall,
+  snapToWall,
+  WallConstraint,
+  RoomDimensions as WallRoomDimensions,
+} from "./wallConstraints";
 
 // R3F Scaling factor: 1 R3F unit = 100cm
 
@@ -129,13 +136,199 @@ export function hasAvailableSpace(
 }
 
 /**
- * Find the next available position for a wardrobe using spiral search
+ * Find positions along a specific wall for traditional wardrobes
+ */
+function findWallPositions(
+  wallIndex: number,
+  product: any,
+  roomDimensions: { width: number; depth: number },
+  wallRoomDimensions: WallRoomDimensions,
+  existingInstances: WardrobeInstance[],
+  yPosition: number
+): [number, number, number][] {
+  const positions: [number, number, number][] = [];
+  const stepSize = 0.3; // Smaller steps for more precise placement
+  const wardrobeWidth = product.width / R3F_SCALE;
+  const wardrobeDepth = product.depth / R3F_SCALE;
+
+  const { width, depth, thickness } = wallRoomDimensions;
+  const halfWidth = width / 2;
+  const halfDepth = depth / 2;
+
+  switch (wallIndex) {
+    case 0: // Right wall
+    case 1: // Left wall
+      // Search along Z-axis (front to back)
+      const wallX =
+        wallIndex === 0
+          ? halfWidth - thickness / 2 - wardrobeDepth / 2
+          : -halfWidth + thickness / 2 + wardrobeDepth / 2;
+
+      for (
+        let z = -halfDepth + wardrobeWidth / 2;
+        z <= halfDepth - wardrobeWidth / 2;
+        z += stepSize
+      ) {
+        const testPos: [number, number, number] = [wallX, yPosition, z];
+        if (
+          !wouldCollideWithExisting(product.model, testPos, existingInstances)
+        ) {
+          positions.push(testPos);
+        }
+      }
+      break;
+
+    case 2: // Back wall
+    case 3: // Front wall
+      // Search along X-axis (left to right)
+      const wallZ =
+        wallIndex === 2
+          ? halfDepth - thickness / 2 - wardrobeDepth / 2
+          : -halfDepth + thickness / 2 + wardrobeDepth / 2;
+
+      for (
+        let x = -halfWidth + wardrobeWidth / 2;
+        x <= halfWidth - wardrobeWidth / 2;
+        x += stepSize
+      ) {
+        const testPos: [number, number, number] = [x, yPosition, wallZ];
+        if (
+          !wouldCollideWithExisting(product.model, testPos, existingInstances)
+        ) {
+          positions.push(testPos);
+        }
+      }
+      break;
+  }
+
+  return positions;
+}
+
+/**
+ * Smart placement for traditional wardrobes - finds closest spot along walls
+ */
+function findSmartWallPosition(
+  productModel: string,
+  existingInstances: WardrobeInstance[],
+  roomDimensions: { width: number; depth: number },
+  yPosition: number,
+  passedWallRoomDimensions?: WallRoomDimensions
+): [number, number, number] | null {
+  const product = productsData.products.find((p) => p.model === productModel);
+  if (!product) return null;
+
+  const wallRoomDimensions: WallRoomDimensions = passedWallRoomDimensions || {
+    width: roomDimensions.width,
+    depth: roomDimensions.depth,
+    height: 2.5, // Default height
+    thickness: 0.05, // Default thickness
+  };
+
+  // Find existing traditional wardrobes and their wall attachments
+  const traditionalWardrobes = existingInstances.filter((w) =>
+    requiresWallAttachment(w.product.model)
+  );
+
+  if (traditionalWardrobes.length === 0) {
+    // No existing traditional wardrobes, start at back wall center
+    const backWallZ =
+      roomDimensions.depth / 2 -
+      wallRoomDimensions.thickness / 2 -
+      product.depth / R3F_SCALE / 2;
+    return [0, yPosition, backWallZ];
+  }
+
+  // Count wardrobes on each wall
+  const wallCounts = [0, 0, 0, 0]; // right, left, back, front
+  const wallPositions: { [key: number]: [number, number, number][] } = {
+    0: [],
+    1: [],
+    2: [],
+    3: [],
+  };
+
+  traditionalWardrobes.forEach((wardrobe) => {
+    const wallConstraint = getClosestWall(
+      wardrobe.position,
+      wallRoomDimensions
+    );
+    wallCounts[wallConstraint.wallIndex]++;
+    wallPositions[wallConstraint.wallIndex].push(wardrobe.position);
+  });
+
+  // Try to place on walls with existing wardrobes first, prioritizing less crowded walls
+  const wallsByPriority = [0, 1, 2, 3]
+    .filter((wallIndex) => wallCounts[wallIndex] > 0) // Walls with existing wardrobes
+    .sort((a, b) => wallCounts[a] - wallCounts[b]); // Sort by wardrobe count (ascending)
+
+  // First, try adjacent to existing wardrobes on the same wall
+  for (const wallIndex of wallsByPriority) {
+    const availablePositions = findWallPositions(
+      wallIndex,
+      product,
+      roomDimensions,
+      wallRoomDimensions,
+      existingInstances,
+      yPosition
+    );
+
+    if (availablePositions.length > 0) {
+      // Find position closest to existing wardrobes on this wall
+      const existingOnWall = wallPositions[wallIndex];
+      let bestPosition = availablePositions[0];
+      let minDistance = Infinity;
+
+      for (const pos of availablePositions) {
+        for (const existing of existingOnWall) {
+          const distance = Math.sqrt(
+            Math.pow(pos[0] - existing[0], 2) +
+              Math.pow(pos[2] - existing[2], 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            bestPosition = pos;
+          }
+        }
+      }
+
+      return bestPosition;
+    }
+  }
+
+  // If no space on walls with existing wardrobes, try empty walls
+  const emptyWalls = [0, 1, 2, 3].filter(
+    (wallIndex) => wallCounts[wallIndex] === 0
+  );
+
+  for (const wallIndex of emptyWalls) {
+    const availablePositions = findWallPositions(
+      wallIndex,
+      product,
+      roomDimensions,
+      wallRoomDimensions,
+      existingInstances,
+      yPosition
+    );
+
+    if (availablePositions.length > 0) {
+      // Return center position of available spots
+      const centerIndex = Math.floor(availablePositions.length / 2);
+      return availablePositions[centerIndex];
+    }
+  }
+
+  return null; // No available wall position found
+}
+
+/**
+ * Find the next available position for a wardrobe using smart placement
  */
 export function findAvailablePosition(
   productModel: string,
   existingInstances: WardrobeInstance[],
   preferredPosition?: [number, number, number],
-  roomDimensions = { width: 5, depth: 4 } // Default room size in R3F units
+  roomDimensions = { width: 5, depth: 4 }, // Default room size in R3F units
+  wallRoomDimensions?: WallRoomDimensions // Optional detailed room dimensions for better placement
 ): [number, number, number] | null {
   const product = productsData.products.find((p) => p.model === productModel);
   if (!product) {
@@ -156,6 +349,28 @@ export function findAvailablePosition(
     ];
     return initialPos;
   }
+
+  // For traditional wardrobes, use smart wall placement
+  if (requiresWallAttachment(productModel)) {
+    const smartPosition = findSmartWallPosition(
+      productModel,
+      existingInstances,
+      roomDimensions,
+      yPosition,
+      wallRoomDimensions
+    );
+
+    if (smartPosition) {
+      console.log(
+        `Smart wall placement found for traditional wardrobe at:`,
+        smartPosition
+      );
+      return smartPosition;
+    }
+  }
+
+  // Fallback to original spiral search for modern wardrobes or if smart placement fails
+  console.log(`Using fallback spiral search for ${productModel}`);
 
   // Start from preferred position or center
   const startX = preferredPosition?.[0] || 0;

@@ -17,7 +17,7 @@ export type WardrobeInstance = {
   id: string;
   product: Product;
   position: [number, number, number];
-  rotation?: [number, number, number];
+  rotation?: number; // Y-axis rotation in radians for wall attachment
   customizations?: Record<string, any>; // For future customization options
   addedAt: Date;
 };

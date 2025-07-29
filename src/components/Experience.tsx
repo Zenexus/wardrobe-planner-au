@@ -27,9 +27,19 @@ import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import WallMeasurements from "@/components/WallMeasurements";
 import WardrobeMeasurements from "@/components/WardrobeMeasurements";
 import FocusedWardrobePanel from "./FocusedWardrobePanel";
+import {
+  getClosestWall,
+  snapToWall,
+  constrainMovementAlongWall,
+  handleWallTransition,
+  requiresWallAttachment,
+  WallConstraint,
+  RoomDimensions as WallRoomDimensions,
+} from "../helper/wallConstraints";
 
 interface DraggableObjectProps {
   position: [number, number, number];
+  rotation?: number;
   color?: string;
   id: string;
   objectRefs: MutableRefObject<{ [key: string]: THREE.Object3D }>;
@@ -39,20 +49,27 @@ interface DraggableObjectProps {
     id: string,
     newPosition: [number, number, number]
   ) => void;
+  onRotationChange?: (id: string, newRotation: number) => void;
   setFocusedWardrobeInstance?: (instance: WardrobeInstance | null) => void;
   wardrobeInstances?: WardrobeInstance[];
+  modelPath?: string;
+  roomDimensions?: WallRoomDimensions;
 }
 
 const DraggableObject: React.FC<DraggableObjectProps> = ({
   position,
+  rotation = 0,
   color = "#ffffff",
   id,
   objectRefs,
   children,
   scale = [1, 1, 1],
   onPositionChange,
+  onRotationChange,
   setFocusedWardrobeInstance,
   wardrobeInstances,
+  modelPath,
+  roomDimensions,
 }) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
@@ -85,6 +102,28 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
   });
   const [wasClick, setWasClick] = useState<boolean>(true);
   const [mouseDownTime, setMouseDownTime] = useState<number>(0);
+
+  // Wall constraint state
+  const [wallConstraint, setWallConstraint] = useState<WallConstraint | null>(
+    null
+  );
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [currentRotation, setCurrentRotation] = useState<number>(rotation);
+  const isWallConstrained =
+    modelPath && requiresWallAttachment(modelPath) && roomDimensions;
+
+  // Initialize wall constraint for traditional wardrobes
+  useEffect(() => {
+    if (isWallConstrained && roomDimensions) {
+      const constraint = getClosestWall(position, roomDimensions);
+      setWallConstraint(constraint);
+    }
+  }, [isWallConstrained, position, roomDimensions]);
+
+  // Sync rotation prop with internal state
+  useEffect(() => {
+    setCurrentRotation(rotation);
+  }, [rotation]);
 
   const handlePointerDown = useCallback(
     (event: ThreeEvent<PointerEvent>) => {
@@ -200,11 +239,63 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         )
       ) {
         // Calculate target position more precisely
-        const targetPosition = new THREE.Vector3(
+        let targetPosition = new THREE.Vector3(
           intersectionPoint.current.x - dragOffset.x,
           rigidBodyRef.current.translation().y, // Keep same Y
           intersectionPoint.current.z - dragOffset.z
         );
+
+        // Apply wall constraints for traditional wardrobes
+        if (
+          isWallConstrained &&
+          wallConstraint &&
+          roomDimensions &&
+          wardrobeInstances
+        ) {
+          const currentInstance = wardrobeInstances.find((w) => w.id === id);
+          if (currentInstance) {
+            const constraintResult = constrainMovementAlongWall(
+              [targetPosition.x, targetPosition.y, targetPosition.z],
+              wallConstraint,
+              currentInstance,
+              roomDimensions,
+              isTransitioning
+            );
+
+            // Update wall constraint if transitioning
+            if (
+              constraintResult.shouldTransition &&
+              constraintResult.newWallConstraint
+            ) {
+              const wallNames = ["Right", "Left", "Back", "Front"];
+              console.log(
+                `Starting transition to ${
+                  wallNames[constraintResult.newWallConstraint.wallIndex]
+                } wall`
+              );
+              setWallConstraint(constraintResult.newWallConstraint);
+
+              // Update rotation immediately for smooth transition
+              const newRotation = constraintResult.newWallConstraint.rotation;
+              setCurrentRotation(newRotation);
+              if (onRotationChange) {
+                onRotationChange(id, newRotation);
+              }
+
+              setIsTransitioning(true);
+            } else if (isTransitioning && !constraintResult.shouldTransition) {
+              // Transition completed, wardrobe is now attached to the new wall
+              console.log("Transition completed, wardrobe attached to wall");
+              setIsTransitioning(false);
+            }
+
+            targetPosition.set(
+              constraintResult.position[0],
+              constraintResult.position[1],
+              constraintResult.position[2]
+            );
+          }
+        }
 
         // Get current position
         const currentPos = rigidBodyRef.current.translation();
@@ -217,10 +308,28 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         // Use distance to determine if we should move directly or use velocity
         const distance = direction.length();
 
+        // Adjust movement speed based on wall constraint state
+        let moveSpeedMultiplier = 1;
+        let dampingFactor = 1;
+
+        if (isWallConstrained) {
+          if (isTransitioning) {
+            // During wall transitions, allow smoother, slower movement
+            moveSpeedMultiplier = 0.6;
+            dampingFactor = 2;
+          } else {
+            // When constrained to a wall, allow faster movement along the wall
+            moveSpeedMultiplier = 1.2;
+          }
+        }
+
         if (distance > 0.1) {
           // For larger distances, use velocity-based movement
-          const maxMoveSpeed = 12;
-          const moveSpeed = Math.max(distance * 14, maxMoveSpeed);
+          const baseMoveSpeed = 12 * moveSpeedMultiplier;
+          const moveSpeed = Math.max(
+            distance * 14 * moveSpeedMultiplier,
+            baseMoveSpeed
+          );
 
           direction.normalize();
           rigidBodyRef.current.setLinvel(
@@ -231,6 +340,11 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             },
             true
           );
+
+          // Apply additional damping during transitions
+          if (isTransitioning && isWallConstrained) {
+            rigidBodyRef.current.setLinearDamping(10 * dampingFactor);
+          }
         } else {
           // For very small distances, move directly for precision
           rigidBodyRef.current.setTranslation(
@@ -268,7 +382,14 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       setSelectedObjectId,
       id,
       onPositionChange,
+      onRotationChange,
       wasClick,
+      isWallConstrained,
+      wallConstraint,
+      roomDimensions,
+      wardrobeInstances,
+      isTransitioning,
+      setIsTransitioning,
     ]
   );
 
@@ -289,6 +410,13 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       rigidBodyRef.current.setLinearDamping(20);
       rigidBodyRef.current.setAngularDamping(20);
 
+      // Handle transition completion more smoothly
+      setTimeout(() => {
+        if (isTransitioning) {
+          setIsTransitioning(false);
+        }
+      }, 50); // Small delay to ensure smooth transition
+
       // After a short delay, restore normal physics properties
       setTimeout(() => {
         if (rigidBodyRef.current) {
@@ -298,9 +426,48 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         }
       }, 100);
 
-      // Final position update (optional since we update during drag)
-      // This ensures we have the exact final position even if there's any physics settling
-      if (onPositionChange && !wasClick) {
+      // Handle wall snapping for traditional wardrobes when drag ends
+      if (
+        isWallConstrained &&
+        wallConstraint &&
+        roomDimensions &&
+        wardrobeInstances &&
+        !wasClick
+      ) {
+        const currentInstance = wardrobeInstances.find((w) => w.id === id);
+        if (currentInstance) {
+          const currentPos = rigidBodyRef.current.translation();
+          const snapResult = handleWallTransition(
+            {
+              ...currentInstance,
+              position: [currentPos.x, currentPos.y, currentPos.z],
+            },
+            wallConstraint,
+            roomDimensions
+          );
+
+          // Apply the snapped position and rotation
+          rigidBodyRef.current.setTranslation(
+            {
+              x: snapResult.position[0],
+              y: snapResult.position[1],
+              z: snapResult.position[2],
+            },
+            true
+          );
+
+          // Update rotation
+          setCurrentRotation(snapResult.rotation);
+          if (onRotationChange) {
+            onRotationChange(id, snapResult.rotation);
+          }
+
+          if (onPositionChange) {
+            onPositionChange(id, snapResult.position);
+          }
+        }
+      } else if (onPositionChange && !wasClick) {
+        // Final position update for non-wall-constrained objects
         const finalPosition = rigidBodyRef.current.translation();
         onPositionChange(id, [
           finalPosition.x,
@@ -338,6 +505,16 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       }
 
       gl.domElement.style.cursor = "auto";
+
+      // Log wall transition info for debugging
+      if (isWallConstrained && wallConstraint) {
+        const wallNames = ["Right", "Left", "Back", "Front"];
+        console.log(
+          `Traditional wardrobe ${
+            isTransitioning ? "transitioning to" : "attached to"
+          } ${wallNames[wallConstraint.wallIndex]} wall`
+        );
+      }
     },
     [
       isDragging,
@@ -352,6 +529,13 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       onPositionChange,
       setFocusedWardrobeInstance,
       wardrobeInstances,
+      isWallConstrained,
+      wallConstraint,
+      roomDimensions,
+      isTransitioning,
+      setIsTransitioning,
+      onRotationChange,
+      currentRotation,
     ]
   );
 
@@ -409,6 +593,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       <RigidBody
         ref={rigidBodyRef}
         position={position}
+        rotation={[0, currentRotation, 0]}
         colliders="cuboid"
         type={bodyType}
         restitution={0.3}
@@ -463,9 +648,21 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             <>
               <boxGeometry />
               <meshStandardMaterial
-                color={isDragging ? "#ff6b6b" : color}
+                color={
+                  isDragging
+                    ? isTransitioning && isWallConstrained
+                      ? "#ffaa00" // Orange when transitioning between walls
+                      : "#ff6b6b" // Red when normally dragging
+                    : color
+                }
                 transparent
-                opacity={isDragging ? 0.8 : 1.0}
+                opacity={
+                  isDragging
+                    ? isTransitioning && isWallConstrained
+                      ? 0.6 // More transparent during wall transition
+                      : 0.8
+                    : 1.0
+                }
               />
             </>
           )}
@@ -479,12 +676,14 @@ const Experience: React.FC = () => {
   const {
     globalHasDragging,
     setGlobalHasDragging,
+    draggedObjectId,
     setDraggedObjectId,
     selectedObjectId,
     setSelectedObjectId,
     customizeMode,
     wardrobeInstances,
     updateWardrobePosition,
+    updateWardrobeRotation,
     focusedWardrobeInstance,
     setFocusedWardrobeInstance,
   } = useStore();
@@ -913,8 +1112,12 @@ const Experience: React.FC = () => {
                 : []
             }
             blur={false}
-            visibleEdgeColor={0x0000ff}
-            hiddenEdgeColor={0x0000ff}
+            visibleEdgeColor={(() => {
+              return 0x0000ff; // Blue for regular objects
+            })()}
+            hiddenEdgeColor={(() => {
+              return 0x0000ff; // Blue for regular objects
+            })()}
             edgeStrength={10}
           />
         </EffectComposer>
@@ -925,13 +1128,19 @@ const Experience: React.FC = () => {
             key={instance.id}
             id={instance.id}
             position={instance.position}
+            rotation={instance.rotation || 0}
             objectRefs={objectRefs}
             scale={[1, 1, 1]} // Use real wardrobe scale - wardrobes should handle their own scaling
             onPositionChange={(id, newPosition) => {
               updateWardrobePosition(id, newPosition);
             }}
+            onRotationChange={(id, newRotation) => {
+              updateWardrobeRotation(id, newRotation);
+            }}
             setFocusedWardrobeInstance={setFocusedWardrobeInstance}
             wardrobeInstances={wardrobeInstances}
+            modelPath={instance.product.model}
+            roomDimensions={roomDimensions}
           >
             {getWardrobeComponent(instance.product.model, (event) => {
               // Simple click handler - main logic is now in DraggableObject
