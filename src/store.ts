@@ -5,7 +5,12 @@ import {
   getSuggestedPositions,
   hasAvailableSpace,
 } from "./helper/wardrobePlacement";
-import { snapToWall, requiresWallAttachment } from "./helper/wallConstraints";
+import {
+  snapToWall,
+  snapToCorner,
+  requiresWallAttachment,
+  requiresCornerPlacement,
+} from "./helper/wallConstraints";
 
 // Real-world dimension constants (in CM)
 export const ROOM_DIMENSIONS = {
@@ -72,6 +77,7 @@ interface StoreState {
     productModel: string
   ) => [number, number, number][];
   checkSpaceAvailability: (productModel: string) => boolean;
+  clearAllWardrobes: () => void;
 
   // the customise mode is a button that allows the user to customize the room size and wall height
   customizeMode: boolean;
@@ -130,11 +136,30 @@ export const useStore = create<StoreState>((set, get) => ({
 
     // Check if there's available space for this wardrobe
     if (
-      !hasAvailableSpace(product.model, state.wardrobeInstances, roomDimensions)
+      !hasAvailableSpace(
+        product.model,
+        state.wardrobeInstances,
+        roomDimensions,
+        wallRoomDimensions
+      )
     ) {
+      const isTraditional = product.model === "components/W-01684";
+      const isLShaped = product.model === "components/W-01687";
+
+      let spaceMessage;
+      if (isTraditional) {
+        spaceMessage =
+          "No wall space available for this traditional wardrobe. Traditional wardrobes must be placed against walls.";
+      } else if (isLShaped) {
+        spaceMessage =
+          "No corner space available for this L-shaped wardrobe. L-shaped wardrobes must be placed in room corners.";
+      } else {
+        spaceMessage = "No floor space available for this modern wardrobe.";
+      }
+
       return {
         success: false,
-        message: `No space available to place ${product.name}. Try removing or moving existing wardrobes to create space.`,
+        message: `${spaceMessage} Try removing or moving existing wardrobes to create space, or consider enlarging the room.`,
       };
     }
 
@@ -160,6 +185,7 @@ export const useStore = create<StoreState>((set, get) => ({
       .substr(2, 9)}`;
 
     // For traditional wardrobes, snap to the closest wall
+    // For L-shaped wardrobes, snap to the closest corner
     let finalPosition = smartPosition;
     let finalRotation = 0;
 
@@ -174,6 +200,29 @@ export const useStore = create<StoreState>((set, get) => ({
       const snapResult = snapToWall(tempInstance, wallRoomDimensions);
       finalPosition = snapResult.position;
       finalRotation = snapResult.rotation;
+    } else if (requiresCornerPlacement(product.model)) {
+      const tempInstance: WardrobeInstance = {
+        id: newId,
+        product,
+        position: smartPosition,
+        addedAt: new Date(),
+      };
+
+      const snapResult = snapToCorner(
+        tempInstance,
+        wallRoomDimensions,
+        state.wardrobeInstances
+      );
+      if (snapResult) {
+        finalPosition = snapResult.position;
+        finalRotation = snapResult.rotation;
+      } else {
+        // This shouldn't happen if hasAvailableSpace worked correctly
+        return {
+          success: false,
+          message: `Failed to snap L-shaped wardrobe to corner. Please try again.`,
+        };
+      }
     }
 
     const newInstance: WardrobeInstance = {
@@ -219,6 +268,28 @@ export const useStore = create<StoreState>((set, get) => ({
       finalPosition = snapResult.position;
       finalRotation = snapResult.rotation;
     }
+    // For L-shaped wardrobes, maintain corner constraints
+    else if (instance && requiresCornerPlacement(instance.product.model)) {
+      const wallRoomDimensions = {
+        width: state.wallsDimensions.front.length * 0.01,
+        depth: state.wallsDimensions.left.length * 0.01,
+        height: state.wallsDimensions.front.height * 0.01,
+        thickness: state.wallsDimensions.front.depth * 0.01,
+      };
+
+      const updatedInstance = { ...instance, position };
+      const otherInstances = state.wardrobeInstances.filter((w) => w.id !== id);
+      const snapResult = snapToCorner(
+        updatedInstance,
+        wallRoomDimensions,
+        otherInstances
+      );
+
+      if (snapResult) {
+        finalPosition = snapResult.position;
+        finalRotation = snapResult.rotation;
+      }
+    }
 
     set((state) => ({
       wardrobeInstances: state.wardrobeInstances.map((w) =>
@@ -263,6 +334,15 @@ export const useStore = create<StoreState>((set, get) => ({
       state.wardrobeInstances,
       roomDimensions
     );
+  },
+  clearAllWardrobes: () => {
+    set(() => ({
+      wardrobeInstances: [],
+      selectedObjectId: null,
+      draggedObjectId: null,
+      focusedWardrobeInstance: null,
+      globalHasDragging: false,
+    }));
   },
   customizeMode: false,
   setCustomizeMode: (customizeMode: boolean) => set({ customizeMode }),

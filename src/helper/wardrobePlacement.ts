@@ -5,9 +5,10 @@ import productsData from "../products.json";
 import { R3F_SCALE } from "../store";
 import {
   requiresWallAttachment,
+  requiresCornerPlacement,
   getClosestWall,
-  snapToWall,
-  WallConstraint,
+  getCornerPositions,
+  findAvailableCorner,
   RoomDimensions as WallRoomDimensions,
 } from "./wallConstraints";
 
@@ -27,7 +28,7 @@ export function getWardrobeBoundingBox(
   instance: WardrobeInstance
 ): BoundingBox {
   const product = instance.product;
-  const [x, y, z] = instance.position;
+  const [x, , z] = instance.position;
 
   // Convert cm to R3F units (1 R3F unit = 100cm, so divide by 100)
   const width = product.width / R3F_SCALE;
@@ -93,32 +94,102 @@ export function wouldCollideWithExisting(
 
 /**
  * Check if there's any available space in the room for a new wardrobe
+ * This is a more efficient check that doesn't do full placement calculation
  */
 export function hasAvailableSpace(
   productModel: string,
   existingInstances: WardrobeInstance[],
-  roomDimensions = { width: 5, depth: 4 }
+  roomDimensions = { width: 5, depth: 4 },
+  wallRoomDimensions?: WallRoomDimensions
 ): boolean {
   const product = productsData.products.find((p) => p.model === productModel);
   if (!product) return false;
 
-  // Calculate actual wardrobe height from product dimensions
-  const wardrobeHeight = product.height / R3F_SCALE;
-  const yPosition = 0; // Position wardrobe directly on floor
-
   // Quick check: if no existing wardrobes, space is available
   if (existingInstances.length === 0) return true;
 
-  // Test a few strategic positions to see if any are available
-  const testPositions = [
-    [0, yPosition, 0], // Center
-    [-1, yPosition, 0], // Left
-    [1, yPosition, 0], // Right
-    [0, yPosition, -1], // Front
-    [0, yPosition, 1], // Back
-  ];
+  const yPosition = 0;
 
-  // Test grid positions across the room
+  // For L-shaped wardrobes, check corner positions
+  if (requiresCornerPlacement(productModel) && wallRoomDimensions) {
+    console.log(
+      `Checking corner positions for L-shaped wardrobe ${product.name}`
+    );
+
+    const wardrobeWidth = product.width / 100; // Convert cm to R3F units
+    const wardrobeDepth = product.depth / 100; // Convert cm to R3F units
+    const corners = getCornerPositions(
+      wallRoomDimensions,
+      wardrobeWidth,
+      wardrobeDepth
+    );
+
+    // Check each corner for availability
+    for (const corner of corners) {
+      // Create a temporary instance at this corner to check for collisions
+      const tempInstance: WardrobeInstance = {
+        id: "temp-corner-check",
+        product,
+        position: corner.position,
+        rotation: corner.rotation,
+        addedAt: new Date(),
+      };
+
+      // Check if this corner position would collide with existing wardrobes
+      const tempBoundingBox = getWardrobeBoundingBox(tempInstance);
+      let hasCollision = false;
+
+      for (const existing of existingInstances) {
+        const existingBox = getWardrobeBoundingBox(existing);
+        if (boundingBoxesIntersect(tempBoundingBox, existingBox, 0.1)) {
+          hasCollision = true;
+          break;
+        }
+      }
+
+      if (!hasCollision) {
+        console.log(
+          `Found available corner position at corner ${corner.cornerIndex}`
+        );
+        return true; // Found at least one available corner
+      }
+    }
+    console.log(
+      `No corner positions available for L-shaped wardrobe ${product.name}`
+    );
+    return false; // No corner positions available
+  }
+
+  // For traditional wardrobes, check wall positions
+  if (requiresWallAttachment(productModel) && wallRoomDimensions) {
+    console.log(
+      `Checking wall positions for traditional wardrobe ${product.name}`
+    );
+    // Check each wall for available space
+    for (let wallIndex = 0; wallIndex < 4; wallIndex++) {
+      const wallPositions = findWallPositions(
+        wallIndex,
+        product,
+        roomDimensions,
+        wallRoomDimensions,
+        existingInstances,
+        yPosition
+      );
+      if (wallPositions.length > 0) {
+        console.log(
+          `Found ${wallPositions.length} available positions on wall ${wallIndex}`
+        );
+        return true; // Found at least one available wall position
+      }
+    }
+    console.log(
+      `No wall positions available for traditional wardrobe ${product.name}`
+    );
+    return false; // No wall positions available
+  }
+
+  // For modern wardrobes, do a grid search
+  console.log(`Checking grid positions for modern wardrobe ${product.name}`);
   const stepSize = 0.5;
   const maxX = roomDimensions.width / 2 - 0.5;
   const maxZ = roomDimensions.depth / 2 - 0.5;
@@ -129,21 +200,29 @@ export function hasAvailableSpace(
       if (
         !wouldCollideWithExisting(productModel, testPosition, existingInstances)
       ) {
+        console.log(
+          `Found available position for modern wardrobe at [${x.toFixed(
+            1
+          )}, ${yPosition}, ${z.toFixed(1)}]`
+        );
         return true;
       }
     }
   }
 
+  console.log(
+    `No grid positions available for modern wardrobe ${product.name}`
+  );
   return false;
 }
 
 /**
  * Find positions along a specific wall for traditional wardrobes
  */
-function findWallPositions(
+export function findWallPositions(
   wallIndex: number,
   product: any,
-  roomDimensions: { width: number; depth: number },
+  _roomDimensions: { width: number; depth: number },
   wallRoomDimensions: WallRoomDimensions,
   existingInstances: WardrobeInstance[],
   yPosition: number
@@ -335,21 +414,70 @@ export function findAvailablePosition(
   const product = productsData.products.find((p) => p.model === productModel);
   if (!product) {
     console.warn(`Product not found: ${productModel}`);
-    return [0, 0, 0]; // Fallback position - on floor
+    return null; // Return null instead of fallback position
   }
 
-  // Calculate actual wardrobe height from product dimensions
-  const wardrobeHeight = product.height / R3F_SCALE;
   const yPosition = 0; // Position wardrobe directly on floor
 
-  // If no existing wardrobes, use center or preferred position
+  // If no existing wardrobes, use center or preferred position (except for corner wardrobes which must go in corners)
   if (existingInstances.length === 0) {
+    // For L-shaped wardrobes, place in first available corner
+    if (requiresCornerPlacement(productModel)) {
+      if (!wallRoomDimensions) {
+        console.warn("Wall room dimensions required for corner placement");
+        return null;
+      }
+      const wardrobeWidth = product.width / 100;
+      const wardrobeDepth = product.depth / 100;
+      const corners = getCornerPositions(
+        wallRoomDimensions,
+        wardrobeWidth,
+        wardrobeDepth
+      );
+      console.log(
+        `Placing L-shaped wardrobe in first corner:`,
+        corners[0].position
+      );
+      return corners[0].position; // Use first corner when room is empty
+    }
+
     const initialPos: [number, number, number] = preferredPosition || [
       0,
       yPosition,
       0,
     ];
     return initialPos;
+  }
+
+  // For L-shaped wardrobes, find available corner
+  if (requiresCornerPlacement(productModel)) {
+    if (!wallRoomDimensions) {
+      console.warn("Wall room dimensions required for corner placement");
+      return null;
+    }
+
+    const tempInstance: WardrobeInstance = {
+      id: "temp-corner-placement",
+      product,
+      position: [0, yPosition, 0], // Temporary position
+      addedAt: new Date(),
+    };
+
+    const cornerResult = findAvailableCorner(
+      tempInstance,
+      wallRoomDimensions,
+      existingInstances
+    );
+    if (cornerResult) {
+      console.log(
+        `Corner placement found for L-shaped wardrobe at corner ${cornerResult.cornerIndex}:`,
+        cornerResult.position
+      );
+      return cornerResult.position;
+    } else {
+      console.log("No available corners for L-shaped wardrobe");
+      return null;
+    }
   }
 
   // For traditional wardrobes, use smart wall placement

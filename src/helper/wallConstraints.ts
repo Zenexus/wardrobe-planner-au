@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { WardrobeInstance } from "../types";
-import { getWardrobeBoundingBox } from "./wardrobePlacement";
+import {
+  getWardrobeBoundingBox,
+  boundingBoxesIntersect,
+} from "./wardrobePlacement";
 
 //FIXME: this wall index need align with the wall index in closestWallDetector.ts
 export type WallConstraint = {
@@ -98,7 +101,6 @@ export function snapToWall(
 
   // Get wardrobe dimensions (original dimensions, not rotated)
   const product = instance.product;
-  const wardrobeWidth = product.width / 100; // Convert cm to R3F units
   const wardrobeDepth = product.depth / 100; // Convert cm to R3F units
 
   let newX = x;
@@ -150,7 +152,7 @@ export function constrainMovementAlongWall(
 
   // Different thresholds for starting vs continuing transition (hysteresis)
   const startTransitionThreshold = 0.5; // Larger threshold to start transition
-  const continueTransitionThreshold = 0.8; // Smaller threshold to continue
+  const continueTransitionThreshold = 1; // Smaller threshold to continue
   const transitionThreshold = isCurrentlyTransitioning
     ? continueTransitionThreshold
     : startTransitionThreshold;
@@ -334,7 +336,7 @@ export function constrainMovementAlongWall(
  */
 export function handleWallTransition(
   instance: WardrobeInstance,
-  newWallConstraint: WallConstraint,
+  _newWallConstraint: WallConstraint,
   roomDimensions: RoomDimensions
 ): { position: [number, number, number]; rotation: number } {
   const tempInstance = { ...instance };
@@ -348,4 +350,152 @@ export function handleWallTransition(
  */
 export function requiresWallAttachment(modelPath: string): boolean {
   return modelPath === "components/W-01684"; // Only traditional wardrobe
+}
+
+/**
+ * Checks if a wardrobe model requires corner placement (only L-shaped wardrobe)
+ */
+export function requiresCornerPlacement(modelPath: string): boolean {
+  return modelPath === "components/W-01687"; // Only L-shaped wardrobe
+}
+
+export type CornerConstraint = {
+  cornerIndex: number; // 0: front-left, 1: front-right, 2: back-right, 3: back-left
+  position: [number, number, number];
+  rotation: number; // Y-axis rotation in radians
+  isValid: boolean;
+};
+
+/**
+ * Gets all 4 corner positions for L-shaped wardrobes
+ */
+export function getCornerPositions(
+  roomDimensions: RoomDimensions,
+  wardrobeWidth: number,
+  wardrobeDepth: number
+): CornerConstraint[] {
+  const { width, depth, thickness } = roomDimensions;
+  const halfWidth = width * 0.5;
+  const halfDepth = depth * 0.5;
+  const halfThickness = thickness * 0.5;
+
+  // Calculate offset from walls (wardrobe center should be offset by half its dimensions)
+  const xOffset = wardrobeWidth / 2 - halfThickness;
+  const zOffset = wardrobeDepth / 2 - halfThickness;
+
+  // model provided has offset
+  const modelOffset = 0.1;
+  return [
+    {
+      cornerIndex: 0,
+      position: [
+        -halfWidth + xOffset,
+        0.05,
+        -halfDepth + zOffset + modelOffset,
+      ], // Front-left
+      rotation: Math.PI * 1.5, // 270 degree Facing inward
+      isValid: true,
+    },
+    {
+      cornerIndex: 1,
+      position: [halfWidth - xOffset - modelOffset, 0.05, -halfDepth + zOffset], // Front-right
+      rotation: Math.PI, // 180 degrees
+      isValid: true,
+    },
+    {
+      cornerIndex: 2,
+      position: [halfWidth - xOffset, 0.05, halfDepth - zOffset - modelOffset], // Back-right
+      rotation: Math.PI * 0.5, // 90 degrees
+      isValid: true,
+    },
+    {
+      cornerIndex: 3,
+      position: [-halfWidth + xOffset + modelOffset, 0.05, halfDepth - zOffset], // Back-left
+      rotation: Math.PI * 2, // 360 degrees
+      isValid: true,
+    },
+  ];
+}
+
+/**
+ * Check if a specific corner is available for L-shaped wardrobes
+ */
+export function isCornerAvailable(
+  corner: CornerConstraint,
+  instance: WardrobeInstance,
+  existingInstances: WardrobeInstance[]
+): boolean {
+  // Create a temporary instance at this corner to check for collisions
+  const tempInstance: WardrobeInstance = {
+    ...instance,
+    position: corner.position,
+    rotation: corner.rotation,
+  };
+
+  // Check if this corner position would collide with existing wardrobes
+  const tempBoundingBox = getWardrobeBoundingBox(tempInstance);
+
+  for (const existing of existingInstances) {
+    if (existing.id === instance.id) continue; // Skip self
+
+    const existingBox = getWardrobeBoundingBox(existing);
+
+    if (boundingBoxesIntersect(tempBoundingBox, existingBox, 0.1)) {
+      return false; // Has collision
+    }
+  }
+
+  return true; // No collision, corner is available
+}
+
+/**
+ * Finds the closest available corner for L-shaped wardrobes
+ */
+export function findAvailableCorner(
+  instance: WardrobeInstance,
+  roomDimensions: RoomDimensions,
+  existingInstances: WardrobeInstance[]
+): CornerConstraint | null {
+  const product = instance.product;
+  const wardrobeWidth = product.width / 100; // Convert cm to R3F units
+  const wardrobeDepth = product.depth / 100; // Convert cm to R3F units
+
+  const corners = getCornerPositions(
+    roomDimensions,
+    wardrobeWidth,
+    wardrobeDepth
+  );
+
+  // Check each corner for availability
+  for (const corner of corners) {
+    if (isCornerAvailable(corner, instance, existingInstances)) {
+      return corner;
+    }
+  }
+
+  return null; // No available corner found
+}
+
+/**
+ * Snaps an L-shaped wardrobe to the closest available corner
+ */
+export function snapToCorner(
+  instance: WardrobeInstance,
+  roomDimensions: RoomDimensions,
+  existingInstances: WardrobeInstance[] = []
+): { position: [number, number, number]; rotation: number } | null {
+  const availableCorner = findAvailableCorner(
+    instance,
+    roomDimensions,
+    existingInstances
+  );
+
+  if (!availableCorner) {
+    return null; // No corner available
+  }
+
+  return {
+    position: availableCorner.position,
+    rotation: availableCorner.rotation,
+  };
 }

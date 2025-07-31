@@ -33,7 +33,12 @@ import {
   constrainMovementAlongWall,
   handleWallTransition,
   requiresWallAttachment,
+  requiresCornerPlacement,
+  getCornerPositions,
+  findAvailableCorner,
+  isCornerAvailable,
   WallConstraint,
+  CornerConstraint,
   RoomDimensions as WallRoomDimensions,
 } from "../helper/wallConstraints";
 
@@ -111,6 +116,8 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
   const [currentRotation, setCurrentRotation] = useState<number>(rotation);
   const isWallConstrained =
     modelPath && requiresWallAttachment(modelPath) && roomDimensions;
+  const isCornerConstrained =
+    modelPath && requiresCornerPlacement(modelPath) && roomDimensions;
 
   // Initialize wall constraint for traditional wardrobes
   useEffect(() => {
@@ -297,6 +304,115 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
           }
         }
 
+        // Apply corner constraints for L-shaped wardrobes
+        if (isCornerConstrained && roomDimensions && wardrobeInstances) {
+          const currentInstance = wardrobeInstances.find((w) => w.id === id);
+          if (currentInstance) {
+            const otherInstances = wardrobeInstances.filter((w) => w.id !== id);
+
+            // Get all corner positions
+            const wardrobeWidth = currentInstance.product.width / 100;
+            const wardrobeDepth = currentInstance.product.depth / 100;
+            const corners = getCornerPositions(
+              roomDimensions,
+              wardrobeWidth,
+              wardrobeDepth
+            );
+
+            // Debug: show all corners and their availability (only during initial setup)
+            // console.log("All corners availability:");
+            // corners.forEach((corner, index) => {
+            //   const available = isCornerAvailable(corner, currentInstance, otherInstances);
+            //   console.log(`  Corner ${index}: ${available ? "AVAILABLE" : "OCCUPIED"}`);
+            // });
+
+            // Find the closest corner to the mouse cursor position
+            let closestCorner: CornerConstraint | null = null;
+            let minDistance = Infinity;
+
+            for (const corner of corners) {
+              const distance = Math.sqrt(
+                Math.pow(targetPosition.x - corner.position[0], 2) +
+                  Math.pow(targetPosition.z - corner.position[2], 2)
+              );
+
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestCorner = corner;
+              }
+            }
+
+            // console.log(
+            //   `L-shaped wardrobe drag: closest corner ${
+            //     closestCorner?.cornerIndex
+            //   }, distance: ${minDistance.toFixed(2)}`
+            // );
+
+            // Check if the closest corner is available (no collision with other wardrobes)
+            if (closestCorner) {
+              // Check if the closest corner is available
+              const isClosestCornerAvailable = isCornerAvailable(
+                closestCorner,
+                currentInstance,
+                otherInstances
+              );
+              // console.log(
+              //   `Corner ${closestCorner.cornerIndex} availability: ${isClosestCornerAvailable}`
+              // );
+
+              if (isClosestCornerAvailable) {
+                // console.log(
+                //   `Moving to closest corner ${closestCorner.cornerIndex}`
+                // );
+                // Snap to the closest available corner
+                targetPosition.set(
+                  closestCorner.position[0],
+                  closestCorner.position[1],
+                  closestCorner.position[2]
+                );
+
+                // Update rotation to match the corner
+                const newRotation = closestCorner.rotation;
+                if (Math.abs(newRotation - currentRotation) > 0.1) {
+                  setCurrentRotation(newRotation);
+                  if (onRotationChange) {
+                    onRotationChange(id, newRotation);
+                  }
+                }
+              } else {
+                // If closest corner is not available, try to find any available corner
+                const anyAvailableCorner = findAvailableCorner(
+                  currentInstance,
+                  roomDimensions,
+                  otherInstances
+                );
+
+                // console.log(
+                //   `Closest corner not available, fallback corner: ${
+                //     anyAvailableCorner?.cornerIndex ?? "none"
+                //   }`
+                // );
+
+                if (anyAvailableCorner) {
+                  targetPosition.set(
+                    anyAvailableCorner.position[0],
+                    anyAvailableCorner.position[1],
+                    anyAvailableCorner.position[2]
+                  );
+
+                  const newRotation = anyAvailableCorner.rotation;
+                  if (Math.abs(newRotation - currentRotation) > 0.1) {
+                    setCurrentRotation(newRotation);
+                    if (onRotationChange) {
+                      onRotationChange(id, newRotation);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
         // Get current position
         const currentPos = rigidBodyRef.current.translation();
         const direction = new THREE.Vector3(
@@ -321,6 +437,10 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             // When constrained to a wall, allow faster movement along the wall
             moveSpeedMultiplier = 1.2;
           }
+        } else if (isCornerConstrained) {
+          // For L-shaped wardrobes, use faster movement to snap quickly to corners
+          moveSpeedMultiplier = 2.0;
+          dampingFactor = 0.3; // Higher damping for quicker settling
         }
 
         if (distance > 0.1) {
@@ -464,6 +584,126 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
 
           if (onPositionChange) {
             onPositionChange(id, snapResult.position);
+          }
+        }
+      }
+      // Handle corner snapping for L-shaped wardrobes when drag ends
+      else if (
+        isCornerConstrained &&
+        roomDimensions &&
+        wardrobeInstances &&
+        !wasClick
+      ) {
+        const currentInstance = wardrobeInstances.find((w) => w.id === id);
+        if (currentInstance) {
+          const currentPos = rigidBodyRef.current.translation();
+          const otherInstances = wardrobeInstances.filter((w) => w.id !== id);
+
+          // Get all corner positions
+          const wardrobeWidth = currentInstance.product.width / 100;
+          const wardrobeDepth = currentInstance.product.depth / 100;
+          const corners = getCornerPositions(
+            roomDimensions,
+            wardrobeWidth,
+            wardrobeDepth
+          );
+
+          // Find the corner closest to current wardrobe position (where it was dragged to)
+          let closestCorner: CornerConstraint | null = null;
+          let minDistance = Infinity;
+
+          for (const corner of corners) {
+            const distance = Math.sqrt(
+              Math.pow(currentPos.x - corner.position[0], 2) +
+                Math.pow(currentPos.z - corner.position[2], 2)
+            );
+
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestCorner = corner;
+            }
+          }
+
+          console.log(
+            `Drop: wardrobe at [${currentPos.x.toFixed(
+              2
+            )}, ${currentPos.z.toFixed(2)}], closest corner: ${
+              closestCorner?.cornerIndex
+            }`
+          );
+
+          if (
+            closestCorner &&
+            isCornerAvailable(closestCorner, currentInstance, otherInstances)
+          ) {
+            console.log(
+              `Drop: snapping to closest corner ${closestCorner.cornerIndex}`
+            );
+
+            // Apply the closest corner position and rotation
+            rigidBodyRef.current.setTranslation(
+              {
+                x: closestCorner.position[0],
+                y: closestCorner.position[1],
+                z: closestCorner.position[2],
+              },
+              true
+            );
+
+            // Update rotation to match the corner
+            setCurrentRotation(closestCorner.rotation);
+            if (onRotationChange) {
+              onRotationChange(id, closestCorner.rotation);
+            }
+
+            if (onPositionChange) {
+              onPositionChange(id, closestCorner.position);
+            }
+          } else {
+            // If closest corner is not available, find any available corner as fallback
+            console.log(`Drop: closest corner not available, finding fallback`);
+
+            const availableCorner = findAvailableCorner(
+              currentInstance,
+              roomDimensions,
+              otherInstances
+            );
+
+            if (availableCorner) {
+              console.log(
+                `Drop: using fallback corner ${availableCorner.cornerIndex}`
+              );
+
+              rigidBodyRef.current.setTranslation(
+                {
+                  x: availableCorner.position[0],
+                  y: availableCorner.position[1],
+                  z: availableCorner.position[2],
+                },
+                true
+              );
+
+              setCurrentRotation(availableCorner.rotation);
+              if (onRotationChange) {
+                onRotationChange(id, availableCorner.rotation);
+              }
+
+              if (onPositionChange) {
+                onPositionChange(id, availableCorner.position);
+              }
+            } else {
+              // If no corner is available, keep current position but still update store
+              console.log(
+                `Drop: no corners available, keeping current position`
+              );
+              if (onPositionChange) {
+                onPositionChange(id, [
+                  currentPos.x,
+                  currentPos.y,
+                  currentPos.z,
+                ]);
+              }
+            }
           }
         }
       } else if (onPositionChange && !wasClick) {
