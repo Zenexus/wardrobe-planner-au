@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { WardrobeInstance } from "../types";
 import { getWardrobeBoundingBox } from "./wardrobePlacement";
 
+//FIXME: this wall index need align with the wall index in closestWallDetector.ts
 export type WallConstraint = {
   wallIndex: number; // 0: right, 1: left, 2: back, 3: front
   wallNormal: THREE.Vector3;
@@ -25,68 +26,62 @@ export function getClosestWall(
   position: [number, number, number],
   roomDimensions: RoomDimensions
 ): WallConstraint {
-  const [x, y, z] = position;
+  const [x, , z] = position; // Skip y since it's not used
   const { width, depth, thickness } = roomDimensions;
 
-  const halfWidth = width / 2;
-  const halfDepth = depth / 2;
+  const halfWidth = width * 0.5; // Slightly faster than division
+  const halfDepth = depth * 0.5;
+  const halfThickness = thickness * 0.5;
 
-  // Calculate distances to each wall
-  const distanceToRight = Math.abs(x - halfWidth);
-  const distanceToLeft = Math.abs(x + halfWidth);
-  const distanceToBack = Math.abs(z - halfDepth);
-  const distanceToFront = Math.abs(z + halfDepth);
+  // Pre-calculate wall positions
+  const rightWallPos = halfWidth - halfThickness;
+  const leftWallPos = -halfWidth + halfThickness;
+  const backWallPos = halfDepth - halfThickness;
+  const frontWallPos = -halfDepth + halfThickness;
 
-  const distances = [
-    {
-      wall: 0,
-      distance: distanceToRight,
-      normal: new THREE.Vector3(-1, 0, 0),
-      axis: "x" as const,
-      pos: halfWidth - thickness / 2,
-      rotation: Math.PI / 2, // Right wall - face left toward center
-    },
-    {
-      wall: 1,
-      distance: distanceToLeft,
-      normal: new THREE.Vector3(1, 0, 0),
-      axis: "x" as const,
-      pos: -halfWidth + thickness / 2,
-      rotation: -Math.PI / 2, // Left wall - face right toward center
-    },
-    {
-      wall: 2,
-      distance: distanceToBack,
-      normal: new THREE.Vector3(0, 0, -1),
-      axis: "z" as const,
-      pos: halfDepth - thickness / 2,
-      rotation: 0, // Back wall - face forward toward center
-    },
-    {
-      wall: 3,
-      distance: distanceToFront,
-      normal: new THREE.Vector3(0, 0, 1),
-      axis: "z" as const,
-      pos: -halfDepth + thickness / 2,
-      rotation: Math.PI, // Front wall - face backward toward center
-    },
+  // Calculate distances (no Math.abs needed since we know wall orientations)
+  const distanceToRight = rightWallPos - x;
+  const distanceToLeft = x - leftWallPos;
+  const distanceToBack = backWallPos - z;
+  const distanceToFront = z - frontWallPos;
+
+  // Find minimum distance and corresponding wall in one pass
+  let minDistance = distanceToRight;
+  let closestWall = 0;
+
+  if (distanceToLeft < minDistance) {
+    minDistance = distanceToLeft;
+    closestWall = 1;
+  }
+  if (distanceToBack < minDistance) {
+    minDistance = distanceToBack;
+    closestWall = 2;
+  }
+  if (distanceToFront < minDistance) {
+    closestWall = 3;
+  }
+
+  // Wall data lookup table (more cache-friendly than array of objects)
+  const wallNormals = [
+    new THREE.Vector3(-1, 0, 0), // Right
+    new THREE.Vector3(1, 0, 0), // Left
+    new THREE.Vector3(0, 0, -1), // Back
+    new THREE.Vector3(0, 0, 1), // Front
   ];
 
-  // Find the closest wall
-  const closest = distances.reduce((min, current) =>
-    current.distance < min.distance ? current : min
-  );
+  const wallAxes = ["x", "x", "z", "z"] as const;
+  const wallPositions = [rightWallPos, leftWallPos, backWallPos, frontWallPos];
+  const wallRotations = [Math.PI * 0.5, -Math.PI * 0.5, 0, Math.PI];
 
   return {
-    wallIndex: closest.wall,
-    wallNormal: closest.normal,
-    constrainedAxis: closest.axis,
-    wallPosition: closest.pos,
-    rotation: closest.rotation,
+    wallIndex: closestWall,
+    wallNormal: wallNormals[closestWall],
+    constrainedAxis: wallAxes[closestWall],
+    wallPosition: wallPositions[closestWall],
+    rotation: wallRotations[closestWall],
     isValid: true,
   };
 }
-
 /**
  * Snaps a wardrobe position to the closest wall (backside against wall, facing center)
  */
@@ -155,7 +150,7 @@ export function constrainMovementAlongWall(
 
   // Different thresholds for starting vs continuing transition (hysteresis)
   const startTransitionThreshold = 0.5; // Larger threshold to start transition
-  const continueTransitionThreshold = 0.2; // Smaller threshold to continue
+  const continueTransitionThreshold = 0.8; // Smaller threshold to continue
   const transitionThreshold = isCurrentlyTransitioning
     ? continueTransitionThreshold
     : startTransitionThreshold;

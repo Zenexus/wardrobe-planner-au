@@ -1,18 +1,9 @@
 import * as THREE from "three";
 
-// Interface for wall objects
-interface Wall {
+type Wall = {
   position: [number, number, number];
   args?: [number, number, number];
-}
-
-// Interface for wall data used internally
-interface WallData {
-  index: number;
-  distance: number;
-  angle: number;
-  isAtAngle: boolean;
-}
+};
 
 /**
  * Detects the closest wall to the camera and hides it.

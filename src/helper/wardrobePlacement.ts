@@ -1,3 +1,5 @@
+// This file contains the logic for placing wardrobes in the room
+
 import { WardrobeInstance } from "../types";
 import productsData from "../products.json";
 import { R3F_SCALE } from "../store";
