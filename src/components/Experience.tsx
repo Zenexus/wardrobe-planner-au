@@ -23,6 +23,7 @@ import { WallPaper, Ceiling } from "./WallPaper";
 import { detectClosestWalls, Wall } from "../helper/closestWallDetector";
 import { ClassicWardrobe } from "./W-01684";
 import { ModernWardrobe } from "./W-01687";
+import { BundleWardrobe } from "./W-01685-bundle";
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import WallMeasurements from "@/components/WallMeasurements";
 import WardrobeMeasurements from "@/components/WardrobeMeasurements";
@@ -1206,6 +1207,8 @@ const Experience: React.FC = () => {
         return <ClassicWardrobe onClick={onClick} />;
       case "components/W-01687":
         return <ModernWardrobe onClick={onClick} />;
+      case "components/W-01685-bundle":
+        return <BundleWardrobe onClick={onClick} />;
       default:
         console.warn(`Unknown model path: ${modelPath}`);
         return <ModernWardrobe onClick={onClick} />;
@@ -1391,14 +1394,19 @@ const Experience: React.FC = () => {
         ))}
 
         {/* Wardrobe measurements - moved outside DraggableObject to avoid ref interference */}
-        {wardrobeInstances.map((instance) => (
-          <WardrobeMeasurements
-            key={`measurements-${instance.id}`}
-            wardrobeId={instance.id}
-            position={instance.position} // Use absolute position since it's outside DraggableObject
-            modelPath={instance.product.model}
-          />
-        ))}
+        {wardrobeInstances.map(
+          (instance) => (
+            console.log("instance", instance),
+            (
+              <WardrobeMeasurements
+                key={`measurements-${instance.id}`}
+                wardrobeId={instance.id}
+                position={instance.position} // Use absolute position since it's outside DraggableObject
+                modelPath={instance.product.model}
+              />
+            )
+          )
+        )}
 
         {/* Wall Measurements - only shown in customize mode */}
         {/* <WallMeasurements walls={walls} /> */}

@@ -27,6 +27,20 @@
       "category": "Core Wardrobe Range",
       "thumbnail": "/thumbnails/single-wardrobe.jpeg",
       "model": "components/W-01684"
+    },
+    {
+      "itemNumber": "2583990",
+      "name": "Wardrobe Bundle Unit White",
+      "width": 60.6,
+      "height": 200,
+      "depth": 48,
+      "color": "White",
+      "desc": "This Wardrobe Bundle combines multiple storage solutions in one unit with adjustable shelves and optimized space utilization.",
+      "price": 150.0,
+      "type": "normal",
+      "category": "Core Wardrobe Range",
+      "thumbnail": "/thumbnails/single-wardrobe.jpeg",
+      "model": "components/W-01685-bundle"
     }
   ]
 }

@@ -349,7 +349,10 @@ export function handleWallTransition(
  * Checks if a wardrobe model requires wall attachment (only traditional wardrobe)
  */
 export function requiresWallAttachment(modelPath: string): boolean {
-  return modelPath === "components/W-01684"; // Only traditional wardrobe
+  return (
+    modelPath === "components/W-01684" ||
+    modelPath === "components/W-01685-bundle"
+  ); // Only traditional wardrobe
 }
 
 /**

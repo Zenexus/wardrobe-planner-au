@@ -278,6 +278,7 @@ export const useStore = create<StoreState>((set, get) => ({
       };
 
       const updatedInstance = { ...instance, position };
+
       const otherInstances = state.wardrobeInstances.filter((w) => w.id !== id);
       const snapResult = snapToCorner(
         updatedInstance,
