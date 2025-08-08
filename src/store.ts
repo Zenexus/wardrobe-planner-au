@@ -290,28 +290,11 @@ export const useStore = create<StoreState>((set, get) => ({
       finalPosition = snapResult.position;
       finalRotation = snapResult.rotation;
     }
-    // For L-shaped wardrobes, maintain corner constraints
+    // For L-shaped wardrobes, do NOT snap during drag; store raw position.
+    // Corner snapping is handled on drag end in the component's pointer up handler.
     else if (instance && requiresCornerPlacement(instance.product.model)) {
-      const wallRoomDimensions = {
-        width: state.wallsDimensions.front.length * 0.01,
-        depth: state.wallsDimensions.left.length * 0.01,
-        height: state.wallsDimensions.front.height * 0.01,
-        thickness: state.wallsDimensions.front.depth * 0.01,
-      };
-
-      const updatedInstance = { ...instance, position };
-
-      const otherInstances = state.wardrobeInstances.filter((w) => w.id !== id);
-      const snapResult = snapToCorner(
-        updatedInstance,
-        wallRoomDimensions,
-        otherInstances
-      );
-
-      if (snapResult) {
-        finalPosition = snapResult.position;
-        finalRotation = snapResult.rotation;
-      }
+      finalPosition = position;
+      finalRotation = instance.rotation || 0;
     }
 
     set((state) => ({

@@ -306,113 +306,11 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
           }
         }
 
-        // Apply corner constraints for L-shaped wardrobes
+        // Do not snap L-shaped wardrobes to corners during drag.
+        // Let the object follow the cursor; snapping happens on pointer up.
+        // (Keep block intentionally empty to preserve free movement.)
         if (isCornerConstrained && roomDimensions && wardrobeInstances) {
-          const currentInstance = wardrobeInstances.find((w) => w.id === id);
-          if (currentInstance) {
-            const otherInstances = wardrobeInstances.filter((w) => w.id !== id);
-
-            // Get all corner positions
-            const wardrobeWidth = currentInstance.product.width / 100;
-            const wardrobeDepth = currentInstance.product.depth / 100;
-            const corners = getCornerPositions(
-              roomDimensions,
-              wardrobeWidth,
-              wardrobeDepth
-            );
-
-            // Debug: show all corners and their availability (only during initial setup)
-            // console.log("All corners availability:");
-            // corners.forEach((corner, index) => {
-            //   const available = isCornerAvailable(corner, currentInstance, otherInstances);
-            //   console.log(`  Corner ${index}: ${available ? "AVAILABLE" : "OCCUPIED"}`);
-            // });
-
-            // Find the closest corner to the mouse cursor position
-            let closestCorner: CornerConstraint | null = null;
-            let minDistance = Infinity;
-
-            for (const corner of corners) {
-              const distance = Math.sqrt(
-                Math.pow(targetPosition.x - corner.position[0], 2) +
-                  Math.pow(targetPosition.z - corner.position[2], 2)
-              );
-
-              if (distance < minDistance) {
-                minDistance = distance;
-                closestCorner = corner;
-              }
-            }
-
-            // console.log(
-            //   `L-shaped wardrobe drag: closest corner ${
-            //     closestCorner?.cornerIndex
-            //   }, distance: ${minDistance.toFixed(2)}`
-            // );
-
-            // Check if the closest corner is available (no collision with other wardrobes)
-            if (closestCorner) {
-              // Check if the closest corner is available
-              const isClosestCornerAvailable = isCornerAvailable(
-                closestCorner,
-                currentInstance,
-                otherInstances
-              );
-              // console.log(
-              //   `Corner ${closestCorner.cornerIndex} availability: ${isClosestCornerAvailable}`
-              // );
-
-              if (isClosestCornerAvailable) {
-                // console.log(
-                //   `Moving to closest corner ${closestCorner.cornerIndex}`
-                // );
-                // Snap to the closest available corner
-                targetPosition.set(
-                  closestCorner.position[0],
-                  closestCorner.position[1],
-                  closestCorner.position[2]
-                );
-
-                // Update rotation to match the corner
-                const newRotation = closestCorner.rotation;
-                if (Math.abs(newRotation - currentRotation) > 0.1) {
-                  setCurrentRotation(newRotation);
-                  if (onRotationChange) {
-                    onRotationChange(id, newRotation);
-                  }
-                }
-              } else {
-                // If closest corner is not available, try to find any available corner
-                const anyAvailableCorner = findAvailableCorner(
-                  currentInstance,
-                  roomDimensions,
-                  otherInstances
-                );
-
-                // console.log(
-                //   `Closest corner not available, fallback corner: ${
-                //     anyAvailableCorner?.cornerIndex ?? "none"
-                //   }`
-                // );
-
-                if (anyAvailableCorner) {
-                  targetPosition.set(
-                    anyAvailableCorner.position[0],
-                    anyAvailableCorner.position[1],
-                    anyAvailableCorner.position[2]
-                  );
-
-                  const newRotation = anyAvailableCorner.rotation;
-                  if (Math.abs(newRotation - currentRotation) > 0.1) {
-                    setCurrentRotation(newRotation);
-                    if (onRotationChange) {
-                      onRotationChange(id, newRotation);
-                    }
-                  }
-                }
-              }
-            }
-          }
+          // no-op during drag
         }
 
         // Get current position
