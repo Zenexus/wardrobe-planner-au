@@ -10,7 +10,15 @@ import {
   snapToCorner,
   requiresWallAttachment,
   requiresCornerPlacement,
+  getClosestWall,
+  getCornerPositions,
+  RoomDimensions as WallRoomDimensions,
 } from "./helper/wallConstraints";
+import {
+  saveDesignState,
+  loadDesignState,
+  SavedDesignState,
+} from "./utils/memorySystem";
 
 // Real-world dimension constants (in CM)
 export const ROOM_DIMENSIONS = {
@@ -99,6 +107,20 @@ interface StoreState {
     dimensions: WallDimensions
   ) => void;
   getWallDimensions: (wall: keyof WallsDimensions) => WallDimensions;
+
+  // Memory system functions
+  saveCurrentState: () => boolean;
+  loadSavedState: (savedState: SavedDesignState) => boolean;
+  resetToDefaultState: () => void;
+  autoSaveEnabled: boolean;
+  setAutoSaveEnabled: (enabled: boolean) => void;
+
+  // Global lighting toggle
+  lightsOn: boolean;
+  setLightsOn: (on: boolean) => void;
+
+  // Recalculate wardrobe positions when room size changes
+  recalcPositionsForRoomResize: () => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -389,4 +411,305 @@ export const useStore = create<StoreState>((set, get) => ({
     })),
   getWallDimensions: (wall: keyof WallsDimensions) =>
     get().wallsDimensions[wall],
+
+  // Memory system functions
+  saveCurrentState: () => {
+    const state = get();
+    return saveDesignState({
+      wardrobeInstances: state.wardrobeInstances,
+      wallsDimensions: state.wallsDimensions,
+      customizeMode: state.customizeMode,
+    });
+  },
+
+  loadSavedState: (savedState: SavedDesignState) => {
+    try {
+      console.log("🔄 Loading saved state into store:", {
+        wardrobes: savedState.wardrobeInstances?.length || 0,
+        walls: savedState.wallsDimensions,
+        customizeMode: savedState.customizeMode,
+      });
+
+      set({
+        wardrobeInstances: savedState.wardrobeInstances || [],
+        wallsDimensions: savedState.wallsDimensions,
+        customizeMode: savedState.customizeMode || false,
+        // Reset UI states when loading
+        selectedObjectId: null,
+        draggedObjectId: null,
+        focusedWardrobeInstance: null,
+        globalHasDragging: false,
+      });
+
+      // Verify the state was set correctly
+      const currentState = get();
+      console.log(
+        "✅ State loaded successfully. Current wardrobes:",
+        currentState.wardrobeInstances.length
+      );
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to load saved state:", error);
+      return false;
+    }
+  },
+
+  resetToDefaultState: () => {
+    set({
+      wardrobeInstances: [],
+      selectedObjectId: null,
+      draggedObjectId: null,
+      focusedWardrobeInstance: null,
+      globalHasDragging: false,
+      customizeMode: false,
+      showWardrobeMeasurements: false,
+      wallsDimensions: {
+        front: {
+          length: ROOM_DIMENSIONS.DEFAULT_WIDTH,
+          depth: ROOM_DIMENSIONS.WALL_THICKNESS,
+          height: ROOM_DIMENSIONS.DEFAULT_HEIGHT,
+        },
+        back: {
+          length: ROOM_DIMENSIONS.DEFAULT_WIDTH,
+          depth: ROOM_DIMENSIONS.WALL_THICKNESS,
+          height: ROOM_DIMENSIONS.DEFAULT_HEIGHT,
+        },
+        left: {
+          length: ROOM_DIMENSIONS.DEFAULT_DEPTH,
+          depth: ROOM_DIMENSIONS.WALL_THICKNESS,
+          height: ROOM_DIMENSIONS.DEFAULT_HEIGHT,
+        },
+        right: {
+          length: ROOM_DIMENSIONS.DEFAULT_DEPTH,
+          depth: ROOM_DIMENSIONS.WALL_THICKNESS,
+          height: ROOM_DIMENSIONS.DEFAULT_HEIGHT,
+        },
+      },
+    });
+    console.log("State reset to default");
+  },
+
+  // Auto-save control
+  autoSaveEnabled: false, // Start disabled
+  setAutoSaveEnabled: (enabled: boolean) => {
+    console.log(`🔄 Auto-save ${enabled ? "enabled" : "disabled"}`);
+    set({ autoSaveEnabled: enabled });
+  },
+
+  // Lighting
+  lightsOn: true,
+  setLightsOn: (on: boolean) => set({ lightsOn: on }),
+
+  // Adjust wardrobes when room size changes
+  recalcPositionsForRoomResize: () => {
+    const state = get();
+    const wallRoomDimensions: WallRoomDimensions = {
+      width: state.wallsDimensions.front.length * 0.01,
+      depth: state.wallsDimensions.left.length * 0.01,
+      height: state.wallsDimensions.front.height * 0.01,
+      thickness: state.wallsDimensions.front.depth * 0.01,
+    };
+
+    const GAP = 0.05; // 5cm minimal gap between wardrobes along a wall
+
+    // Start from a shallow copy
+    const updated: WardrobeInstance[] = state.wardrobeInstances.map((w) => ({
+      ...w,
+    }));
+
+    type WallItem = {
+      index: number; // index in updated/state array
+      wallIndex: 0 | 1 | 2 | 3;
+      alongAxis: "x" | "z"; // axis parallel to wall
+      widthAlong: number; // projected width along that axis
+      minBound: number; // allowed min center along axis
+      maxBound: number; // allowed max center along axis
+      desiredCenter: number; // preferred center (from current position)
+      snapNormalPos: [number, number, number]; // snapped normal position
+      rotation: number;
+    };
+
+    const wallGroups: Record<0 | 1 | 2 | 3, WallItem[]> = {
+      0: [],
+      1: [],
+      2: [],
+      3: [],
+    };
+
+    // Helper to process a single wardrobe
+    const processWardrobe = (instance: WardrobeInstance, index: number) => {
+      const product = instance.product;
+      const wardrobeWidth = product.width * 0.01;
+      const wardrobeDepth = product.depth * 0.01;
+
+      // Helper to clamp within room bounds (center-based)
+      const clampWithinRoom = (x: number, z: number): [number, number] => {
+        const maxX = wallRoomDimensions.width / 2 - wardrobeWidth / 2;
+        const maxZ = wallRoomDimensions.depth / 2 - wardrobeDepth / 2;
+        const clampedX = Math.max(-maxX, Math.min(maxX, x));
+        const clampedZ = Math.max(-maxZ, Math.min(maxZ, z));
+        return [clampedX, clampedZ];
+      };
+
+      if (requiresCornerPlacement(product.model)) {
+        // Move to nearest corner under new size
+        const corners = getCornerPositions(
+          wallRoomDimensions,
+          wardrobeWidth,
+          wardrobeDepth
+        );
+        const [cx, , cz] = instance.position;
+        let nearest = corners[0];
+        let nearestDist = Infinity;
+        for (const c of corners) {
+          const dx = c.position[0] - cx;
+          const dz = c.position[2] - cz;
+          const d2 = dx * dx + dz * dz;
+          if (d2 < nearestDist) {
+            nearest = c;
+            nearestDist = d2;
+          }
+        }
+        updated[index] = {
+          ...instance,
+          position: nearest.position,
+          rotation: nearest.rotation,
+        };
+        return;
+      }
+
+      if (requiresWallAttachment(product.model)) {
+        // Snap to current closest wall under new dimensions
+        const snap = snapToWall(instance, wallRoomDimensions);
+        const constraint = getClosestWall(snap.position, wallRoomDimensions);
+        const alongAxis: "x" | "z" =
+          constraint.constrainedAxis === "x" ? "z" : "x";
+        const widthAlong = product.width * 0.01; // Along the wall use wardrobe width
+
+        // Allowed bounds for center along the wall
+        let minBound: number, maxBound: number;
+        if (alongAxis === "z") {
+          const maxZ = wallRoomDimensions.depth / 2 - widthAlong / 2;
+          minBound = -maxZ;
+          maxBound = maxZ;
+        } else {
+          const maxX = wallRoomDimensions.width / 2 - widthAlong / 2;
+          minBound = -maxX;
+          maxBound = maxX;
+        }
+
+        const desiredCenterRaw =
+          alongAxis === "z" ? instance.position[2] : instance.position[0];
+        const desiredCenter = Math.max(
+          minBound,
+          Math.min(maxBound, desiredCenterRaw)
+        );
+
+        wallGroups[constraint.wallIndex as 0 | 1 | 2 | 3].push({
+          index,
+          wallIndex: constraint.wallIndex as 0 | 1 | 2 | 3,
+          alongAxis,
+          widthAlong,
+          minBound,
+          maxBound,
+          desiredCenter,
+          snapNormalPos: snap.position as [number, number, number],
+          rotation: snap.rotation,
+        });
+        return;
+      }
+
+      // Freestanding: clamp within room
+      const [nx, nz] = clampWithinRoom(
+        instance.position[0],
+        instance.position[2]
+      );
+      updated[index] = {
+        ...instance,
+        position: [nx, instance.position[1], nz] as [number, number, number],
+      };
+    };
+
+    state.wardrobeInstances.forEach(processWardrobe);
+
+    // Resolve overlaps on each wall group with a two-pass constraint solver
+    ([0, 1, 2, 3] as const).forEach((key) => {
+      const items = wallGroups[key];
+      if (items.length === 0) return;
+
+      // Sort by desired center to preserve relative order
+      items.sort((a, b) => a.desiredCenter - b.desiredCenter);
+
+      // Compute adaptive gap if wall is oversubscribed
+      const n = items.length;
+      const totalWidths = items.reduce((sum, it) => sum + it.widthAlong, 0);
+      const groupMin = Math.min(...items.map((it) => it.minBound));
+      const groupMax = Math.max(...items.map((it) => it.maxBound));
+      const available = groupMax - groupMin;
+      const baseGap = GAP;
+      const required = totalWidths + baseGap * (n - 1);
+      const effectiveGap =
+        n > 1
+          ? Math.max(0, Math.min(baseGap, (available - totalWidths) / (n - 1)))
+          : 0;
+
+      // Forward pass: enforce min spacing and lower bounds
+      const centers: number[] = new Array(items.length);
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const prevCenter = i > 0 ? centers[i - 1] : undefined;
+        const prevWidth = i > 0 ? items[i - 1].widthAlong : undefined;
+        let center = Math.max(item.desiredCenter, item.minBound);
+        if (prevCenter !== undefined && prevWidth !== undefined) {
+          const sep = (prevWidth + item.widthAlong) / 2 + effectiveGap;
+          center = Math.max(center, prevCenter + sep);
+        }
+        centers[i] = Math.min(center, item.maxBound);
+      }
+
+      // Backward pass: enforce upper bounds and spacing
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        const nextCenter = i < items.length - 1 ? centers[i + 1] : undefined;
+        const nextWidth =
+          i < items.length - 1 ? items[i + 1].widthAlong : undefined;
+        let center = centers[i];
+        center = Math.min(center, item.maxBound);
+        if (nextCenter !== undefined && nextWidth !== undefined) {
+          const sep = (nextWidth + item.widthAlong) / 2 + effectiveGap;
+          center = Math.min(center, nextCenter - sep);
+        }
+        centers[i] = Math.max(center, item.minBound);
+      }
+
+      // Apply resolved centers to updated positions
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const center = centers[i];
+        if (item.alongAxis === "z") {
+          updated[item.index] = {
+            ...updated[item.index],
+            position: [
+              item.snapNormalPos[0],
+              item.snapNormalPos[1],
+              center,
+            ] as [number, number, number],
+            rotation: item.rotation,
+          };
+        } else {
+          updated[item.index] = {
+            ...updated[item.index],
+            position: [
+              center,
+              item.snapNormalPos[1],
+              item.snapNormalPos[2],
+            ] as [number, number, number],
+            rotation: item.rotation,
+          };
+        }
+      }
+    });
+
+    set({ wardrobeInstances: updated });
+  },
 }));

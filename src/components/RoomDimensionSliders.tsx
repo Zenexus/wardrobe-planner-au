@@ -5,7 +5,8 @@ import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 
 const RoomDimensionSliders = () => {
-  const { wallsDimensions, setWallDimensions } = useStore();
+  const { wallsDimensions, setWallDimensions, recalcPositionsForRoomResize } =
+    useStore();
   const [widthInputFocused, setWidthInputFocused] = useState(false);
   const [depthInputFocused, setDepthInputFocused] = useState(false);
 
@@ -26,6 +27,7 @@ const RoomDimensionSliders = () => {
 
     setWallDimensions("front", { ...frontWall, length: newWidth });
     setWallDimensions("back", { ...backWall, length: newWidth });
+    recalcPositionsForRoomResize();
   };
 
   const handleDepthChange = (value: number[]) => {
@@ -37,6 +39,7 @@ const RoomDimensionSliders = () => {
 
     setWallDimensions("left", { ...leftWall, length: newDepth });
     setWallDimensions("right", { ...rightWall, length: newDepth });
+    recalcPositionsForRoomResize();
   };
 
   const handleWidthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

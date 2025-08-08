@@ -25,6 +25,7 @@ import { ClassicWardrobe } from "./W-01684";
 import { ModernWardrobe } from "./W-01687";
 import { BundleWardrobe } from "./W-01685-bundle";
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
+import ToolPanel from "@/components/ToolPanel";
 import WallMeasurements from "@/components/WallMeasurements";
 import WardrobeMeasurements from "@/components/WardrobeMeasurements";
 import FocusedWardrobePanel from "./FocusedWardrobePanel";
@@ -1417,6 +1418,8 @@ const Experience: React.FC = () => {
       ) : (
         <CustomiseRoomPanel />
       )}
+
+      <ToolPanel />
 
       {!globalHasDragging && (
         <OrbitControls

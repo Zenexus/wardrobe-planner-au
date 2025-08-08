@@ -7,7 +7,8 @@ import ProductSelection from "@/components/ProductSelection";
 import WallHeightSlider from "@/components/WallHeightSlider";
 import RoomDimensionSliders from "@/components/RoomDimensionSliders";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Menu } from "lucide-react";
+import { ArrowRight, Menu, Save, CheckCircle } from "lucide-react";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 import Lottie from "lottie-react";
 
@@ -38,6 +39,7 @@ const CanvasLoader = () => {
 // Canvas wrapper with external loading state
 const CanvasWrapper = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const lightsOn = useStore((state) => state.lightsOn);
 
   return (
     <div className="w-7/10 relative">
@@ -50,11 +52,13 @@ const CanvasWrapper = () => {
           setTimeout(() => setIsLoading(false), 1000); // Small delay to ensure everything is loaded
         }}
       >
-        {/* Basic lighting */}
+        {/* Enhanced lighting setup */}
+
+        {/* Main directional light (sun) */}
         <directionalLight
           castShadow
           position={[4, 4, 1]}
-          intensity={2}
+          intensity={lightsOn ? 1.5 : 0.2}
           shadow-mapSize={[2048, 2048]}
           shadow-camera-near={1}
           shadow-camera-far={50}
@@ -63,9 +67,128 @@ const CanvasWrapper = () => {
           shadow-camera-bottom={-15}
           shadow-camera-left={-15}
         />
-        <ambientLight intensity={1} />
+
+        {/* Secondary directional light for fill lighting */}
+        <directionalLight
+          position={[-2, 3, -2]}
+          intensity={lightsOn ? 0.8 : 0.1}
+          color="#cfe8ff"
+        />
+
+        {/* Ambient light for overall illumination */}
+        <ambientLight intensity={lightsOn ? 0.4 : 0.08} color="#dbeafe" />
+
+        {/* Moonlight / sky fill for night */}
+        <hemisphereLight
+          args={["#20304a", "#0f1014"]}
+          intensity={lightsOn ? 0 : 0.15}
+        />
+
+        {/* Point lights inside the room for wardrobe details */}
+        <pointLight
+          position={[0, 2, 0]}
+          intensity={lightsOn ? 1.2 : 0}
+          distance={8}
+          decay={1}
+          color="#ffffff"
+        />
+
+        <pointLight
+          position={[1.5, 1.8, 1.5]}
+          intensity={lightsOn ? 0.8 : 0}
+          distance={6}
+          decay={1.5}
+          color="#fff8e1"
+        />
+
+        <pointLight
+          position={[-1.5, 1.8, -1.5]}
+          intensity={lightsOn ? 0.8 : 0}
+          distance={6}
+          decay={1.5}
+          color="#fff8e1"
+        />
+
+        {/* Spot lights for accent lighting */}
+        <spotLight
+          position={[2, 3, 2]}
+          angle={0.5}
+          penumbra={0.5}
+          intensity={lightsOn ? 1 : 0}
+          distance={10}
+          decay={1}
+          target-position={[0, 0, 0]}
+          color="#ffffff"
+        />
+
+        <spotLight
+          position={[-2, 3, -2]}
+          angle={0.5}
+          penumbra={0.5}
+          intensity={lightsOn ? 1 : 0}
+          distance={10}
+          decay={1}
+          target-position={[0, 0, 0]}
+          color="#ffffff"
+        />
+
+        {/* Rim lighting for wardrobe edges */}
+        <directionalLight
+          position={[0, 1, 4]}
+          intensity={lightsOn ? 0.6 : 0.12}
+          color="#cfe8ff"
+        />
+
+        <directionalLight
+          position={[0, 1, -4]}
+          intensity={lightsOn ? 0.6 : 0.12}
+          color="#cfe8ff"
+        />
         <Experience />
       </Canvas>
+    </div>
+  );
+};
+
+// Auto-save indicator component
+const AutoSaveIndicator = () => {
+  const [showSaved, setShowSaved] = useState(false);
+  const wardrobeInstances = useStore((state) => state.wardrobeInstances);
+  const wallsDimensions = useStore((state) => state.wallsDimensions);
+  const customizeMode = useStore((state) => state.customizeMode);
+  const autoSaveEnabled = useStore((state) => state.autoSaveEnabled);
+
+  useEffect(() => {
+    // Only show "saved" indicator if auto-save is enabled and state changes
+    if (autoSaveEnabled) {
+      setShowSaved(true);
+      const timer = setTimeout(() => setShowSaved(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [wardrobeInstances, wallsDimensions, customizeMode, autoSaveEnabled]);
+
+  if (!autoSaveEnabled) {
+    return (
+      <div className="flex items-center text-xs text-gray-400">
+        <Save size={14} className="mr-1" />
+        <span>Auto-save disabled</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center text-xs text-gray-500">
+      {showSaved ? (
+        <>
+          <CheckCircle size={14} className="mr-1 text-green-500" />
+          <span className="text-green-600">Saved</span>
+        </>
+      ) : (
+        <>
+          <Save size={14} className="mr-1" />
+          <span>Auto-save enabled</span>
+        </>
+      )}
     </div>
   );
 };
@@ -74,6 +197,9 @@ export default function Home() {
   const { customizeMode, wardrobeInstances } = useStore();
   const [disableFinalise, setDisableFinalise] = useState(true);
   const navigate = useNavigate();
+
+  // Enable auto-save for this component
+  useAutoSave();
 
   // Calculate total price
   const totalPrice = wardrobeInstances.reduce((sum, instance) => {
@@ -115,6 +241,11 @@ export default function Home() {
           </div>
         </div>
         <div className="flex flex-col gap-4 p-12">
+          {/* Auto-save indicator */}
+          <div className="flex justify-end mb-2">
+            <AutoSaveIndicator />
+          </div>
+
           {!customizeMode ? (
             <ProductSelection />
           ) : (
