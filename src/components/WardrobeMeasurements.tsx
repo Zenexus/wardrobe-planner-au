@@ -467,11 +467,7 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
 
   const config = positionConfigs.get(currentRange)!;
 
-  console.log(
-    `Wardrobe rotation: ${((wardrobeRotation * 180) / Math.PI).toFixed(
-      1
-    )}° - Range: ${currentRange} (${config.description})`
-  );
+  // Debug log removed to avoid excessive console output during drag
 
   // Wall measurements - only shown for non-corner wardrobes that are being dragged or focused
   const wallMeasurements =

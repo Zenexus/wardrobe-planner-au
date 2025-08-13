@@ -93,6 +93,11 @@ body {
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Prevent layout shift when scroll locking (e.g., opening Sheet) */
+html {
+  scrollbar-gutter: stable;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

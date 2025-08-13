@@ -42,10 +42,11 @@ const CanvasWrapper = () => {
   const lightsOn = useStore((state) => state.lightsOn);
 
   return (
-    <div className="w-7/10 relative">
+    <div className="w-7/10 h-screen relative overflow-hidden">
       {isLoading && <CanvasLoader />}
       <Canvas
         shadows
+        gl={{ preserveDrawingBuffer: true }}
         camera={{ position: [5, 5, 5], fov: 60 }}
         onCreated={() => {
           // Hide loading when Canvas is created and ready
@@ -195,6 +196,9 @@ const AutoSaveIndicator = () => {
 
 export default function Home() {
   const { customizeMode, wardrobeInstances } = useStore();
+  const setCanvasScreenshotDataUrl = useStore(
+    (s) => s.setCanvasScreenshotDataUrl
+  );
   const [disableFinalise, setDisableFinalise] = useState(true);
   const navigate = useNavigate();
 
@@ -213,14 +217,23 @@ export default function Home() {
   }, [wardrobeInstances]);
 
   const handleFinaliseClick = () => {
+    try {
+      const canvas = document.querySelector("canvas");
+      const dataUrl = canvas?.toDataURL("image/png");
+      if (dataUrl) {
+        setCanvasScreenshotDataUrl(dataUrl);
+      }
+    } catch (e) {
+      // ignore capture failures
+    }
     navigate("/summary");
   };
 
   return (
-    <div className="flex w-full h-full">
+    <div className="flex w-full h-screen overflow-hidden">
       <CanvasWrapper />
-      <section className="w-3/10 h-full bg-white">
-        <div className="flex justify-end items-center gap-4 px-8 py-2 h-28 shadow-lg">
+      <section className="w-3/10 h-screen bg-white flex flex-col overflow-hidden">
+        <div className="flex justify-end items-center gap-4 px-8 py-2 h-28 shadow-lg flex-shrink-0">
           <div className="flex items-start font-bold">
             <span className="text-lg">$</span>
             <span className="text-4xl">{Math.floor(totalPrice)}</span>
@@ -240,7 +253,7 @@ export default function Home() {
             <Menu />
           </div>
         </div>
-        <div className="flex flex-col gap-4 p-12">
+        <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-12">
           {/* Auto-save indicator */}
           <div className="flex justify-end mb-2">
             <AutoSaveIndicator />

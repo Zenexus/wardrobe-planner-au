@@ -121,6 +121,10 @@ interface StoreState {
 
   // Recalculate wardrobe positions when room size changes
   recalcPositionsForRoomResize: () => void;
+
+  // Canvas screenshot (data URL)
+  canvasScreenshotDataUrl: string | null;
+  setCanvasScreenshotDataUrl: (dataUrl: string | null) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -694,5 +698,19 @@ export const useStore = create<StoreState>((set, get) => ({
     });
 
     set({ wardrobeInstances: updated });
+  },
+
+  // Screenshot storage
+  canvasScreenshotDataUrl: null,
+  setCanvasScreenshotDataUrl: (dataUrl: string | null) => {
+    try {
+      if (dataUrl) {
+        // Persist a small copy in localStorage for cross-page availability
+        localStorage.setItem("designScreenshot", dataUrl);
+      } else {
+        localStorage.removeItem("designScreenshot");
+      }
+    } catch {}
+    set({ canvasScreenshotDataUrl: dataUrl });
   },
 }));

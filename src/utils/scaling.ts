@@ -1,4 +1,4 @@
-import { R3F_SCALE } from "../store";
+import { R3F_SCALE } from "@/store";
 
 /**
  * Scaling utilities for converting between real-world centimeters and R3F units

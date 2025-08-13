@@ -1,15 +1,13 @@
-import { WallsDimensions } from "../store";
-import { WardrobeInstance } from "../types";
+import { WallsDimensions } from "@/store";
+import { WardrobeInstance } from "@/types";
 
-// Define the structure of saved design data
-export interface SavedDesignState {
-  version: string; // For future compatibility
+export type SavedDesignState = {
+  version: string;
   timestamp: number;
   wardrobeInstances: WardrobeInstance[];
   wallsDimensions: WallsDimensions;
   customizeMode: boolean;
-  // Add any other state that should be persisted
-}
+};
 
 const STORAGE_KEY = "wardrobe-design-state";
 const CURRENT_VERSION = "1.0.0";
@@ -28,10 +26,9 @@ export const saveDesignState = (
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(designState));
-    console.log("Design state saved successfully", designState);
+
     return true;
   } catch (error) {
-    console.error("Failed to save design state:", error);
     return false;
   }
 };
@@ -48,11 +45,6 @@ export const loadDesignState = (): SavedDesignState | null => {
 
     const parsedData = JSON.parse(savedData) as SavedDesignState;
 
-    // Version compatibility check (for future use)
-    if (!parsedData.version) {
-      console.warn("Saved data has no version, might be incompatible");
-    }
-
     // Convert date strings back to Date objects for wardrobe instances
     if (parsedData.wardrobeInstances) {
       parsedData.wardrobeInstances = parsedData.wardrobeInstances.map(
@@ -63,10 +55,8 @@ export const loadDesignState = (): SavedDesignState | null => {
       );
     }
 
-    console.log("Design state loaded successfully", parsedData);
     return parsedData;
   } catch (error) {
-    console.error("Failed to load design state:", error);
     return null;
   }
 };
@@ -79,7 +69,6 @@ export const hasSavedDesign = (): boolean => {
     const savedData = localStorage.getItem(STORAGE_KEY);
     return savedData !== null && savedData.trim() !== "";
   } catch (error) {
-    console.error("Failed to check for saved design:", error);
     return false;
   }
 };
@@ -90,10 +79,9 @@ export const hasSavedDesign = (): boolean => {
 export const clearSavedDesign = (): boolean => {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    console.log("Saved design cleared successfully");
+
     return true;
   } catch (error) {
-    console.error("Failed to clear saved design:", error);
     return false;
   }
 };
@@ -117,7 +105,6 @@ export const getSavedDesignMetadata = (): {
       version: parsedData.version || "unknown",
     };
   } catch (error) {
-    console.error("Failed to get saved design metadata:", error);
     return null;
   }
 };

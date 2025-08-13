@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useStore, DIMENSION_LIMITS } from "../store";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
@@ -14,6 +14,14 @@ const RoomDimensionSliders = () => {
   const currentWidth = wallsDimensions.front.length; // Front wall length = room width
   const currentDepth = wallsDimensions.left.length; // Left wall length = room depth
 
+  // Local input state (strings) to allow free typing, including empty/partial values
+  const [widthInputValue, setWidthInputValue] = useState<string>(
+    String(Math.round(currentWidth))
+  );
+  const [depthInputValue, setDepthInputValue] = useState<string>(
+    String(Math.round(currentDepth))
+  );
+
   // Use real CM values from constants
   const MIN_SIZE = DIMENSION_LIMITS.WIDTH_LENGTH.MIN; // 400cm
   const MAX_SIZE = DIMENSION_LIMITS.WIDTH_LENGTH.MAX; // 2000cm
@@ -28,6 +36,10 @@ const RoomDimensionSliders = () => {
     setWallDimensions("front", { ...frontWall, length: newWidth });
     setWallDimensions("back", { ...backWall, length: newWidth });
     recalcPositionsForRoomResize();
+    // Keep input in sync when change comes from slider
+    if (!widthInputFocused) {
+      setWidthInputValue(String(Math.round(newWidth)));
+    }
   };
 
   const handleDepthChange = (value: number[]) => {
@@ -40,21 +52,67 @@ const RoomDimensionSliders = () => {
     setWallDimensions("left", { ...leftWall, length: newDepth });
     setWallDimensions("right", { ...rightWall, length: newDepth });
     recalcPositionsForRoomResize();
+    if (!depthInputFocused) {
+      setDepthInputValue(String(Math.round(newDepth)));
+    }
+  };
+
+  // Sync inputs from store when not focused
+  useEffect(() => {
+    if (!widthInputFocused) {
+      setWidthInputValue(String(Math.round(currentWidth)));
+    }
+  }, [currentWidth, widthInputFocused]);
+
+  useEffect(() => {
+    if (!depthInputFocused) {
+      setDepthInputValue(String(Math.round(currentDepth)));
+    }
+  }, [currentDepth, depthInputFocused]);
+
+  const commitWidthInput = () => {
+    const parsed = parseFloat(widthInputValue);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(MIN_SIZE, Math.min(MAX_SIZE, parsed));
+      handleWidthChange([clamped]);
+      setWidthInputValue(String(Math.round(clamped)));
+    } else {
+      // Revert to current if invalid
+      setWidthInputValue(String(Math.round(currentWidth)));
+    }
+  };
+
+  const commitDepthInput = () => {
+    const parsed = parseFloat(depthInputValue);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(MIN_SIZE, Math.min(MAX_SIZE, parsed));
+      handleDepthChange([clamped]);
+      setDepthInputValue(String(Math.round(clamped)));
+    } else {
+      setDepthInputValue(String(Math.round(currentDepth)));
+    }
   };
 
   const handleWidthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= MIN_SIZE && value <= MAX_SIZE) {
-      handleWidthChange([value]);
-    }
+    setWidthInputValue(e.target.value);
   };
 
   const handleDepthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= MIN_SIZE && value <= MAX_SIZE) {
-      handleDepthChange([value]);
-    }
+    setDepthInputValue(e.target.value);
   };
+
+  // Temporary slider values reflecting input while focused
+  const parsedWidth = parseFloat(widthInputValue);
+  const sliderWidthValue =
+    widthInputFocused && !isNaN(parsedWidth)
+      ? Math.max(MIN_SIZE, Math.min(MAX_SIZE, parsedWidth))
+      : currentWidth;
+
+  const parsedDepth = parseFloat(depthInputValue);
+  const sliderDepthValue =
+    depthInputFocused && !isNaN(parsedDepth)
+      ? Math.max(MIN_SIZE, Math.min(MAX_SIZE, parsedDepth))
+      : currentDepth;
 
   return (
     <div className="space-y-6">
@@ -71,10 +129,19 @@ const RoomDimensionSliders = () => {
               min={MIN_SIZE}
               max={MAX_SIZE}
               step="10"
-              value={Math.round(currentWidth)}
+              value={widthInputValue}
               onChange={handleWidthInputChange}
               onFocus={() => setWidthInputFocused(true)}
-              onBlur={() => setWidthInputFocused(false)}
+              onBlur={() => {
+                setWidthInputFocused(false);
+                commitWidthInput();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  commitWidthInput();
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               className="w-20 text-right"
             />
             <span className="text-sm text-muted-foreground">cm</span>
@@ -83,7 +150,7 @@ const RoomDimensionSliders = () => {
 
         <div className="space-y-2">
           <Slider
-            value={[currentWidth]}
+            value={[sliderWidthValue]}
             onValueChange={handleWidthChange}
             min={MIN_SIZE}
             max={MAX_SIZE}
@@ -113,10 +180,19 @@ const RoomDimensionSliders = () => {
               min={MIN_SIZE}
               max={MAX_SIZE}
               step="10"
-              value={Math.round(currentDepth)}
+              value={depthInputValue}
               onChange={handleDepthInputChange}
               onFocus={() => setDepthInputFocused(true)}
-              onBlur={() => setDepthInputFocused(false)}
+              onBlur={() => {
+                setDepthInputFocused(false);
+                commitDepthInput();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  commitDepthInput();
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               className="w-20 text-right"
             />
             <span className="text-sm text-muted-foreground">cm</span>
@@ -125,7 +201,7 @@ const RoomDimensionSliders = () => {
 
         <div className="space-y-2">
           <Slider
-            value={[currentDepth]}
+            value={[sliderDepthValue]}
             onValueChange={handleDepthChange}
             min={MIN_SIZE}
             max={MAX_SIZE}

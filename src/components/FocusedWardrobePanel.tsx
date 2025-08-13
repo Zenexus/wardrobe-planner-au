@@ -83,102 +83,98 @@ const FocusedWardrobePanel = () => {
 
   return (
     <Html fullscreen prepend>
-      <div className="absolute bottom-[50px] left-1/2 -translate-x-1/2 z-[100] max-w-[150px] h-[50px] w-full mx-4">
-        <div className="bg-[#0085AD] rounded-full shadow-lg flex items-center justify-center">
-          <Button
-            onClick={handleDelete}
-            variant="ghost"
-            className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer "
-          >
-            <Trash2 />
-          </Button>
+      <div className="absolute flex gap-4 bottom-[50px] left-1/2 -translate-x-1/2 z-[100] max-w-[150px] h-[50px] w-full mx-4">
+        <Button
+          onClick={handleDelete}
+          className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer "
+          title="Delete this wardrobe"
+        >
+          <Trash2 />
+        </Button>
 
-          <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
-              >
-                <Info />
-              </Button>
-            </SheetTrigger>
+        <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
+          <SheetTrigger asChild>
+            <Button
+              className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
+              title="View wardrobe details"
+            >
+              <Info />
+            </Button>
+          </SheetTrigger>
 
-            <SheetTitle className="sr-only">{product.name}</SheetTitle>
-            <SheetDescription className="sr-only">
-              Product details and information
-            </SheetDescription>
-            <SheetContent className="overflow-y-auto p-4">
-              <div className="flex flex-col gap-6 p-4">
-                {/* Product Images Carousel */}
-                <SheetThumbnailsCarousel
-                  images={getProductImages(product)}
-                  alt={product.name}
-                  className="w-full"
-                />
+          <SheetTitle className="sr-only">{product.name}</SheetTitle>
+          <SheetDescription className="sr-only">
+            Product details and information
+          </SheetDescription>
+          <SheetContent className="overflow-y-auto p-4">
+            <div className="flex flex-col gap-6 p-4">
+              {/* Product Images Carousel */}
+              <SheetThumbnailsCarousel
+                images={getProductImages(product)}
+                alt={product.name}
+                className="w-full"
+              />
 
-                <div className="flex flex-col gap-2">
-                  <p className="text-2xl font-bold">{product.name}</p>
-                  <p className="text-sm text-gray-600">
-                    Item #{product.itemNumber} {product.category}
-                  </p>
-                </div>
-
-                {/* Product Details */}
-                <div className="space-y-4">
-                  {/* Price */}
-
-                  <div className="flex items-start font-bold">
-                    <span className="text-lg">$</span>
-                    <span className="text-4xl">
-                      {Math.floor(product.price)}
-                    </span>
-                    <span className="text-lg">
-                      .{(product.price % 1).toFixed(2).substring(2)}
-                    </span>
-                  </div>
-
-                  {/* Dimensions */}
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="flex items-center gap-2">
-                      <p>Width: </p>
-                      <p className="font-semibold ">
-                        {formatDimension(product.width)}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <p>Depth: </p>
-                      <p className="font-semibold ">
-                        {formatDimension(product.depth)}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <p>Height: </p>
-                      <p className="font-semibold">
-                        {formatDimension(product.height)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  {product.desc && (
-                    <div>
-                      <img
-                        src="/danger_symbols.svg"
-                        alt="danger symbols"
-                        className="w-25 h-25"
-                      />
-                      <p className=" text-gray-700 leading-relaxed whitespace-pre-line">
-                        {product.desc}
-                      </p>
-                    </div>
-                  )}
-                </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-2xl font-bold">{product.name}</p>
+                <p className="text-sm text-gray-600">
+                  Item #{product.itemNumber} {product.category}
+                </p>
               </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+
+              {/* Product Details */}
+              <div className="space-y-4">
+                {/* Price */}
+
+                <div className="flex items-start font-bold">
+                  <span className="text-lg">$</span>
+                  <span className="text-4xl">{Math.floor(product.price)}</span>
+                  <span className="text-lg">
+                    .{(product.price % 1).toFixed(2).substring(2)}
+                  </span>
+                </div>
+
+                {/* Dimensions */}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="flex items-center gap-2">
+                    <p>Width: </p>
+                    <p className="font-semibold ">
+                      {formatDimension(product.width)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <p>Depth: </p>
+                    <p className="font-semibold ">
+                      {formatDimension(product.depth)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <p>Height: </p>
+                    <p className="font-semibold">
+                      {formatDimension(product.height)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {product.desc && (
+                  <div>
+                    <img
+                      src="/danger_symbols.svg"
+                      alt="danger symbols"
+                      className="w-25 h-25"
+                    />
+                    <p className=" text-gray-700 leading-relaxed whitespace-pre-line">
+                      {product.desc}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </Html>
   );

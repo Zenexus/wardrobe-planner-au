@@ -82,6 +82,9 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
   const meshRef = useRef<THREE.Mesh>(null);
   const childRef = useRef<THREE.Mesh>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [lastReportedPosition, setLastReportedPosition] = useState<
+    [number, number, number] | null
+  >(null);
   const {
     setGlobalHasDragging,
     draggedObjectId,
@@ -150,6 +153,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       });
       setWasClick(true);
       setMouseDownTime(Date.now());
+      setLastReportedPosition(null);
 
       // Convert mouse coordinates to normalized device coordinates
       const rect = gl.domElement.getBoundingClientRect();
@@ -379,14 +383,31 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
           rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
         }
 
-        // Real-time position update during drag for measurements
+        // Real-time position update during drag for measurements (with threshold)
         if (onPositionChange && !wasClick) {
           const currentPosition = rigidBodyRef.current.translation();
-          onPositionChange(id, [
-            currentPosition.x,
-            currentPosition.y,
-            currentPosition.z,
-          ]);
+          // Avoid spamming updates if the movement is extremely small frame-to-frame
+          setLastReportedPosition((prev) => {
+            const threshold = 0.005; // ~5mm in R3F units if meters
+            if (
+              !prev ||
+              Math.abs(prev[0] - currentPosition.x) > threshold ||
+              Math.abs(prev[1] - currentPosition.y) > threshold ||
+              Math.abs(prev[2] - currentPosition.z) > threshold
+            ) {
+              onPositionChange(id, [
+                currentPosition.x,
+                currentPosition.y,
+                currentPosition.z,
+              ]);
+              return [
+                currentPosition.x,
+                currentPosition.y,
+                currentPosition.z,
+              ] as [number, number, number];
+            }
+            return prev;
+          });
         }
       }
     },
@@ -421,6 +442,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       setIsDragging(false);
       setGlobalHasDragging(false);
       setDraggedObjectId(null);
+      setLastReportedPosition(null);
 
       // Completely stop all movement immediately
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -1028,13 +1050,32 @@ const Experience: React.FC = () => {
     setDraggedObjectId,
   ]);
 
+  // Helper to avoid unnecessary state updates when hidden walls didn't change
+  const arraysContainSameNumbers = useCallback((a: number[], b: number[]) => {
+    if (a === b) return true;
+    if (a.length !== b.length) return false;
+    // Order-insensitive shallow equality
+    for (let i = 0; i < a.length; i += 1) {
+      if (!b.includes(a[i])) return false;
+    }
+    return true;
+  }, []);
+
   // Handle camera controls change - separate from the main effect
   const handleControlsChange = useCallback(() => {
     if (customizeMode || isTransitioning) return;
 
-    const wallsToHide = detectClosestWalls(camera, wallsForDetection);
-    setHiddenWalls(wallsToHide);
-  }, [camera, wallsForDetection, customizeMode, isTransitioning]);
+    const nextHidden = detectClosestWalls(camera, wallsForDetection);
+    setHiddenWalls((prev) =>
+      arraysContainSameNumbers(prev, nextHidden) ? prev : nextHidden
+    );
+  }, [
+    camera,
+    wallsForDetection,
+    customizeMode,
+    isTransitioning,
+    arraysContainSameNumbers,
+  ]);
 
   // Set up and clean up controls change event listener
   useEffect(() => {
@@ -1293,19 +1334,14 @@ const Experience: React.FC = () => {
         ))}
 
         {/* Wardrobe measurements - moved outside DraggableObject to avoid ref interference */}
-        {wardrobeInstances.map(
-          (instance) => (
-            console.log("instance", instance),
-            (
-              <WardrobeMeasurements
-                key={`measurements-${instance.id}`}
-                wardrobeId={instance.id}
-                position={instance.position} // Use absolute position since it's outside DraggableObject
-                modelPath={instance.product.model}
-              />
-            )
-          )
-        )}
+        {wardrobeInstances.map((instance) => (
+          <WardrobeMeasurements
+            key={`measurements-${instance.id}`}
+            wardrobeId={instance.id}
+            position={instance.position} // Use absolute position since it's outside DraggableObject
+            modelPath={instance.product.model}
+          />
+        ))}
 
         {/* Wall Measurements - only shown in customize mode */}
         {/* <WallMeasurements walls={walls} /> */}
