@@ -8,6 +8,8 @@ import WallHeightSlider from "@/components/WallHeightSlider";
 import RoomDimensionSliders from "@/components/RoomDimensionSliders";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Menu, Save, CheckCircle } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
 
 import Lottie from "lottie-react";
@@ -249,11 +251,21 @@ export default function Home() {
             Finalise
             <ArrowRight />
           </Button>
-          <div className="flex items-center justify-center pl-4 cursor-pointer hover:bg-gray-200 rounded-full p-4">
-            <Menu />
-          </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <div className="flex items-center justify-center pl-4 cursor-pointer hover:bg-gray-200 rounded-full p-4">
+                <Menu />
+              </div>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <MenuSheetContent />
+            </SheetContent>
+          </Sheet>
         </div>
-        <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-12">
+        <div
+          className="flex-1 overflow-y-auto flex flex-col gap-4 p-12"
+          style={{ scrollbarGutter: "stable" }}
+        >
           {/* Auto-save indicator */}
           <div className="flex justify-end mb-2">
             <AutoSaveIndicator />

@@ -1,12 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Menu, NotebookPen } from "lucide-react";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import MenuSheetContent from "@/components/MenuSheetContent";
 
 export default function SummaryHeader() {
   const navigate = useNavigate();
@@ -55,10 +50,7 @@ export default function SummaryHeader() {
                   </button>
                 </SheetTrigger>
                 <SheetContent side="right">
-                  <SheetHeader>
-                    <SheetTitle>Menu</SheetTitle>
-                  </SheetHeader>
-                  {/* Add menu content here */}
+                  <MenuSheetContent />
                 </SheetContent>
               </Sheet>
             </div>
