@@ -1,5 +1,19 @@
 import { WardrobeInstance } from "@/types";
 import { Button } from "@/components/ui/button";
+import {
+  Download,
+  Youtube,
+  PackageSearch,
+  PackageOpen,
+  Drill,
+  Check,
+  Info,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 type AssemblyOverviewListProps = {
   instances: WardrobeInstance[];
@@ -87,35 +101,129 @@ export default function AssemblyOverviewList({
                   .{(group.totalPrice % 1).toFixed(2).substring(2)}
                 </span>
               </div>
-              <div className="mt-2">
-                <Button size="sm" variant="outline" className="cursor-pointer">
-                  Download materials
-                </Button>
+              <div className="mt-2 flex items-center justify-end gap-2">
+                {group.product.instructions && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        asChild
+                        size="icon"
+                        className="cursor-pointer rounded-full"
+                        aria-label="Download Assembly Instructions (PDF)"
+                      >
+                        <a
+                          href={`/Instructions${group.product.instructions}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Download className="size-4" />
+                        </a>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Download Assembly Instructions
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {group.product.youtube &&
+                  group.product.youtube.trim() !== "" && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          asChild
+                          size="icon"
+                          className="cursor-pointer rounded-full"
+                          aria-label="Watch Assembly Instructions on YouTube"
+                        >
+                          <a
+                            href={group.product.youtube}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Youtube className="size-4" />
+                          </a>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Watch on YouTube</TooltipContent>
+                    </Tooltip>
+                  )}
               </div>
             </div>
           </div>
 
-          {/* Placeholder sections for later customization */}
+          {/* Important to know */}
+          <div className="mt-4 bg-gray-50 rounded p-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-1">
+              <Info className="size-4" />
+              <span>Important to know</span>
+            </div>
+            <div className="text-xs text-gray-800 space-y-1">
+              <div>
+                This furniture must be fixed to the wall with the enclosed wall
+                fastener.
+              </div>
+              <div>
+                Different wall materials require different types of fixing
+                devices. Use fixing devices suitable for the walls in your home,
+                sold separately.
+              </div>
+              <div>
+                Two persons are needed for the assembly of this furniture.
+              </div>
+            </div>
+          </div>
+
+          {/* Assembly overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="bg-gray-50 rounded p-3">
-              <div className="text-sm font-medium text-gray-900 mb-1">
-                Materials
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-1">
+                <PackageSearch className="size-4" />
+                <span>Pack Details</span>
               </div>
-              <div className="text-xs text-gray-600">
-                Add boards, panels, rails...
+              <div className="text-xs whitespace-pre-line text-gray-700">
+                {group.product.packDetails ?? "—"}
               </div>
             </div>
             <div className="bg-gray-50 rounded p-3">
-              <div className="text-sm font-medium text-gray-900 mb-1">
-                Tools
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-1">
+                <PackageOpen className="size-4" />
+                <span>Included</span>
               </div>
-              <div className="text-xs text-gray-600">Add tools list...</div>
+              <div className="text-xs text-gray-700 space-y-1">
+                {(group.product.included?.split("\n") ?? []).map(
+                  (line, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check
+                        className="size-4 mt-0.5 text-[#003B4A]"
+                        strokeWidth={2.5}
+                      />
+                      <span>{line}</span>
+                    </div>
+                  )
+                )}
+                {!group.product.included && <div>—</div>}
+              </div>
             </div>
             <div className="bg-gray-50 rounded p-3">
-              <div className="text-sm font-medium text-gray-900 mb-1">
-                Notes
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-1">
+                <Drill className="size-4" />
+                <span>Tools Required</span>
               </div>
-              <div className="text-xs text-gray-600">Add custom notes...</div>
+              <div className="text-xs text-gray-700 space-y-1">
+                {(group.product.toolsRequired?.split("\n") ?? []).map(
+                  (line, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check
+                        className="size-4 mt-0.5 text-[#003B4A]"
+                        strokeWidth={2.5}
+                      />
+                      <span>{line}</span>
+                    </div>
+                  )
+                )}
+                {!group.product.toolsRequired && <div>—</div>}
+              </div>
             </div>
           </div>
         </div>

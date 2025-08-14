@@ -11,6 +11,11 @@ export type Product = {
   category: string;
   thumbnail: string;
   model: string;
+  packDetails?: string;
+  included?: string;
+  toolsRequired?: string;
+  instructions?: string;
+  youtube?: string;
 };
 
 export type WardrobeInstance = {

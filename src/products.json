@@ -7,12 +7,17 @@
       "height": 200,
       "depth": 97,
       "color": "White",
-      "desc": "WARNING! TIPPING HAZARD – Children have died from furniture tipping over.\nALWAYS anchor your furniture to the wall with an anti-tip device.\nNEVER place a TV on any furniture other than a media/TV bench intended for this purpose. ALWAYS secure your TV by using an anchoring device.\nNEVER allow children to stand, climb, or hang on drawers, doors or shelves.\nNEVER open more than one drawer at the time.\nALWAYS place heaviest items in the lowest drawers.",
-      "price": 200.0,
+      "desc": "Mix. Match. Make It Yours with the Flexi Storage Wardrobe range.\nThis Wardrobe is constructed with 18mm thick boards and features 5 height adjustable shelves allowing you to arrange your space to fit your storage needs. The Corner design provides a deceptively large footprint and seamless continuation of your wardrobe around corners while utilising all available wall space.\nEach Unit in the Flexi Storage Wardrobe range comes with fixing hardware allowing you to join multiple Units together. Perfect for creating a free-standing, versatile wardrobe or fill out an existing wall cavity.\n5 height adjustable shelves\n18mm board thickness\nCorner storage solution\nJoin multiple Units together using included connecting hardware\n5-year warranty",
+      "price": 495.73,
       "type": "corner",
       "category": "Core Wardrobe Range",
       "thumbnail": "/thumbnails/L-wardrobe.jpeg",
-      "model": "components/W-01687"
+      "model": "components/W-01687",
+      "packDetails": "Weight CTN 1: 36.4kg\nWeight CTN 2: 37.1kg\nDimensions CTN 1: (Flat)\n491mm W x 2075mm L x 105mm H\nDimensions CTN 2: (Flat)\n491mm W x 2075mm L x 100mm H\nNo. Of Cartons: 2",
+      "included": "Unit frame including kickboard and backing board\n5 x adjustable corner shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
+      "toolsRequired": "Small spirit level\nTape measure\nPhillips head screw drivers\nRubber mallet",
+      "instructions": "/01687_Flexi-Storage-Wardrobe-Wardrobe-Corner-Instructions_AUS_JN01554_FA_V5_WEB.pdf",
+      "youtube": "https://youtu.be/jQtge-AiPbk"
     },
     {
       "itemNumber": "2583988",
@@ -21,12 +26,17 @@
       "height": 200,
       "depth": 48,
       "color": "White",
-      "desc": "This Wardrobe is constructed with 18mm thick boards and features 6 height adjustable shelves allowing you to arrange your space to fit your storage needs.",
-      "price": 100.0,
+      "desc": "Mix. Match. Make It Yours with the Flexi Storage Wardrobe range.\nThis Wardrobe is constructed with 18mm thick boards and features 6 height adjustable shelves allowing you to arrange your space to fit your storage needs.\nEach Unit in the Flexi Storage Wardrobe range comes with fixing hardware allowing you to join multiple Units together. Perfect for creating a free-standing, versatile wardrobe or fill out an existing wall cavity.\n6 height adjustable shelves\n18mm board thickness\nJoin multiple Units together using included connecting hardware\n5-year warranty",
+      "price": 265.0,
       "type": "normal",
       "category": "Core Wardrobe Range",
       "thumbnail": "/thumbnails/single-wardrobe.jpeg",
-      "model": "components/W-01684"
+      "model": "components/W-01684",
+      "packDetails": "Weight: 53.2kg\nDimensions: (Flat) 572mm W x 2008mm L x 80mm H\nNo. Of Cartons: 1",
+      "included": "Unit frame including kickboard and backing board\n5 x adjustable shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
+      "toolsRequired": "Small spirit level\nTape measure\nPhillips head screw drivers\nRubber mallet",
+      "instructions": "/01686_Flexi-Storage-Wardrobe-6-Shelf-Unit-Instructions_AUS_JN01553_FA_V3_WEB_V4.pdf",
+      "youtube": ""
     },
     {
       "itemNumber": "2583990",
@@ -41,6 +51,44 @@
       "category": "Core Wardrobe Range",
       "thumbnail": "/thumbnails/single-wardrobe.jpeg",
       "model": "components/W-01685-bundle"
+    },
+    {
+      "itemNumber": "2583987",
+      "name": "Wardrobe 1 Hang Rail 2 Shelf Unit White",
+      "width": 60.6,
+      "height": 200,
+      "depth": 48,
+      "color": "White",
+      "desc": "Mix. Match. Make It Yours with the Flexi Storage Wardrobe range.\nhis Wardrobe is constructed with 18mm thick boards and features a brushed aluminium hanging rail and 2 height adjustable shelves allowing you to arrange your space to fit your storage needs.\nEach Unit in the Flexi Storage Wardrobe range comes with fixing hardware allowing you to join multiple Units together. Perfect for creating a free-standing, versatile wardrobe or fill out an existing wall cavity.\nFlexi Wardrobe Units can also be enhanced with a range of accessories, including extra shelves, hanging rails, drawers, baskets and shoe racks. These versatile accessories allow you to make the most of your storage space and tailor your wardrobe to your specific needs and preferences.\n2 height adjustable shelves\nBrushed aluminium hanging rail for added versatility\nJoin multiple Units together using included connecting hardware\nEnhance your Wardrobe with optional accessories (sold separately)\n5 year warranty",
+      "price": 199.0,
+      "type": "normal",
+      "category": "Core Wardrobe Range",
+      "thumbnail": "/thumbnails/single-wardrobe.jpeg",
+      "model": "components/W-01684",
+      "packDetails": "Weight: 43.8kg\nDimensions: (Flat) 581mm W x 2043mm L x 82mm H\nNo. Of Cartons: 1",
+      "included": "Unit frame including kickboard and backing board\n1 x adjustable hang rail\n2 x adjustable shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
+      "toolsRequired": "Small spirit level\nTape measure\nPhillips head screw drivers\nRubber mallet",
+      "instructions": "/01685_Flexi-Storage-Wardrobe-2-Shelf-Unit-with-Hanging-Rail-White-Assembly-Instructions_AUS_JN01555_FA_V3_WEB_V4",
+      "youtube": ""
+    },
+    {
+      "itemNumber": "2583986",
+      "name": "Wardrobe 3 Shelf & 4 Drawer Unit White",
+      "width": 60.6,
+      "height": 200,
+      "depth": 48,
+      "color": "White",
+      "desc": "Mix. Match. Make It Yours with the Flexi Storage Wardrobe range.\nThis Wardrobe is constructed with 18mm thick boards and features 4 large drawers and 3 height adjustable shelves allowing you to arrange your space to fit your storage needs.\nEach Unit in the Flexi Storage Wardrobe range comes with fixing hardware allowing you to join multiple Units together. Perfect for creating a free-standing, versatile wardrobe or fill out an existing wall cavity.\nFlexi Wardrobe Units can also be enhanced with a range of accessories, including extra shelves, hanging rails, drawers, baskets and shoe racks. These versatile accessories allow you to make the most of your storage space and tailor your wardrobe to your specific needs and preferences.\n3 height adjustable shelves\n4 large drawers with smooth sliding metal runners\nJoin multiple Units together using included connecting hardware\nEnhance your Wardrobe with optional accessories (sold separately)\n5 year warranty",
+      "price": 365.0,
+      "type": "normal",
+      "category": "Core Wardrobe Range",
+      "thumbnail": "/thumbnails/single-wardrobe.jpeg",
+      "model": "components/W-01684",
+      "packDetails": "Weight: 55.4kg\nDimensions: (Flat) 590mm W x 2075mm L x 100mm H\nNo. Of Cartons: 1",
+      "included": "Unit frame including kickboard and backing board\n4 x drawers with metal drawer runners\n3 x adjustable shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
+      "toolsRequired": "Small spirit level\nTape measure\nPhillips head screw drivers\nRubber mallet",
+      "instructions": "/01684_Flexi-Storage-Wardrobe-4-Drawer-and-3-Shelf-Kit_INSTRUCTIONS_AUS_JN01556_FA_V4_WEB.pdf",
+      "youtube": ""
     }
   ]
 }

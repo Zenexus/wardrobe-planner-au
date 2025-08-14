@@ -1,0 +1,46 @@
+{
+  "products": [
+    {
+      "itemNumber": "2583989",
+      "name": "Wardrobe 6 Shelf Corner Unit White",
+      "width": 97,
+      "height": 200,
+      "depth": 97,
+      "color": "White",
+      "desc": "WARNING! TIPPING HAZARD – Children have died from furniture tipping over.\nALWAYS anchor your furniture to the wall with an anti-tip device.\nNEVER place a TV on any furniture other than a media/TV bench intended for this purpose. ALWAYS secure your TV by using an anchoring device.\nNEVER allow children to stand, climb, or hang on drawers, doors or shelves.\nNEVER open more than one drawer at the time.\nALWAYS place heaviest items in the lowest drawers.",
+      "price": 200.0,
+      "type": "corner",
+      "category": "Core Wardrobe Range",
+      "thumbnail": "/thumbnails/L-wardrobe.jpeg",
+      "model": "components/W-01687"
+    },
+    {
+      "itemNumber": "2583988",
+      "name": "Wardrobe 6 Shelf Unit White",
+      "width": 60.6,
+      "height": 200,
+      "depth": 48,
+      "color": "White",
+      "desc": "This Wardrobe is constructed with 18mm thick boards and features 6 height adjustable shelves allowing you to arrange your space to fit your storage needs.",
+      "price": 100.0,
+      "type": "normal",
+      "category": "Core Wardrobe Range",
+      "thumbnail": "/thumbnails/single-wardrobe.jpeg",
+      "model": "components/W-01684"
+    },
+    {
+      "itemNumber": "2583990",
+      "name": "Wardrobe Bundle Unit White",
+      "width": 60.6,
+      "height": 200,
+      "depth": 48,
+      "color": "White",
+      "desc": "This Wardrobe Bundle combines multiple storage solutions in one unit with adjustable shelves and optimized space utilization.",
+      "price": 150.0,
+      "type": "normal",
+      "category": "Core Wardrobe Range",
+      "thumbnail": "/thumbnails/single-wardrobe.jpeg",
+      "model": "components/W-01685-bundle"
+    }
+  ]
+}
