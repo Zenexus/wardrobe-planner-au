@@ -2,6 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Menu, NotebookPen } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function SummaryHeader() {
   const navigate = useNavigate();
@@ -17,38 +22,52 @@ export default function SummaryHeader() {
                 alt="Wardrobe Logo"
                 className="h-12 w-auto object-contain"
               />
-              <button
-                type="button"
-                className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded-full"
-                onClick={() => navigate("/")}
-                aria-label="Back"
-              >
-                <ArrowLeft size={24} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded-full"
+                    onClick={() => navigate("/")}
+                    aria-label="Back"
+                  >
+                    <ArrowLeft size={24} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Back</TooltipContent>
+              </Tooltip>
             </div>
 
             <div className="flex items-center gap-2 pr-4">
-              <a
-                href=""
-                target="_blank"
-                rel="noreferrer"
-                className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
-                aria-label="Hot Sell List"
-                title="Hot Sell List"
-              >
-                <NotebookPen size={24} />
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href=""
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
+                    aria-label="Notes"
+                  >
+                    <NotebookPen size={24} />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>Notes</TooltipContent>
+              </Tooltip>
 
               <Sheet>
-                <SheetTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Open menu"
-                    className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
-                  >
-                    <Menu size={24} />
-                  </button>
-                </SheetTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SheetTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Open menu"
+                        className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
+                      >
+                        <Menu size={24} />
+                      </button>
+                    </SheetTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Menu</TooltipContent>
+                </Tooltip>
                 <SheetContent side="right">
                   <MenuSheetContent />
                 </SheetContent>

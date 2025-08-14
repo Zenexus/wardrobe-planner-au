@@ -89,20 +89,17 @@ export default function App() {
   }
 
   return (
-    <>
+    <Router>
       <DesignMemoryModal
         isOpen={showMemoryModal}
         onClose={handleCloseModal}
         onNewDesign={handleNewDesign}
         onResumeDesign={handleResumeDesign}
       />
-
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/summary" element={<Summary />} />
-        </Routes>
-      </Router>
-    </>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/summary" element={<Summary />} />
+      </Routes>
+    </Router>
   );
 }

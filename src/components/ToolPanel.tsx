@@ -14,6 +14,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ToolPanel = () => {
   const {
@@ -41,47 +46,63 @@ const ToolPanel = () => {
     <Html fullscreen prepend style={{ pointerEvents: "none" }}>
       <div className="absolute bottom-[50px] left-[50px] z-[100] flex gap-4 pointer-events-auto">
         {/* Show Measurements Button */}
-        <Button
-          className={cn(
-            "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
-            showWardrobeMeasurements
-              ? "bg-black text-white hover:bg-black/80"
-              : ""
-          )}
-          onClick={handleMeasurementsClick}
-          variant={showWardrobeMeasurements ? "default" : "outline"}
-          title={
-            showWardrobeMeasurements ? "Hide measurements" : "Show measurements"
-          }
-        >
-          <Ruler />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className={cn(
+                "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
+                showWardrobeMeasurements
+                  ? "bg-black text-white hover:bg-black/80"
+                  : ""
+              )}
+              onClick={handleMeasurementsClick}
+              variant={showWardrobeMeasurements ? "default" : "outline"}
+            >
+              <Ruler />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {showWardrobeMeasurements
+              ? "Hide measurements"
+              : "Show measurements"}
+          </TooltipContent>
+        </Tooltip>
 
         {/* Toggle Lights Button */}
-        <Button
-          className={cn(
-            "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
-            lightsOn ? "bg-black text-white hover:bg-black/80" : ""
-          )}
-          onClick={handleToggleLights}
-          variant={lightsOn ? "default" : "outline"}
-          title={lightsOn ? "Turn lights off" : "Turn lights on"}
-        >
-          <Lightbulb />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className={cn(
+                "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
+                lightsOn ? "bg-black text-white hover:bg-black/80" : ""
+              )}
+              onClick={handleToggleLights}
+              variant={lightsOn ? "default" : "outline"}
+            >
+              <Lightbulb />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {lightsOn ? "Turn lights off" : "Turn lights on"}
+          </TooltipContent>
+        </Tooltip>
 
         {/* Clear All Wardrobes with confirmation */}
         {wardrobeInstances.length > 0 && (
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
-                variant="outline"
-                title="Clear all wardrobes"
-              >
-                <Trash2 />
-              </Button>
-            </AlertDialogTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                    variant="outline"
+                  >
+                    <Trash2 />
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Clear all wardrobes</TooltipContent>
+            </Tooltip>
             <AlertDialogContent className="w-[400px]">
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-xl">

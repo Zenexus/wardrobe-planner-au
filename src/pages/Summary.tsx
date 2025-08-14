@@ -4,6 +4,7 @@ import { WardrobeInstance } from "@/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import BunningsCard from "@/components/BunningsCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import AssemblyOverviewList from "@/components/AssemblyOverviewList";
 import SummaryHeader from "@/components/SummaryHeader";
 
 // Type for grouped wardrobes
@@ -161,11 +162,7 @@ const Summary = () => {
                 <h2 className="text-xl font-semibold mb-4">
                   Assembly overview
                 </h2>
-                <p className="text-sm text-gray-600">
-                  A step-by-step assembly summary will appear here. This will
-                  include parts, tools, and instructions tailored to your
-                  selected wardrobes.
-                </p>
+                <AssemblyOverviewList instances={wardrobeInstances} />
               </div>
             </TabsContent>
           </Tabs>

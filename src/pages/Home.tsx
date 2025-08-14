@@ -9,6 +9,11 @@ import RoomDimensionSliders from "@/components/RoomDimensionSliders";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Menu, Save, CheckCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import WardrobeDetailSheet from "@/components/WardrobeDetailSheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -219,7 +224,10 @@ export default function Home() {
     if (wardrobeInstances.length > 0) {
       setDisableFinalise(false);
     }
-  }, [wardrobeInstances]);
+    if (customizeMode) {
+      setDisableFinalise(true);
+    }
+  }, [wardrobeInstances, customizeMode]);
 
   // Auto open/close detail sheet when focus changes
   useEffect(() => {
@@ -260,11 +268,16 @@ export default function Home() {
             <ArrowRight />
           </Button>
           <Sheet>
-            <SheetTrigger asChild>
-              <div className="flex items-center justify-center pl-4 cursor-pointer hover:bg-gray-200 rounded-full p-4">
-                <Menu />
-              </div>
-            </SheetTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SheetTrigger asChild>
+                  <div className="flex items-center justify-center pl-4 cursor-pointer hover:bg-gray-200 rounded-full p-4">
+                    <Menu />
+                  </div>
+                </SheetTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Menu</TooltipContent>
+            </Tooltip>
             <SheetContent side="right">
               <MenuSheetContent />
             </SheetContent>

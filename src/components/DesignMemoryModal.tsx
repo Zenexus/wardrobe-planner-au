@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { getSavedDesignMetadata, clearSavedDesign } from "@/utils/memorySystem";
+import { getSavedDesignMetadata } from "@/utils/memorySystem";
 
 interface DesignMemoryModalProps {
   isOpen: boolean;
@@ -16,9 +17,7 @@ export default function DesignMemoryModal({
   onNewDesign,
   onResumeDesign,
 }: DesignMemoryModalProps) {
-  const [isClearing, setIsClearing] = useState(false);
-
-  console.log("🎯 DesignMemoryModal render - isOpen:", isOpen);
+  const navigate = useNavigate();
 
   // Disable pointer events on body when modal is open to prevent Canvas interference
   React.useEffect(() => {
@@ -35,8 +34,6 @@ export default function DesignMemoryModal({
         (wrapper as HTMLElement).style.pointerEvents = "none";
       });
 
-      console.log("🚫 Disabled pointer events on canvas elements");
-
       return () => {
         // Re-enable pointer events when modal closes
         canvases.forEach((canvas) => {
@@ -45,7 +42,6 @@ export default function DesignMemoryModal({
         canvasWrappers.forEach((wrapper) => {
           (wrapper as HTMLElement).style.pointerEvents = "auto";
         });
-        console.log("✅ Re-enabled pointer events on canvas elements");
       };
     }
   }, [isOpen]);
@@ -71,16 +67,6 @@ export default function DesignMemoryModal({
     }
   };
 
-  const handleClearSavedDesign = async () => {
-    setIsClearing(true);
-    const success = clearSavedDesign();
-    if (success) {
-      // Close modal and start new design
-      onNewDesign();
-    }
-    setIsClearing(false);
-  };
-
   const modalContent = (
     <div
       className="fixed inset-0 flex items-center justify-center"
@@ -96,7 +82,6 @@ export default function DesignMemoryModal({
         cursor: "default",
       }}
       onClick={(e) => {
-        console.log("🎯 Backdrop clicked");
         // Only close if clicking the backdrop
         if (e.target === e.currentTarget) {
           onClose();
@@ -147,6 +132,7 @@ export default function DesignMemoryModal({
             <Button
               onClick={() => {
                 onNewDesign();
+                navigate("/");
               }}
               variant="outline"
               className="w-full h-12 rounded-full border-gray-300 hover:bg-gray-50 cursor-pointer"
