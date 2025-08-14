@@ -4,6 +4,7 @@ import productsData from "../products.json";
 import { useStore } from "../store";
 import { Product } from "../types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import ColorSwatch from "./ColorSwatch";
 
 const ProductSelection = () => {
   // Filter products for Core Wardrobe Range
@@ -39,52 +40,30 @@ const ProductSelection = () => {
 
       {/* Change colour */}
       <div className="mt-4">
-        <div className="text-sm font-medium text-gray-600">Change colour</div>
+        <div className="text-lg font-bold mb-4">Change colour</div>
         <div className="text-sm text-gray-800 mt-1">{selectedColor}</div>
         <div className="flex items-center gap-4 mt-2">
           {/* White */}
-          <div
-            className={
-              selectedColor === "White"
-                ? "inline-flex w-14 h-14 items-center justify-center p-1 rounded-full border-2 border-black"
-                : "inline-flex w-14 h-14 items-center justify-center p-1 rounded-full border-2 border-transparent"
-            }
-          >
-            <button
-              type="button"
-              aria-pressed={selectedColor === "White"}
-              onClick={() => setSelectedColor("White")}
-              className="w-12 h-12 rounded-full border border-black shadow-sm hover:shadow cursor-pointer"
-              style={{ background: "#ffffff" }}
-              title="White"
-            />
-          </div>
+          <ColorSwatch
+            isSelected={selectedColor === "White"}
+            onClick={() => setSelectedColor("White")}
+            title="White"
+            background="#e6e6e6"
+          />
 
           {/* White stained oak effect */}
-          <div
-            className={
-              selectedColor === "White stained oak effect"
-                ? "inline-flex w-14 h-14 items-center justify-center p-1 rounded-full border-2 border-black"
-                : "inline-flex w-14 h-14 items-center justify-center p-1 rounded-full border-2 border-transparent"
-            }
-          >
-            <button
-              type="button"
-              aria-pressed={selectedColor === "White stained oak effect"}
-              onClick={() => setSelectedColor("White stained oak effect")}
-              className="w-12 h-12 rounded-full border border-black shadow-sm hover:shadow cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, #f7f2e7 0%, #e6d6b8 100%)",
-              }}
-              title="White stained oak effect"
-            />
-          </div>
+          <ColorSwatch
+            isSelected={selectedColor === "White stained oak effect"}
+            onClick={() => setSelectedColor("White stained oak effect")}
+            title="White stained oak effect"
+            background="#c3b194"
+          />
         </div>
       </div>
 
       {/* Depth */}
       <div className="mt-6">
-        <div className="text-sm font-medium text-gray-600 mb-2">Depth</div>
+        <div className="text-lg font-bold mb-4">Depth</div>
         <Tabs value={depthTab} onValueChange={setDepthTab} className="w-full">
           <TabsList>
             <TabsTrigger value="core">Core</TabsTrigger>

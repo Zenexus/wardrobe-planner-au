@@ -9,6 +9,7 @@ import RoomDimensionSliders from "@/components/RoomDimensionSliders";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Menu, Save, CheckCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import WardrobeDetailSheet from "@/components/WardrobeDetailSheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
 
@@ -201,7 +202,9 @@ export default function Home() {
   const setCanvasScreenshotDataUrl = useStore(
     (s) => s.setCanvasScreenshotDataUrl
   );
+  const focusedWardrobeInstance = useStore((s) => s.focusedWardrobeInstance);
   const [disableFinalise, setDisableFinalise] = useState(true);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const navigate = useNavigate();
 
   // Enable auto-save for this component
@@ -217,6 +220,11 @@ export default function Home() {
       setDisableFinalise(false);
     }
   }, [wardrobeInstances]);
+
+  // Auto open/close detail sheet when focus changes
+  useEffect(() => {
+    setIsDetailOpen(!!focusedWardrobeInstance);
+  }, [focusedWardrobeInstance]);
 
   const handleFinaliseClick = () => {
     try {
@@ -291,6 +299,11 @@ export default function Home() {
             </div>
           )}
         </div>
+        {/* Right-side floating detail sheet that doesn't cover header */}
+        <WardrobeDetailSheet
+          open={isDetailOpen}
+          onOpenChange={setIsDetailOpen}
+        />
       </section>
     </div>
   );

@@ -3,6 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Ruler, Trash2, Lightbulb } from "lucide-react";
 import { useStore } from "@/store";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const ToolPanel = () => {
   const {
@@ -21,17 +32,6 @@ const ToolPanel = () => {
 
   const handleToggleLights = () => {
     setLightsOn(!lightsOn);
-  };
-
-  const handleClearAllClick = () => {
-    if (wardrobeInstances.length > 0) {
-      const confirmed = window.confirm(
-        "Are you sure you want to clear all wardrobes? This action cannot be undone."
-      );
-      if (confirmed) {
-        clearAllWardrobes();
-      }
-    }
   };
 
   // Show the tool panel only when not in customize mode
@@ -70,16 +70,41 @@ const ToolPanel = () => {
           <Lightbulb />
         </Button>
 
-        {/* Clear All Wardrobes Button */}
+        {/* Clear All Wardrobes with confirmation */}
         {wardrobeInstances.length > 0 && (
-          <Button
-            className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
-            onClick={handleClearAllClick}
-            variant="outline"
-            title="Clear all wardrobes"
-          >
-            <Trash2 />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                variant="outline"
+                title="Clear all wardrobes"
+              >
+                <Trash2 />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="w-[400px]">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-xl">
+                  Clear all wardrobes?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove all wardrobes from the scene. This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="cursor-pointer">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={clearAllWardrobes}
+                  className="bg-red-600 hover:bg-red-600/80 cursor-pointer"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
     </Html>
