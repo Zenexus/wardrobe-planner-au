@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/form";
 import { useStore } from "@/store";
 import { loadDesignState } from "@/utils/memorySystem";
+import { getDesignByCode } from "@/services/designService";
 
 const ResumeSchema = z.object({
-  code: z.string().min(6, "Enter a valid design code"),
+  code: z.string().min(1, "Enter a design code"),
 });
 
 type ResumeValues = z.infer<typeof ResumeSchema>;
@@ -28,14 +29,42 @@ const ResumeDesignForm = () => {
 
   const loadSavedStateToStore = useStore((s) => s.loadSavedState);
 
-  const onSubmit = async (_values: ResumeValues) => {
-    // For now, restore from local storage regardless of the code
-    const saved = loadDesignState();
-    if (saved) {
-      loadSavedStateToStore(saved);
-    } else {
+  const onSubmit = async (values: ResumeValues) => {
+    try {
+      const designCode = values.code.trim().toUpperCase();
+
+      // Load design from Firebase using the provided code
+      const result = await getDesignByCode(designCode);
+
+      if (result.success && result.data) {
+        // Convert Firebase data to our SavedDesignState format
+        const designState = {
+          version: result.data.version,
+          date: result.data.date,
+          designId: result.data.designId,
+          designData: result.data.designData,
+          shoppingCart: result.data.shoppingCart,
+          totalPrice: result.data.totalPrice,
+          firebaseId: result.data.id,
+        };
+
+        const loadSuccess = loadSavedStateToStore(designState);
+        if (loadSuccess) {
+          form.reset();
+        } else {
+          form.setError("code", {
+            message: "Failed to load design. Please try again.",
+          });
+        }
+      } else {
+        form.setError("code", {
+          message: "Design code not found. Please check and try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Error loading design:", error);
       form.setError("code", {
-        message: "No saved design found on this device",
+        message: "Error loading design. Please try again.",
       });
     }
   };
@@ -64,7 +93,7 @@ const ResumeDesignForm = () => {
           disabled={form.formState.isSubmitting || !form.watch("code")}
           className="w-full h-[50px] cursor-pointer"
         >
-          Open
+          {form.formState.isSubmitting ? "Loading..." : "Open"}
         </Button>
       </form>
     </Form>

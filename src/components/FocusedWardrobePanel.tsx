@@ -1,16 +1,14 @@
 import { Html } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Trash2, Info } from "lucide-react";
 import { useStore } from "@/store";
-import SheetThumbnailsCarousel from "./SheetThumbnailsCarousel";
+import ProductDetailSheet from "./ProductDetailSheet";
 import { useState, useEffect } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const FocusedWardrobePanel = () => {
   const {
@@ -18,6 +16,7 @@ const FocusedWardrobePanel = () => {
     setFocusedWardrobeInstance,
     removeWardrobeInstance,
     setSelectedObjectId,
+    globalSheetOpen,
   } = useStore();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -42,6 +41,10 @@ const FocusedWardrobePanel = () => {
     }
   };
 
+  const handleViewDetails = () => {
+    setIsSheetOpen(true);
+  };
+
   const handleSheetOpenChange = (open: boolean) => {
     setIsSheetOpen(open);
 
@@ -56,125 +59,43 @@ const FocusedWardrobePanel = () => {
 
   const { product } = focusedWardrobeInstance;
 
-  const formatDimension = (cm: number) => {
-    return `${cm}cm`;
-  };
-
-  // Get product images - currently using single thumbnail, but prepared for multiple images
-  const getProductImages = (
-    product: typeof focusedWardrobeInstance.product
-  ) => {
-    // Start with the main thumbnail
-    const images = [product.thumbnail];
-
-    // Demo: Add duplicate images to show carousel functionality
-    // In production, you would have actual different product images
-    // For now, we'll duplicate the thumbnail to demonstrate the carousel
-    if (images[0]) {
-      // Add the same image 2 more times for demo (in production, use different angles/views)
-      images.push(product.thumbnail, product.thumbnail);
-    }
-
-    // Future implementation example:
-    // return [product.thumbnail, product.image2, product.image3, product.image4].filter(Boolean);
-
-    return images;
-  };
-
   return (
     <Html fullscreen prepend>
       <div className="absolute flex gap-4 bottom-[50px] left-1/2 -translate-x-1/2 z-[100] max-w-[150px] h-[50px] w-full mx-4">
-        <Button
-          onClick={handleDelete}
-          className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer "
-          title="Delete this wardrobe"
-        >
-          <Trash2 />
-        </Button>
-
-        <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
-          <SheetTrigger asChild>
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
+              onClick={handleDelete}
               className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
-              title="View wardrobe details"
             >
-              <Info />
+              <Trash2 />
             </Button>
-          </SheetTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Delete this wardrobe</TooltipContent>
+        </Tooltip>
 
-          <SheetTitle className="sr-only">{product.name}</SheetTitle>
-          <SheetDescription className="sr-only">
-            Product details and information
-          </SheetDescription>
-          <SheetContent className="overflow-y-auto p-4">
-            <div className="flex flex-col gap-6 p-4">
-              {/* Product Images Carousel */}
-              <SheetThumbnailsCarousel
-                images={getProductImages(product)}
-                alt={product.name}
-                className="w-full"
-              />
-
-              <div className="flex flex-col gap-2">
-                <p className="text-2xl font-bold">{product.name}</p>
-                <p className="text-sm text-gray-600">
-                  Item #{product.itemNumber} {product.category}
-                </p>
-              </div>
-
-              {/* Product Details */}
-              <div className="space-y-4">
-                {/* Price */}
-
-                <div className="flex items-start font-bold">
-                  <span className="text-lg">$</span>
-                  <span className="text-4xl">{Math.floor(product.price)}</span>
-                  <span className="text-lg">
-                    .{(product.price % 1).toFixed(2).substring(2)}
-                  </span>
-                </div>
-
-                {/* Dimensions */}
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="flex items-center gap-2">
-                    <p>Width: </p>
-                    <p className="font-semibold ">
-                      {formatDimension(product.width)}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <p>Depth: </p>
-                    <p className="font-semibold ">
-                      {formatDimension(product.depth)}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <p>Height: </p>
-                    <p className="font-semibold">
-                      {formatDimension(product.height)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                {product.desc && (
-                  <div>
-                    <img
-                      src="/danger_symbols.svg"
-                      alt="danger symbols"
-                      className="w-25 h-25"
-                    />
-                    <p className=" text-gray-700 leading-relaxed whitespace-pre-line">
-                      {product.desc}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <ProductDetailSheet
+          product={product}
+          open={isSheetOpen}
+          onOpenChange={handleSheetOpenChange}
+          onSheetClose={() => {
+            // Prevent any unwanted actions when sheet closes
+            // The handleSheetOpenChange already handles the proper cleanup
+          }}
+          trigger={
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleViewDetails}
+                  className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
+                >
+                  <Info />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View wardrobe details</TooltipContent>
+            </Tooltip>
+          }
+        />
       </div>
     </Html>
   );

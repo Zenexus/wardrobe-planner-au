@@ -11,6 +11,7 @@ export type Product = {
   category: string;
   thumbnail: string;
   model: string;
+  images?: string[]; // Optional array of product images
   packDetails?: string;
   included?: string;
   toolsRequired?: string;

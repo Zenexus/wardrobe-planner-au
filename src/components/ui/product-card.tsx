@@ -1,4 +1,8 @@
+import { Info } from "lucide-react";
 import { Product } from "../../types";
+import { useState } from "react";
+import ProductDetailSheet from "../ProductDetailSheet";
+import { useStore } from "../../store";
 
 interface ProductCardProps {
   product: Product;
@@ -11,31 +15,108 @@ export function ProductCard({
   onAddToDesign,
   hasSpace = true,
 }: ProductCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const { globalSheetOpen } = useStore();
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDetailOpen(true);
+  };
+
+  const handleCardClick = () => {
+    // Only add to design if no sheet is open and there's space
+    if (!globalSheetOpen && !isDetailOpen && hasSpace) {
+      onAddToDesign?.(product);
+    }
+  };
+
+  const handleSheetClose = () => {
+    // No delay needed - update state immediately
+    setIsDetailOpen(false);
+  };
+
+  const handleSheetOpenChange = (newOpen: boolean) => {
+    setIsDetailOpen(newOpen);
+
+    // If sheet is closing, ensure we update the state immediately
+    if (!newOpen) {
+      setIsDetailOpen(false);
+    }
+  };
+
   return (
     <div
-      className={`p-4 hover:shadow-md flex flex-col h-full relative transition-all ${
+      className={`p-4 hover:shadow-sm flex flex-col h-full relative transition-all ${
         hasSpace
           ? "bg-white cursor-pointer"
-          : "bg-gray-200 hover:bg-gray-300 cursor-not-allowed opacity-75"
+          : "bg-gray-200 hover:bg-gray-200 cursor-not-allowed opacity-75"
       }`}
-      onClick={() => onAddToDesign?.(product)}
+      onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div>
+      <div className="relative w-full h-32">
+        {/* Default image (first image) */}
         <img
-          src={product.thumbnail}
+          src={product.images?.[0] || product.thumbnail}
           alt={product.name}
-          className="w-full h-32 object-cover rounded-md"
+          className={`w-full h-32 object-cover absolute inset-0 transition-opacity duration-300 ${
+            isHovered && product.images && product.images.length > 1
+              ? "opacity-0"
+              : "opacity-100"
+          }`}
         />
+
+        {/* Hover image (second image) - only render if we have multiple images */}
+        {product.images && product.images.length > 1 && (
+          <img
+            src={product.images[1]}
+            alt={product.name}
+            className={`w-full h-32 object-cover absolute inset-0 transition-opacity duration-300 ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        )}
       </div>
       <div className="font-semibold text-sm pt-4">{product.name}</div>
-
       <div className="mt-2 flex justify-between items-center">
         <span className="font-semibold">${product.price.toFixed(2)}</span>
-      </div>
-      <div className="text-xs text-gray-500 mt-1">
-        {product.width}cm × {product.depth}cm × {product.height}cm
+        <ProductDetailSheet
+          product={product}
+          open={isDetailOpen}
+          onOpenChange={handleSheetOpenChange}
+          onSheetClose={handleSheetClose}
+          trigger={
+            <button
+              type="button"
+              className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
+              aria-label="Product information"
+              onClick={handleViewDetails}
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          }
+        />
       </div>
 
+      <div className="flex items-center gap-1 mt-2">
+        <div className="grid grid-cols-3 gap-1 text-xs text-center">
+          <div className="bg-gray-100 p-1 text-gray-600">
+            <div className="font-medium">{product.width}</div>
+            <div className="text-gray-500">W</div>
+          </div>
+          <div className="bg-gray-100 p-1 text-gray-600">
+            <div className="font-medium">{product.depth}</div>
+            <div className="text-gray-500">D</div>
+          </div>
+          <div className="bg-gray-100 p-1 text-gray-600">
+            <div className="font-medium">{product.height}</div>
+            <div className="text-gray-500">H</div>
+          </div>
+        </div>
+        <span className="text-xs text-gray-400 ml-1">cm</span>
+      </div>
       {/* No space indicator */}
       {!hasSpace && (
         <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">

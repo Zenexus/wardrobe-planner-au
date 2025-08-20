@@ -11,7 +11,14 @@
       "price": 495.73,
       "type": "corner",
       "category": "Core Wardrobe Range",
-      "thumbnail": "/thumbnails/L-wardrobe.jpeg",
+      "images": [
+        "/images/products/2583989/2583989_image_1.webp",
+        "/images/products/2583989/2583989_image_2.webp",
+        "/images/products/2583989/2583989_image_3.webp",
+        "/images/products/2583989/2583989_image_4.webp",
+        "/images/products/2583989/2583989_image_5.webp"
+      ],
+      "thumbnail": "/images/products/2583989/2583989_image_1.webp",
       "model": "components/W-01687",
       "packDetails": "Weight CTN 1: 36.4kg\nWeight CTN 2: 37.1kg\nDimensions CTN 1: (Flat)\n491mm W x 2075mm L x 105mm H\nDimensions CTN 2: (Flat)\n491mm W x 2075mm L x 100mm H\nNo. Of Cartons: 2",
       "included": "Unit frame including kickboard and backing board\n5 x adjustable corner shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
@@ -30,7 +37,14 @@
       "price": 265.0,
       "type": "normal",
       "category": "Core Wardrobe Range",
-      "thumbnail": "/thumbnails/single-wardrobe.jpeg",
+      "images": [
+        "/images/products/2583988/2583988_image_1.webp",
+        "/images/products/2583988/2583988_image_2.webp",
+        "/images/products/2583988/2583988_image_3.webp",
+        "/images/products/2583988/2583988_image_4.webp",
+        "/images/products/2583988/2583988_image_5.webp"
+      ],
+      "thumbnail": "/images/products/2583988/2583988_image_1.webp",
       "model": "components/W-01684",
       "packDetails": "Weight: 53.2kg\nDimensions: (Flat) 572mm W x 2008mm L x 80mm H\nNo. Of Cartons: 1",
       "included": "Unit frame including kickboard and backing board\n5 x adjustable shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",

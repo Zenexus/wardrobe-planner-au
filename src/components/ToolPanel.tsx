@@ -103,7 +103,7 @@ const ToolPanel = () => {
               </TooltipTrigger>
               <TooltipContent>Clear all wardrobes</TooltipContent>
             </Tooltip>
-            <AlertDialogContent className="w-[400px]">
+            <AlertDialogContent className="w-[400px] rounded-none">
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-xl">
                   Clear all wardrobes?
@@ -114,12 +114,12 @@ const ToolPanel = () => {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="cursor-pointer">
+                <AlertDialogCancel className="cursor-pointer rounded-full">
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={clearAllWardrobes}
-                  className="bg-red-600 hover:bg-red-600/80 cursor-pointer"
+                  className="bg-red-600 hover:bg-red-600/80 cursor-pointer rounded-full"
                 >
                   Delete
                 </AlertDialogAction>

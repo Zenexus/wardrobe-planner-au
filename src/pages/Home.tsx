@@ -17,6 +17,11 @@ import {
 import WardrobeDetailSheet from "@/components/WardrobeDetailSheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import {
+  saveDesignStateWithSync,
+  generateShoppingCart,
+} from "@/utils/memorySystem";
+import { generateDesignCode } from "@/utils/generateCode";
 
 import Lottie from "lottie-react";
 
@@ -210,6 +215,8 @@ export default function Home() {
   const focusedWardrobeInstance = useStore((s) => s.focusedWardrobeInstance);
   const [disableFinalise, setDisableFinalise] = useState(true);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Enable auto-save for this component
@@ -234,7 +241,7 @@ export default function Home() {
     setIsDetailOpen(!!focusedWardrobeInstance);
   }, [focusedWardrobeInstance]);
 
-  const handleFinaliseClick = () => {
+  const handleFinaliseClick = async () => {
     try {
       const canvas = document.querySelector("canvas");
       const dataUrl = canvas?.toDataURL("image/png");
@@ -244,8 +251,50 @@ export default function Home() {
     } catch (e) {
       // ignore capture failures
     }
+
+    // Save current design to DB with a generated design code
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      const designCode = generateDesignCode();
+      const { shoppingCart, totalPrice } =
+        generateShoppingCart(wardrobeInstances);
+
+      await saveDesignStateWithSync({
+        designId: designCode,
+        designData: {
+          wardrobeInstances,
+          wallsDimensions: useStore.getState().wallsDimensions,
+          customizeMode: useStore.getState().customizeMode,
+        },
+        shoppingCart,
+        totalPrice,
+      });
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to save design"
+      );
+    } finally {
+      setIsSaving(false);
+    }
+
     navigate("/summary");
   };
+
+  // Intercept attempts to leave the page to offer saving
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // If there is content, offer to save via our dialog. Note: browsers restrict custom dialogs on unload.
+      if (wardrobeInstances.length > 0) {
+        e.preventDefault();
+        e.returnValue = ""; // Triggers native confirm; our custom dialog won't show here.
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [wardrobeInstances.length]);
+
+  // Note: Custom modals cannot be shown on browser/tab close; a native prompt will appear.
 
   return (
     <div className="flex w-full h-screen overflow-hidden">

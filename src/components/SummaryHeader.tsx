@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Menu, NotebookPen } from "lucide-react";
+import { ArrowLeft, Menu, HeartPlus } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import {
@@ -45,12 +45,12 @@ export default function SummaryHeader() {
                     target="_blank"
                     rel="noreferrer"
                     className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
-                    aria-label="Notes"
+                    aria-label="Popular List"
                   >
-                    <NotebookPen size={24} />
+                    <HeartPlus size={24} />
                   </a>
                 </TooltipTrigger>
-                <TooltipContent>Notes</TooltipContent>
+                <TooltipContent>Popular List</TooltipContent>
               </Tooltip>
 
               <Sheet>

@@ -18,6 +18,7 @@ import {
   saveDesignState,
   loadDesignState,
   SavedDesignState,
+  generateShoppingCart,
 } from "./utils/memorySystem";
 
 // Real-world dimension constants (in CM)
@@ -97,6 +98,10 @@ interface StoreState {
     focusedWardrobeInstance: WardrobeInstance | null
   ) => void;
 
+  // Global sheet state to prevent wardrobe addition when any sheet is open
+  globalSheetOpen: boolean;
+  setGlobalSheetOpen: (open: boolean) => void;
+
   // Show wardrobe measurements toggle
   showWardrobeMeasurements: boolean;
   setShowWardrobeMeasurements: (showWardrobeMeasurements: boolean) => void;
@@ -137,6 +142,10 @@ export const useStore = create<StoreState>((set, get) => ({
   selectedObjectId: null,
   setSelectedObjectId: (selectedObjectId: string | null) =>
     set({ selectedObjectId }),
+
+  // Global sheet state
+  globalSheetOpen: false,
+  setGlobalSheetOpen: (globalSheetOpen: boolean) => set({ globalSheetOpen }),
 
   // Wardrobe instances management
   wardrobeInstances: [],
@@ -402,25 +411,34 @@ export const useStore = create<StoreState>((set, get) => ({
   // Memory system functions
   saveCurrentState: () => {
     const state = get();
+    const { shoppingCart, totalPrice } = generateShoppingCart(
+      state.wardrobeInstances
+    );
     return saveDesignState({
-      wardrobeInstances: state.wardrobeInstances,
-      wallsDimensions: state.wallsDimensions,
-      customizeMode: state.customizeMode,
+      designId: `W${Date.now().toString().slice(-6)}`, // Temporary ID for local save
+      designData: {
+        wardrobeInstances: state.wardrobeInstances,
+        wallsDimensions: state.wallsDimensions,
+        customizeMode: state.customizeMode,
+      },
+      shoppingCart,
+      totalPrice,
     });
   },
 
   loadSavedState: (savedState: SavedDesignState) => {
     try {
       console.log("🔄 Loading saved state into store:", {
-        wardrobes: savedState.wardrobeInstances?.length || 0,
-        walls: savedState.wallsDimensions,
-        customizeMode: savedState.customizeMode,
+        wardrobes: savedState.designData?.wardrobeInstances?.length || 0,
+        walls: savedState.designData?.wallsDimensions,
+        customizeMode: savedState.designData?.customizeMode,
       });
 
       set({
-        wardrobeInstances: savedState.wardrobeInstances || [],
-        wallsDimensions: savedState.wallsDimensions,
-        customizeMode: savedState.customizeMode || false,
+        wardrobeInstances: savedState.designData?.wardrobeInstances || [],
+        wallsDimensions:
+          savedState.designData?.wallsDimensions || get().wallsDimensions,
+        customizeMode: savedState.designData?.customizeMode || false,
         // Reset UI states when loading
         selectedObjectId: null,
         draggedObjectId: null,

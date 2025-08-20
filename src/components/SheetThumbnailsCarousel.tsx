@@ -77,7 +77,7 @@ const SheetThumbnailsCarousel: React.FC<SheetThumbnailsCarouselProps> = ({
       />
 
       <div className="flex gap-2 items-center justify-start">
-        {images.slice(0, 3).map((image, index) => (
+        {images.map((image, index) => (
           <Thumb
             key={index}
             selected={index === selectedIndex}
