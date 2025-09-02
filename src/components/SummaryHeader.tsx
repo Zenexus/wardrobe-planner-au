@@ -7,6 +7,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function SummaryHeader() {
   const navigate = useNavigate();
@@ -38,20 +45,30 @@ export default function SummaryHeader() {
             </div>
 
             <div className="flex items-center gap-2 pr-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <a
-                    href=""
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
-                    aria-label="Popular List"
-                  >
-                    <HeartPlus size={24} />
-                  </a>
-                </TooltipTrigger>
-                <TooltipContent>Popular List</TooltipContent>
-              </Tooltip>
+              <Dialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded-full transition-colors"
+                        aria-label="Popular List"
+                      >
+                        <HeartPlus size={24} />
+                      </button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Popular List</TooltipContent>
+                </Tooltip>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Popular List</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    {/* Content will be added later */}
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <Sheet>
                 <Tooltip>

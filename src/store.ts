@@ -130,6 +130,10 @@ interface StoreState {
   // Canvas screenshot (data URL)
   canvasScreenshotDataUrl: string | null;
   setCanvasScreenshotDataUrl: (dataUrl: string | null) => void;
+
+  // Current design code
+  currentDesignCode: string | null;
+  setCurrentDesignCode: (code: string | null) => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -731,4 +735,9 @@ export const useStore = create<StoreState>((set, get) => ({
     } catch {}
     set({ canvasScreenshotDataUrl: dataUrl });
   },
+
+  // Current design code
+  currentDesignCode: null,
+  setCurrentDesignCode: (code: string | null) =>
+    set({ currentDesignCode: code }),
 }));

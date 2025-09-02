@@ -1,4 +1,5 @@
 import { Info } from "lucide-react";
+import { useState } from "react";
 import { useStore } from "@/store";
 import { WardrobeInstance } from "@/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -6,6 +7,7 @@ import BunningsCard from "@/components/BunningsCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AssemblyOverviewList from "@/components/AssemblyOverviewList";
 import SummaryHeader from "@/components/SummaryHeader";
+import { HeartHandshake } from "lucide-react";
 
 // Type for grouped wardrobes
 type GroupedWardrobe = {
@@ -17,6 +19,7 @@ type GroupedWardrobe = {
 
 const Summary = () => {
   const { wardrobeInstances } = useStore();
+  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const screenshotFromStore = useStore((s) => s.canvasScreenshotDataUrl);
   const screenshotFromStorage =
     typeof window !== "undefined"
@@ -202,7 +205,62 @@ const Summary = () => {
               </div>
             </div>
           )}
-          <div className="mt-4 text-xs text-gray-600 leading-relaxed space-y-2 break-words">
+
+          <div className="mt-10 flex justify-start gap-2 items-start">
+            <HeartHandshake className="w-5 h-5 text-gray-900 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Need help? We're right here.
+              </h3>
+
+              <div>
+                <p className="text-gray-700 mb-4">
+                  Whether you've a question or would like us to review your
+                  design before you buy, we'd love to help.
+                </p>
+
+                <div className="mb-4">
+                  <a
+                    href="https://flexistorage.com.au/contact-us/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline cursor-pointer text-gray-700 hover:text-gray-900"
+                  >
+                    Contact us
+                  </a>
+                </div>
+
+                <p className=" text-gray-600 mb-2">
+                  Keep this design code handy:
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="bg-gray-100 px-3 py-2 rounded font-mono text-lg font-bold text-gray-900">
+                    {useStore.getState().currentDesignCode || "WDC75D"}
+                  </code>
+                  <button
+                    onClick={() => {
+                      const code =
+                        useStore.getState().currentDesignCode || "WDC75D";
+                      navigator.clipboard.writeText(code);
+                      setShowCopiedMessage(true);
+                      setTimeout(() => setShowCopiedMessage(false), 2000);
+                    }}
+                    className={`text-sm cursor-pointer font-medium transition-colors ${
+                      showCopiedMessage ? "text-[#003B4A]" : "text-[#0085AD]"
+                    }`}
+                  >
+                    {showCopiedMessage ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <p className="text-gray-500 mt-2">
+                  Use this code to retrieve your design later or share it with
+                  our team.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-20 text-xs text-gray-600 leading-relaxed space-y-2 break-words">
             <p>
               * While we endeavour to provide accurate and up to date
               information, prices and availability may vary by store. Please

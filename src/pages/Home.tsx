@@ -212,6 +212,7 @@ export default function Home() {
   const setCanvasScreenshotDataUrl = useStore(
     (s) => s.setCanvasScreenshotDataUrl
   );
+  const setCurrentDesignCode = useStore((s) => s.setCurrentDesignCode);
   const focusedWardrobeInstance = useStore((s) => s.focusedWardrobeInstance);
   const [disableFinalise, setDisableFinalise] = useState(true);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -257,6 +258,7 @@ export default function Home() {
       setIsSaving(true);
       setSaveError(null);
       const designCode = generateDesignCode();
+      setCurrentDesignCode(designCode);
       const { shoppingCart, totalPrice } =
         generateShoppingCart(wardrobeInstances);
 
