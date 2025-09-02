@@ -12,8 +12,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useStore } from "@/store";
-import { loadDesignState } from "@/utils/memorySystem";
 import { getDesignByCode } from "@/services/designService";
+import { useNavigate } from "react-router-dom";
 
 const ResumeSchema = z.object({
   code: z.string().min(1, "Enter a design code"),
@@ -22,6 +22,7 @@ const ResumeSchema = z.object({
 type ResumeValues = z.infer<typeof ResumeSchema>;
 
 const ResumeDesignForm = () => {
+  const navigate = useNavigate();
   const form = useForm<ResumeValues>({
     resolver: zodResolver(ResumeSchema),
     defaultValues: { code: "" },
@@ -51,6 +52,7 @@ const ResumeDesignForm = () => {
         const loadSuccess = loadSavedStateToStore(designState);
         if (loadSuccess) {
           form.reset();
+          navigate("/planner");
         } else {
           form.setError("code", {
             message: "Failed to load design. Please try again.",
@@ -79,7 +81,7 @@ const ResumeDesignForm = () => {
             <FormItem>
               <FormLabel>
                 Design code
-                <span className="text-red-500 ml-1">*</span>
+                <span className="text-destructive ml-1">*</span>
               </FormLabel>
               <FormControl>
                 <Input {...field} className="h-[50px]" />
@@ -91,7 +93,7 @@ const ResumeDesignForm = () => {
         <Button
           type="submit"
           disabled={form.formState.isSubmitting || !form.watch("code")}
-          className="w-full h-[50px] cursor-pointer"
+          className="w-full h-[50px] rounded-full cursor-pointer bg-primary hover:bg-primary/90"
         >
           {form.formState.isSubmitting ? "Loading..." : "Open"}
         </Button>

@@ -49,7 +49,7 @@ export default function DesignMemoryModal({
   if (!isOpen) return null;
 
   const savedMetadata = getSavedDesignMetadata();
-  const savedDate = savedMetadata ? new Date(savedMetadata.timestamp) : null;
+  const savedDate = savedMetadata ? new Date(savedMetadata.date) : null;
 
   const formatDate = (date: Date) => {
     const now = new Date();
@@ -89,7 +89,7 @@ export default function DesignMemoryModal({
       }}
     >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden relative"
+        className="bg-background rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden relative"
         style={{
           zIndex: 2147483647, // Maximum safe z-index value
           pointerEvents: "auto",
@@ -101,18 +101,20 @@ export default function DesignMemoryModal({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Welcome Back!</h2>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-semibold text-foreground">
+            Resume design?
+          </h2>
         </div>
 
         {/* Content */}
         <div className="p-6">
           <div className="text-center mb-6">
-            <p className="text-gray-600 mb-2">
-              We found a saved design from your previous session.
+            <p className="text-secondary-foreground mb-2">
+              Looks like you started planning already!
             </p>
             {savedDate && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-secondary-foreground">
                 Last saved: {formatDate(savedDate)}
               </p>
             )}
@@ -124,20 +126,19 @@ export default function DesignMemoryModal({
               onClick={() => {
                 onResumeDesign();
               }}
-              className="w-full h-12 rounded-full  bg-black hover:bg-black/80 text-white cursor-pointer"
+              className="w-full h-12 rounded-full bg-primary hover:bg-primary/80 text-primary-foreground cursor-pointer"
             >
-              Resume Previous Design
+              Continue where you left off
             </Button>
 
             <Button
               onClick={() => {
                 onNewDesign();
-                navigate("/");
               }}
               variant="outline"
-              className="w-full h-12 rounded-full border-gray-300 hover:bg-gray-50 cursor-pointer"
+              className="w-full h-12 rounded-full border-border hover:bg-border cursor-pointer"
             >
-              Start New Design
+              Create new
             </Button>
           </div>
         </div>

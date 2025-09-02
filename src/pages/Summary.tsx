@@ -60,7 +60,7 @@ const Summary = () => {
 
   // Get grouped wardrobes
   const groupedWardrobes = groupWardrobesByItemNumber(wardrobeInstances);
-
+  console.log(groupedWardrobes);
   // Calculate total price
   const totalPrice = wardrobeInstances.reduce((sum, instance) => {
     return sum + instance.product.price;
@@ -91,7 +91,7 @@ const Summary = () => {
                 {groupedWardrobes.map((group) => (
                   <div
                     key={group.product.itemNumber}
-                    className="border border-gray-200 p-4 "
+                    className="border border-border p-4 "
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -102,7 +102,7 @@ const Summary = () => {
                             className="w-16 h-16 object-cover rounded-md"
                           />
                           <div>
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="font-semibold text-foreground">
                               {group.product.name}
                             </h3>
                             <p className="text-sm text-gray-600">
@@ -246,7 +246,9 @@ const Summary = () => {
                       setTimeout(() => setShowCopiedMessage(false), 2000);
                     }}
                     className={`text-sm cursor-pointer font-medium transition-colors ${
-                      showCopiedMessage ? "text-[#003B4A]" : "text-[#0085AD]"
+                      showCopiedMessage
+                        ? "text-[var(--tertiary)]"
+                        : "text-[var(--primary)]"
                     }`}
                   >
                     {showCopiedMessage ? "Copied!" : "Copy"}

@@ -34,13 +34,13 @@ export default function SummaryHeader() {
                   <button
                     type="button"
                     className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded-full"
-                    onClick={() => navigate("/")}
-                    aria-label="Back"
+                    onClick={() => navigate("/planner")}
+                    aria-label="Back to Planner"
                   >
                     <ArrowLeft size={24} />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>Back</TooltipContent>
+                <TooltipContent>Back to Planner</TooltipContent>
               </Tooltip>
             </div>
 

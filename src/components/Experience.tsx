@@ -23,7 +23,7 @@ import { WallPaper, Ceiling } from "./WallPaper";
 import { detectClosestWalls, Wall } from "../helper/closestWallDetector";
 import { ClassicWardrobe } from "./W-01684";
 import { ModernWardrobe } from "./W-01687";
-import { BundleWardrobe } from "./W-01685-bundle";
+import { BundleWardrobe } from "./W-01685-bundle-sample";
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import ToolPanel from "@/components/ToolPanel";
 import WallMeasurements from "@/components/WallMeasurements";

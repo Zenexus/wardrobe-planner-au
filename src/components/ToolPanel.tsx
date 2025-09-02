@@ -52,7 +52,7 @@ const ToolPanel = () => {
               className={cn(
                 "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
                 showWardrobeMeasurements
-                  ? "bg-black text-white hover:bg-black/80"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/80"
                   : ""
               )}
               onClick={handleMeasurementsClick}
@@ -74,7 +74,9 @@ const ToolPanel = () => {
             <Button
               className={cn(
                 "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
-                lightsOn ? "bg-black text-white hover:bg-black/80" : ""
+                lightsOn
+                  ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                  : ""
               )}
               onClick={handleToggleLights}
               variant={lightsOn ? "default" : "outline"}
@@ -94,7 +96,7 @@ const ToolPanel = () => {
               <TooltipTrigger asChild>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                    className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-destructive border-destructive hover:bg-destructive hover:text-white"
                     variant="outline"
                   >
                     <Trash2 />
@@ -103,9 +105,9 @@ const ToolPanel = () => {
               </TooltipTrigger>
               <TooltipContent>Clear all wardrobes</TooltipContent>
             </Tooltip>
-            <AlertDialogContent className="w-[400px] rounded-none">
+            <AlertDialogContent className="w-[450px] rounded-md">
               <AlertDialogHeader>
-                <AlertDialogTitle className="text-xl">
+                <AlertDialogTitle className="text-xl! font-semibold! text-foreground!">
                   Clear all wardrobes?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
@@ -113,13 +115,13 @@ const ToolPanel = () => {
                   cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="cursor-pointer rounded-full">
+              <AlertDialogFooter className="!flex !flex-col mt-10 space-y-2">
+                <AlertDialogCancel className="cursor-pointer rounded-full w-full h-12 hover:bg-border">
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={clearAllWardrobes}
-                  className="bg-red-600 hover:bg-red-600/80 cursor-pointer rounded-full"
+                  className="bg-destructive hover:bg-destructive/80 text-primary-foreground cursor-pointer rounded-full w-full h-12"
                 >
                   Delete
                 </AlertDialogAction>
