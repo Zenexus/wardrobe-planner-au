@@ -23,6 +23,8 @@ export type SavedDesignState = {
     wardrobeInstances: WardrobeInstance[];
     wallsDimensions: WallsDimensions;
     customizeMode: boolean;
+    selectedColor: "White" | "Oak";
+    depthTab: "Core" | "400mm";
   };
   shoppingCart: ShoppingCartItem[];
   totalPrice: number;
@@ -243,6 +245,8 @@ export const loadDesignStateFromFirebase = async (
           ),
           wallsDimensions: result.data.designData.wallsDimensions,
           customizeMode: result.data.designData.customizeMode,
+          selectedColor: result.data.designData.selectedColor || "White",
+          depthTab: result.data.designData.depthTab || "Core",
         },
         shoppingCart: result.data.shoppingCart || [],
         totalPrice: result.data.totalPrice || 0,

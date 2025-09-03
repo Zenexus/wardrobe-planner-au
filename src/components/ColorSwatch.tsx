@@ -1,31 +1,46 @@
-// This component is used to display a color selector in the home page right hand side menu
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type ColorSwatchProps = {
-  isSelected: boolean;
+  selectedColor: "White" | "Oak";
+  value: string;
   onClick: () => void;
-  title: string;
   background: string;
+  className?: string;
 };
 
 const ColorSwatch = ({
-  isSelected,
+  selectedColor,
+  value,
   onClick,
-  title,
   background,
+  className,
 }: ColorSwatchProps) => {
+  const isSelected = selectedColor === value;
+
   return (
-    <button
-      type="button"
-      aria-pressed={isSelected}
-      onClick={onClick}
-      className={
-        isSelected
-          ? "w-14 h-14 rounded-full border-2 border-black shadow-sm hover:shadow cursor-pointer"
-          : "w-14 h-14 rounded-full border-2 border-transparent shadow-sm hover:shadow cursor-pointer"
-      }
-      style={{ background }}
-      title={title}
-    />
+    <div className={cn("flex flex-col items-center gap-2", className)}>
+      <Button
+        onClick={onClick}
+        aria-label={`Select ${value} color`}
+        aria-pressed={isSelected}
+        className={cn(
+          "w-12 h-12 rounded-full shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary",
+          isSelected
+            ? "scale-105 shadow-lg ring-2 ring-primary ring-offset-1"
+            : "border-secondary hover:border-secondary-foreground"
+        )}
+        style={{ backgroundColor: background }}
+      ></Button>
+
+      <span className="text-sm text-foreground font-medium min-h-[1.25rem] flex items-center">
+        {isSelected ? (
+          <span className="font-semibold text-primary">{value}</span>
+        ) : (
+          <span className="text-muted-foreground">{value}</span>
+        )}
+      </span>
+    </div>
   );
 };
 

@@ -43,26 +43,34 @@ export const DIMENSION_LIMITS = {
 // R3F Scaling factor: 1 R3F unit = 100cm
 export const R3F_SCALE = 100;
 
-export interface WallDimensions {
+export type WallDimensions = {
   length: number; // in CM
   depth: number; // in CM (thickness)
   height: number; // in CM
-}
+};
 
-export interface WallsDimensions {
+export type WallsDimensions = {
   front: WallDimensions;
   back: WallDimensions;
   left: WallDimensions;
   right: WallDimensions;
-}
+};
 
-interface StoreState {
+type StoreState = {
   globalHasDragging: boolean;
   setGlobalHasDragging: (globalHasDragging: boolean) => void;
   draggedObjectId: string | null;
   setDraggedObjectId: (draggedObjectId: string | null) => void;
   selectedObjectId: string | null;
   setSelectedObjectId: (selectedObjectId: string | null) => void;
+
+  // Color selection state
+  selectedColor: "White" | "Oak";
+  setSelectedColor: (color: "White" | "Oak") => void;
+
+  // Depth tab state
+  depthTab: "Core" | "400mm";
+  setDepthTab: (tab: "Core" | "400mm") => void;
 
   // Wardrobe instances management
   wardrobeInstances: WardrobeInstance[];
@@ -134,7 +142,7 @@ interface StoreState {
   // Current design code
   currentDesignCode: string | null;
   setCurrentDesignCode: (code: string | null) => void;
-}
+};
 
 export const useStore = create<StoreState>((set, get) => ({
   globalHasDragging: false,
@@ -146,6 +154,22 @@ export const useStore = create<StoreState>((set, get) => ({
   selectedObjectId: null,
   setSelectedObjectId: (selectedObjectId: string | null) =>
     set({ selectedObjectId }),
+
+  // Color selection state
+  selectedColor: "White",
+  setSelectedColor: (selectedColor: "White" | "Oak") => set({ selectedColor }),
+
+  // Depth tab state
+  depthTab: "Core",
+  setDepthTab: (depthTab: "Core" | "400mm") => {
+    const state = get();
+    // If switching to core tab and oak is selected, reset to white
+    if (depthTab === "Core" && state.selectedColor === "Oak") {
+      set({ depthTab, selectedColor: "White" });
+    } else {
+      set({ depthTab });
+    }
+  },
 
   // Global sheet state
   globalSheetOpen: false,
@@ -424,6 +448,8 @@ export const useStore = create<StoreState>((set, get) => ({
         wardrobeInstances: state.wardrobeInstances,
         wallsDimensions: state.wallsDimensions,
         customizeMode: state.customizeMode,
+        selectedColor: state.selectedColor,
+        depthTab: state.depthTab,
       },
       shoppingCart,
       totalPrice,
@@ -443,6 +469,8 @@ export const useStore = create<StoreState>((set, get) => ({
         wallsDimensions:
           savedState.designData?.wallsDimensions || get().wallsDimensions,
         customizeMode: savedState.designData?.customizeMode || false,
+        selectedColor: savedState.designData?.selectedColor || "White",
+        depthTab: savedState.designData?.depthTab || "Core",
         // Reset UI states when loading
         selectedObjectId: null,
         draggedObjectId: null,
@@ -471,6 +499,8 @@ export const useStore = create<StoreState>((set, get) => ({
       focusedWardrobeInstance: null,
       globalHasDragging: false,
       customizeMode: false,
+      selectedColor: "White",
+      depthTab: "Core",
       showWardrobeMeasurements: false,
       wallsDimensions: {
         front: {
