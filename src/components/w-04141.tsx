@@ -6,7 +6,7 @@ import React, { useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 
 export function Model(props) {
-  const { nodes, materials } = useGLTF("/Bundle_2_04141.gltf");
+  const { nodes, materials } = useGLTF("/models/04141.gltf");
   return (
     <group {...props} dispose={null}>
       <group position={[-0.023, 0.858, 0.019]}>
@@ -27,4 +27,4 @@ export function Model(props) {
   );
 }
 
-useGLTF.preload("/Bundle_2_04141.gltf");
+useGLTF.preload("/models/04141.gltf");

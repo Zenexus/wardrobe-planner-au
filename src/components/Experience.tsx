@@ -21,9 +21,20 @@ import { WardrobeInstance } from "../types";
 import { WoodFloor } from "./WoodFloor";
 import { WallPaper, Ceiling } from "./WallPaper";
 import { detectClosestWalls, Wall } from "../helper/closestWallDetector";
+// Core Wardrobe Range Components
 import { ClassicWardrobe } from "./W-01684";
-import { ModernWardrobe } from "./W-01687";
+import { Model as W01685 } from "./W-01685";
+import { Model as W01686 } from "./W-01686";
+import { ModernWardrobe as W01687 } from "./W-01687";
 import { BundleWardrobe } from "./W-01685-bundle-sample";
+
+// 400mm Wardrobe Range Components
+import { Model as W04140 } from "./w-04140";
+import { Model as W04141 } from "./w-04141";
+import { Model as W04142 } from "./w-04142";
+import { Model as W04143 } from "./w-04143";
+import { Model as W04144 } from "./w-04144";
+import { Model as W04145 } from "./w-04145";
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import ToolPanel from "@/components/ToolPanel";
 import WallMeasurements from "@/components/WallMeasurements";
@@ -1140,18 +1151,36 @@ const Experience: React.FC = () => {
     modelPath: string,
     onClick?: (event: any) => void
   ) => {
-    //FIXME: here we need change later on
-    // Based on the model path, return the appropriate wardrobe component
+    // Map model paths to their corresponding React components
     switch (modelPath) {
+      // Core Wardrobe Range
       case "components/W-01684":
         return <ClassicWardrobe onClick={onClick} />;
+      case "components/W-01685":
+        return <W01685 onClick={onClick} />;
+      case "components/W-01686":
+        return <W01686 onClick={onClick} />;
       case "components/W-01687":
-        return <ModernWardrobe onClick={onClick} />;
+        return <W01687 onClick={onClick} />;
       case "components/W-01685-bundle":
         return <BundleWardrobe onClick={onClick} />;
+
+      // 400mm Wardrobe Range
+      case "components/w-04140":
+        return <W04140 onClick={onClick} />;
+      case "components/w-04141":
+        return <W04141 onClick={onClick} />;
+      case "components/w-04142":
+        return <W04142 onClick={onClick} />;
+      case "components/w-04143":
+        return <W04143 onClick={onClick} />;
+      case "components/w-04144":
+        return <W04144 onClick={onClick} />;
+      case "components/w-04145":
+        return <W04145 onClick={onClick} />;
+
       default:
-        console.warn(`Unknown model path: ${modelPath}`);
-        return <ModernWardrobe onClick={onClick} />;
+        return <ClassicWardrobe onClick={onClick} />; // Fallback to a known working component
     }
   };
 

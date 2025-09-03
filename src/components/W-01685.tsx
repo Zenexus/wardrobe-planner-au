@@ -7,7 +7,7 @@ import React, { useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 
 export function Model(props) {
-  const { nodes, materials } = useGLTF("/Bundle_3_01685.gltf");
+  const { nodes, materials } = useGLTF("/models/01685.gltf");
   return (
     <group {...props} dispose={null}>
       <group position={[0.016, 0.989, 0.011]}>
@@ -28,4 +28,6 @@ export function Model(props) {
   );
 }
 
-useGLTF.preload("/Bundle_3_01685.gltf");
+useGLTF.preload("/models/01685.gltf");
+
+// Keep backward compatibility

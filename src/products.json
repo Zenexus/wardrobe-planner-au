@@ -38,14 +38,14 @@
       "type": "normal",
       "category": "Core Wardrobe Range",
       "images": [
-        "/images/products/2583988/2583988_image_1.webp",
-        "/images/products/2583988/2583988_image_2.webp",
-        "/images/products/2583988/2583988_image_3.webp",
-        "/images/products/2583988/2583988_image_4.webp",
-        "/images/products/2583988/2583988_image_5.webp"
+        "/images/products/2583988/2583988_1.webp",
+        "/images/products/2583988/2583988_2.webp",
+        "/images/products/2583988/2583988_3.webp",
+        "/images/products/2583988/2583988_4.webp",
+        "/images/products/2583988/2583988_5.webp"
       ],
-      "thumbnail": "/images/products/2583988/2583988_image_1.webp",
-      "model": "components/W-01684",
+      "thumbnail": "/images/products/2583988/2583988_1.webp",
+      "model": "components/W-01686",
       "packDetails": "Weight: 53.2kg\nDimensions: (Flat) 572mm W x 2008mm L x 80mm H\nNo. Of Cartons: 1",
       "included": "Unit frame including kickboard and backing board\n5 x adjustable shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
       "toolsRequired": "Small spirit level\nTape measure\nPhillips head screw drivers\nRubber mallet",
@@ -72,7 +72,7 @@
         "/images/products/2583987/2583987_image_6.webp"
       ],
       "thumbnail": "/images/products/2583987/2583987_image_1.webp",
-      "model": "components/W-01684",
+      "model": "components/W-01685",
       "packDetails": "Weight: 43.8kg\nDimensions: (Flat) 581mm W x 2043mm L x 82mm H\nNo. Of Cartons: 1",
       "included": "Unit frame including kickboard and backing board\n1 x adjustable hang rail\n2 x adjustable shelves\nWall mount safety bracket\nCamlock fittings\nMultiple unit connector\nInstructions",
       "toolsRequired": "Small spirit level\nTape measure\nPhillips head screw drivers\nRubber mallet",
@@ -152,7 +152,7 @@
         "/images/products/0404288/0404288_5.webp"
       ],
       "thumbnail": "/images/products/0404288/0404288_1.webp",
-      "model": "components/w-04141",
+      "model": "components/w-04142",
       "packDetails": "Weight: 36.2kg\nDimensions: (Flat) 500mm W x 1655mm L x 100mm H\nNo. Of Cartons: 1",
       "included": "Unit frame & backing board\n3 x adjustable shelves\n4 x drawers with metal drawer runners\n1 x adjustable hanging rail\nWall mount safety bracket\nCamlock fittings\nInstructions",
       "toolsRequired": "Tape measure\nPhillips head screw drivers\nRubber mallet",
@@ -179,7 +179,7 @@
         "/images/products/0404291/0404291_5.webp"
       ],
       "thumbnail": "/images/products/0404291/0404291_1.webp",
-      "model": "components/w-04142",
+      "model": "components/w-04144",
       "packDetails": "Weight: 31.7kg\nDimensions: (Flat) 500mm W x 886mm L x 110mm H\nNo. Of Cartons: 1",
       "included": "Unit frame & backing board\n4 x drawers with metal drawer runners\nWall mount safety bracket\nCamlock fittings\nInstructions",
       "toolsRequired": "Tape measure\nPhillips head screw drivers\nRubber mallet",
@@ -206,7 +206,7 @@
         "/images/products/0404287/0404287_5.webp"
       ],
       "thumbnail": "/images/products/0404287/0404287_1.webp",
-      "model": "components/w-04143",
+      "model": "components/w-04141",
       "packDetails": "Weight: 36.2kg\nDimensions: (Flat) 510mm W x 1660mm L x 95mm H\nNo. Of Cartons: 1",
       "included": "Unit frame & backing board\n5 x adjustable shelves\n1 x adjustable hanging rail\nWall mount safety bracket\nCamlock fittings\nInstructions",
       "toolsRequired": "Tape measure\nPhillips head screw drivers\nRubber mallet",
@@ -233,7 +233,7 @@
         "/images/products/0404290/0404290_5.webp"
       ],
       "thumbnail": "/images/products/0404290/0404290_1.webp",
-      "model": "components/w-04144",
+      "model": "components/w-04143",
       "packDetails": "Weight: 36.2kg\nDimensions: (Flat) 510mm W x 1660mm L x 90mm H\nNo. Of Cartons: 1",
       "included": "Unit frame & backing board\n3 x adjustable shelves\n4 x drawers with metal drawer runners\n1 x adjustable hanging rail\nWall mount safety bracket\nCamlock fittings\nInstructions",
       "toolsRequired": "Tape measure\nPhillips head screw drivers\nRubber mallet",
