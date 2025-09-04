@@ -47,7 +47,7 @@ export const ModernWardrobe = forwardRef<
 
     // Counteract the built-in Y translation in the GLTF model (0.9481528997421265)
     // to place the wardrobe bottom at Y=0
-    const modelBuiltInYOffset = 0.95;
+    const modelBuiltInYOffset = 0.93;
     const yOffset = modelBuiltInYOffset * scaleFactor;
 
     return { scaleFactor, yOffset };

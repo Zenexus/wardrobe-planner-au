@@ -1325,12 +1325,20 @@ const Experience: React.FC = () => {
             }
             blur={false}
             visibleEdgeColor={(() => {
-              return 0x0000ff; // Blue for regular objects
+              const primaryColor = getComputedStyle(document.documentElement)
+                .getPropertyValue("--primary")
+                .trim();
+              return parseInt(primaryColor.replace("#", ""), 16);
             })()}
             hiddenEdgeColor={(() => {
-              return 0x0000ff; // Blue for regular objects
+              const primaryColor = getComputedStyle(document.documentElement)
+                .getPropertyValue("--primary")
+                .trim();
+              return parseInt(primaryColor.replace("#", ""), 16);
             })()}
-            edgeStrength={10}
+            edgeStrength={50}
+            pulseSpeed={0}
+            xRay={true}
           />
         </EffectComposer>
 
