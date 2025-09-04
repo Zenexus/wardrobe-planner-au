@@ -351,7 +351,15 @@ export function handleWallTransition(
 export function requiresWallAttachment(modelPath: string): boolean {
   return (
     modelPath === "components/W-01684" ||
-    modelPath === "components/W-01685-bundle"
+    modelPath === "components/W-01685-bundle" ||
+    modelPath === "components/W-01685" ||
+    modelPath === "components/W-01686" ||
+    modelPath === "components/w-04140" ||
+    modelPath === "components/w-04141" ||
+    modelPath === "components/w-04142" ||
+    modelPath === "components/w-04143" ||
+    modelPath === "components/w-04144" ||
+    modelPath === "components/w-04145"
   ); // Only traditional wardrobe
 }
 
