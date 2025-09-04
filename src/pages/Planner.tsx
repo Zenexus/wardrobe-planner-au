@@ -350,7 +350,7 @@ export default function Planner() {
       setIsSaving(false);
     }
 
-    navigate("/summary");
+    navigate("/addon-organisors");
   };
 
   // Intercept attempts to leave the page to offer saving

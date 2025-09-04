@@ -1,5 +1,5 @@
 import create from "zustand";
-import { Product, WardrobeInstance } from "./types";
+import { Product, WardrobeInstance, SelectedOrganizer } from "./types";
 import {
   findAvailablePosition,
   getSuggestedPositions,
@@ -142,6 +142,13 @@ type StoreState = {
   // Current design code
   currentDesignCode: string | null;
   setCurrentDesignCode: (code: string | null) => void;
+
+  // Selected organizers management
+  selectedOrganizers: SelectedOrganizer[];
+  addOrganizer: (organizer: SelectedOrganizer) => void;
+  updateOrganizerQuantity: (itemNumber: string, quantity: number) => void;
+  removeOrganizer: (itemNumber: string) => void;
+  clearOrganizers: () => void;
 };
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -770,4 +777,59 @@ export const useStore = create<StoreState>((set, get) => ({
   currentDesignCode: null,
   setCurrentDesignCode: (code: string | null) =>
     set({ currentDesignCode: code }),
+
+  // Selected organizers management
+  selectedOrganizers: [],
+  addOrganizer: (organizer: SelectedOrganizer) => {
+    set((state) => {
+      const existingIndex = state.selectedOrganizers.findIndex(
+        (item) => item.organizer.itemNumber === organizer.organizer.itemNumber
+      );
+
+      if (existingIndex >= 0) {
+        // Update existing organizer
+        const updated = [...state.selectedOrganizers];
+        updated[existingIndex] = organizer;
+        return { selectedOrganizers: updated };
+      } else {
+        // Add new organizer
+        return { selectedOrganizers: [...state.selectedOrganizers, organizer] };
+      }
+    });
+  },
+  updateOrganizerQuantity: (itemNumber: string, quantity: number) => {
+    set((state) => {
+      if (quantity === 0) {
+        // Remove organizer if quantity is 0
+        return {
+          selectedOrganizers: state.selectedOrganizers.filter(
+            (item) => item.organizer.itemNumber !== itemNumber
+          ),
+        };
+      }
+
+      const existingIndex = state.selectedOrganizers.findIndex(
+        (item) => item.organizer.itemNumber === itemNumber
+      );
+
+      if (existingIndex >= 0) {
+        // Update existing organizer quantity
+        const updated = [...state.selectedOrganizers];
+        updated[existingIndex] = { ...updated[existingIndex], quantity };
+        return { selectedOrganizers: updated };
+      }
+
+      // If organizer doesn't exist and quantity > 0, we need to add it
+      // This case should be handled by addOrganizer, so just return current state
+      return state;
+    });
+  },
+  removeOrganizer: (itemNumber: string) => {
+    set((state) => ({
+      selectedOrganizers: state.selectedOrganizers.filter(
+        (item) => item.organizer.itemNumber !== itemNumber
+      ),
+    }));
+  },
+  clearOrganizers: () => set({ selectedOrganizers: [] }),
 }));

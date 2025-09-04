@@ -27,3 +27,21 @@ export type WardrobeInstance = {
   customizations?: Record<string, any>; // For future customization options
   addedAt: Date;
 };
+
+export type Organizer = {
+  itemNumber: string;
+  code: string;
+  name: string;
+  width: number;
+  height: number;
+  depth: number;
+  color: string;
+  desc: string;
+  price: number;
+  images: string[];
+};
+
+export type SelectedOrganizer = {
+  organizer: Organizer;
+  quantity: number;
+};

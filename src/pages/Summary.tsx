@@ -18,7 +18,7 @@ type GroupedWardrobe = {
 };
 
 const Summary = () => {
-  const { wardrobeInstances } = useStore();
+  const { wardrobeInstances, selectedOrganizers } = useStore();
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const screenshotFromStore = useStore((s) => s.canvasScreenshotDataUrl);
   const screenshotFromStorage =
@@ -61,10 +61,18 @@ const Summary = () => {
   // Get grouped wardrobes
   const groupedWardrobes = groupWardrobesByItemNumber(wardrobeInstances);
   console.log(groupedWardrobes);
-  // Calculate total price
-  const totalPrice = wardrobeInstances.reduce((sum, instance) => {
+  // Calculate total price for wardrobes
+  const wardrobeTotalPrice = wardrobeInstances.reduce((sum, instance) => {
     return sum + instance.product.price;
   }, 0);
+
+  // Calculate total price for organizers
+  const organizerTotalPrice = selectedOrganizers.reduce((sum, item) => {
+    return sum + item.organizer.price * item.quantity;
+  }, 0);
+
+  // Calculate overall total price
+  const totalPrice = wardrobeTotalPrice + organizerTotalPrice;
 
   return (
     <div className="min-h-screen bg-white">
@@ -139,13 +147,87 @@ const Summary = () => {
                   </div>
                 ))}
 
+                {/* Organizers section */}
+                {selectedOrganizers.length > 0 && (
+                  <>
+                    <div className="border-t border-gray-200 pt-4 mt-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Add-on Organisers
+                      </h3>
+                    </div>
+                    {selectedOrganizers.map((item) => (
+                      <div
+                        key={item.organizer.itemNumber}
+                        className="border border-border p-4"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <img
+                                src={item.organizer.images[0]}
+                                alt={item.organizer.name}
+                                className="w-16 h-16 object-cover rounded-md"
+                              />
+                              <div>
+                                <h3 className="font-semibold text-foreground">
+                                  {item.organizer.name}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  #{item.organizer.itemNumber}
+                                </p>
+                                <div>
+                                  <span className="text-sm text-gray-600 pr-2">
+                                    Dimensions:
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    {item.organizer.width} ×{" "}
+                                    {item.organizer.depth} ×{" "}
+                                    {item.organizer.height} cm
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="flex items-start justify-end font-semibold text-gray-900">
+                              <span className="text-sm pt-0.5">$</span>
+                              <span className="text-lg">
+                                {Math.floor(
+                                  item.organizer.price * item.quantity
+                                )}
+                              </span>
+                              <span className="text-sm pt-0.5">
+                                .
+                                {((item.organizer.price * item.quantity) % 1)
+                                  .toFixed(2)
+                                  .substring(2)}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Qty: {item.quantity}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
                 {/* Total section */}
                 <div className="border-t-2 border-gray-100 pt-4 mt-6">
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="text-lg font-semibold">
-                        Total ({groupedWardrobes.length} unique items,{" "}
-                        {wardrobeInstances.length} total)
+                        Total (
+                        {groupedWardrobes.length + selectedOrganizers.length}{" "}
+                        unique items,{" "}
+                        {wardrobeInstances.length +
+                          selectedOrganizers.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0
+                          )}{" "}
+                        total)
                       </span>
                     </div>
                     <div className="flex items-start text-2xl font-bold text-gray-900">
