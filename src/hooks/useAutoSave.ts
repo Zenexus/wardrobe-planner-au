@@ -24,7 +24,7 @@ export const useAutoSave = () => {
     }
 
     if (!autoSaveEnabled) {
-      console.log("⏸️ Auto-save is disabled");
+      console.log("Auto-save is disabled");
       return;
     }
 

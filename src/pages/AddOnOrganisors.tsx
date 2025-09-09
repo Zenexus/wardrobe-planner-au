@@ -61,7 +61,7 @@ const AddOnOrganisors = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b">
+      <header className="sticky top-0 z-50 bg-white">
         <div className="px-10 py-6">
           <div className="pl-6">
             <div className="flex items-center justify-between mb-4">

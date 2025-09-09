@@ -26,6 +26,7 @@ import {
 } from "@/utils/memorySystem";
 import { generateDesignCode } from "@/utils/generateCode";
 import DesignMemoryModal from "@/components/DesignMemoryModal";
+import { shouldTriggerSheet } from "@/constants/wardrobeConfig";
 
 import Lottie from "lottie-react";
 
@@ -195,11 +196,11 @@ const AutoSaveIndicator = () => {
   }
 
   return (
-    <div className="flex items-center text-xs text-gray-500">
+    <div className="flex items-center text-xs text-secondary-foreground">
       {showSaved ? (
         <>
-          <CheckCircle size={14} className="mr-1 text-green-500" />
-          <span className="text-green-600">Saved</span>
+          <CheckCircle size={14} className="mr-1 text-primary" />
+          <span className="text-primary">Saved</span>
         </>
       ) : (
         <>
@@ -307,9 +308,16 @@ export default function Planner() {
     }
   }, [wardrobeInstances, customizeMode]);
 
-  // Auto open/close detail sheet when focus changes
+  // Auto open/close detail sheet when focus changes (only for specific wardrobe types)
   useEffect(() => {
-    setIsDetailOpen(!!focusedWardrobeInstance);
+    if (
+      focusedWardrobeInstance &&
+      shouldTriggerSheet(focusedWardrobeInstance.product.itemNumber)
+    ) {
+      setIsDetailOpen(true);
+    } else {
+      setIsDetailOpen(false);
+    }
   }, [focusedWardrobeInstance]);
 
   const handleFinaliseClick = async () => {
@@ -338,6 +346,8 @@ export default function Planner() {
           wardrobeInstances,
           wallsDimensions: useStore.getState().wallsDimensions,
           customizeMode: useStore.getState().customizeMode,
+          selectedColor: useStore.getState().selectedColor,
+          depthTab: useStore.getState().depthTab,
         },
         shoppingCart,
         totalPrice,
@@ -441,7 +451,7 @@ export default function Planner() {
             </Sheet>
           </div>
           <div
-            className="flex-1 overflow-y-auto flex flex-col gap-4 p-12"
+            className="flex-1 overflow-y-auto flex flex-col gap-4 py-12 px-8"
             style={{ scrollbarGutter: "stable" }}
           >
             {/* Auto-save indicator */}

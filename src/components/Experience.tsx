@@ -18,7 +18,8 @@ import { useStore } from "../store";
 import { cmToR3F } from "../utils/scaling";
 import { RapierRigidBody } from "@react-three/rapier";
 import { WardrobeInstance } from "../types";
-import { WoodFloor } from "./WoodFloor";
+import { shouldTriggerSheetOnClickOnly } from "../constants/wardrobeConfig";
+import FloorRenderer from "./FloorRenderer";
 import { WallPaper, Ceiling } from "./WallPaper";
 import { detectClosestWalls, Wall } from "../helper/closestWallDetector";
 // Core Wardrobe Range Components
@@ -26,8 +27,10 @@ import { ClassicWardrobe } from "./W-01684";
 import { Model as W01685 } from "./W-01685";
 import { Model as W01686 } from "./W-01686";
 import { ModernWardrobe as W01687 } from "./W-01687";
-import { BundleWardrobe } from "./W-01685-bundle-sample";
-
+// Bundle Models
+import { Model as W01685BundleA } from "./W-01685-bundle-A";
+import { Model as W01685BundleB } from "./W-01685-bundle-B";
+import { Model as W01685BundleC } from "./W-01685-bundle-C";
 // 400mm Wardrobe Range Components
 import { Model as W04140 } from "./w-04140";
 import { Model as W04141 } from "./w-04141";
@@ -238,10 +241,18 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         if (selectedObjectId !== id) {
           setSelectedObjectId(id);
           // Also set focused wardrobe instance if this is a wardrobe
+          // BUT only if it's not a click-only sheet trigger wardrobe
           if (wardrobeInstances && setFocusedWardrobeInstance) {
             const wardrobeInstance = wardrobeInstances.find((w) => w.id === id);
             if (wardrobeInstance) {
-              setFocusedWardrobeInstance(wardrobeInstance);
+              // Check if this wardrobe should only trigger sheet on click, not drag
+              if (
+                !shouldTriggerSheetOnClickOnly(
+                  wardrobeInstance.product.itemNumber
+                )
+              ) {
+                setFocusedWardrobeInstance(wardrobeInstance);
+              }
             }
           }
         }
@@ -292,11 +303,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
               constraintResult.newWallConstraint
             ) {
               const wallNames = ["Right", "Left", "Back", "Front"];
-              console.log(
-                `Starting transition to ${
-                  wallNames[constraintResult.newWallConstraint.wallIndex]
-                } wall`
-              );
+
               setWallConstraint(constraintResult.newWallConstraint);
 
               // Update rotation immediately for smooth transition
@@ -309,7 +316,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
               setIsTransitioning(true);
             } else if (isTransitioning && !constraintResult.shouldTransition) {
               // Transition completed, wardrobe is now attached to the new wall
-              console.log("Transition completed, wardrobe attached to wall");
+
               setIsTransitioning(false);
             }
 
@@ -557,22 +564,10 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             }
           }
 
-          console.log(
-            `Drop: wardrobe at [${currentPos.x.toFixed(
-              2
-            )}, ${currentPos.z.toFixed(2)}], closest corner: ${
-              closestCorner?.cornerIndex
-            }`
-          );
-
           if (
             closestCorner &&
             isCornerAvailable(closestCorner, currentInstance, otherInstances)
           ) {
-            console.log(
-              `Drop: snapping to closest corner ${closestCorner.cornerIndex}`
-            );
-
             // Apply the closest corner position and rotation
             rigidBodyRef.current.setTranslation(
               {
@@ -594,8 +589,6 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             }
           } else {
             // If closest corner is not available, find any available corner as fallback
-            console.log(`Drop: closest corner not available, finding fallback`);
-
             const availableCorner = findAvailableCorner(
               currentInstance,
               roomDimensions,
@@ -603,10 +596,6 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             );
 
             if (availableCorner) {
-              console.log(
-                `Drop: using fallback corner ${availableCorner.cornerIndex}`
-              );
-
               rigidBodyRef.current.setTranslation(
                 {
                   x: availableCorner.position[0],
@@ -626,9 +615,6 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
               }
             } else {
               // If no corner is available, keep current position but still update store
-              console.log(
-                `Drop: no corners available, keeping current position`
-              );
               if (onPositionChange) {
                 onPositionChange(id, [
                   currentPos.x,
@@ -655,7 +641,6 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       const wasActualClick = wasClick && clickDuration < 300; // Click should be under 300ms
 
       if (wasActualClick) {
-        console.log(`Wardrobe clicked and selected: ${id}`);
         const isCurrentlySelected = selectedObjectId === id;
 
         if (isCurrentlySelected) {
@@ -678,16 +663,6 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       }
 
       gl.domElement.style.cursor = "auto";
-
-      // Log wall transition info for debugging
-      if (isWallConstrained && wallConstraint) {
-        const wallNames = ["Right", "Left", "Back", "Front"];
-        console.log(
-          `Traditional wardrobe ${
-            isTransitioning ? "transitioning to" : "attached to"
-          } ${wallNames[wallConstraint.wallIndex]} wall`
-        );
-      }
     },
     [
       isDragging,
@@ -1162,8 +1137,14 @@ const Experience: React.FC = () => {
         return <W01686 onClick={onClick} />;
       case "components/W-01687":
         return <W01687 onClick={onClick} />;
-      case "components/W-01685-bundle":
-        return <BundleWardrobe onClick={onClick} />;
+
+      // Bundle Models
+      case "components/W-01685-bundle-A":
+        return <W01685BundleA onClick={onClick} />;
+      case "components/W-01685-bundle-B":
+        return <W01685BundleB onClick={onClick} />;
+      case "components/W-01685-bundle-C":
+        return <W01685BundleC onClick={onClick} />;
 
       // 400mm Wardrobe Range
       case "components/w-04140":
@@ -1225,7 +1206,7 @@ const Experience: React.FC = () => {
             position={[0, 0, 0]}
           />
           <mesh onClick={handleBackgroundClick}>
-            <WoodFloor />
+            <FloorRenderer />
           </mesh>
         </RigidBody>
 

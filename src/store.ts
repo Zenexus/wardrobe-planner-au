@@ -132,6 +132,10 @@ type StoreState = {
   lightsOn: boolean;
   setLightsOn: (on: boolean) => void;
 
+  // Floor texture selection
+  floorTexture: "wood" | "carpet" | "tile";
+  setFloorTexture: (texture: "wood" | "carpet" | "tile") => void;
+
   // Recalculate wardrobe positions when room size changes
   recalcPositionsForRoomResize: () => void;
 
@@ -545,6 +549,11 @@ export const useStore = create<StoreState>((set, get) => ({
   // Lighting
   lightsOn: true,
   setLightsOn: (on: boolean) => set({ lightsOn: on }),
+
+  // Floor texture
+  floorTexture: "wood",
+  setFloorTexture: (texture: "wood" | "carpet" | "tile") =>
+    set({ floorTexture: texture }),
 
   // Adjust wardrobes when room size changes
   recalcPositionsForRoomResize: () => {

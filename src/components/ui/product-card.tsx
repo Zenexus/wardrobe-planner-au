@@ -4,11 +4,11 @@ import { useState } from "react";
 import ProductDetailSheet from "../ProductDetailSheet";
 import { useStore } from "../../store";
 
-interface ProductCardProps {
+type ProductCardProps = {
   product: Product;
   onAddToDesign?: (product: Product) => void;
   hasSpace?: boolean;
-}
+};
 
 export function ProductCard({
   product,
@@ -49,8 +49,8 @@ export function ProductCard({
     <div
       className={`p-4 hover:shadow-sm flex flex-col h-full relative transition-all ${
         hasSpace
-          ? "bg-white cursor-pointer"
-          : "bg-gray-200 hover:bg-gray-200 cursor-not-allowed opacity-75"
+          ? "bg-background cursor-pointer"
+          : "bg-secondary cursor-not-allowed opacity-75"
       }`}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -79,7 +79,8 @@ export function ProductCard({
           />
         )}
       </div>
-      <div className="font-semibold text-sm pt-4">{product.name}</div>
+
+      <div className="text-sm font-semibold pt-4 h-20">{product.name}</div>
       <div className="mt-2 flex justify-between items-center">
         <span className="font-semibold">${product.price.toFixed(2)}</span>
         <ProductDetailSheet
@@ -94,7 +95,7 @@ export function ProductCard({
               aria-label="Product information"
               onClick={handleViewDetails}
             >
-              <Info className="w-4 h-4" />
+              <Info className="w-4 h-4 text-primary" />
             </button>
           }
         />
@@ -102,24 +103,42 @@ export function ProductCard({
 
       <div className="flex items-center gap-1 mt-2">
         <div className="grid grid-cols-3 gap-1 text-xs text-center">
-          <div className="bg-gray-100 p-1 text-gray-600">
-            <div className="font-medium">{product.width}</div>
-            <div className="text-gray-500">W</div>
+          <div
+            className={`p-1 transition-colors ${
+              isHovered
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            <div>{product.width}</div>
+            <div>W</div>
           </div>
-          <div className="bg-gray-100 p-1 text-gray-600">
-            <div className="font-medium">{product.depth}</div>
-            <div className="text-gray-500">D</div>
+          <div
+            className={`p-1 transition-colors ${
+              isHovered
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            <div>{product.depth}</div>
+            <div>D</div>
           </div>
-          <div className="bg-gray-100 p-1 text-gray-600">
-            <div className="font-medium">{product.height}</div>
-            <div className="text-gray-500">H</div>
+          <div
+            className={`p-1 transition-colors ${
+              isHovered
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            <div>{product.height}</div>
+            <div>H</div>
           </div>
         </div>
         <span className="text-xs text-gray-400 ml-1">cm</span>
       </div>
       {/* No space indicator */}
       {!hasSpace && (
-        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+        <div className="absolute top-2 right-2 bg-destructive text-white text-xs px-2 py-1 rounded-full">
           No Space
         </div>
       )}

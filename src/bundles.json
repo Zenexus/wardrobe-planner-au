@@ -1,0 +1,31 @@
+{
+  "bundles": [
+    {
+      "ItemName": "2583987-Bundle-A ",
+      "code": "01685",
+      "name": "Wardrobe 1 Hang Rail 2 Shelf Unit White + Shoe Rack",
+      "description": "Wardrobe 1 Hang Rail 2 Shelf Unit White - Bundle A",
+      "thumbnail": "/images/products/2583987/2583987_image_1.webp",
+      "model": "components/W-01685-bundle-A",
+      "price": 199.0
+    },
+    {
+      "ItemName": "2583987-Bundle-B",
+      "code": "01685",
+      "name": "Wardrobe 1 Hang Rail 2 Shelf Unit White + Basket",
+      "description": "Wardrobe 1 Hang Rail 2 Shelf Unit White - Bundle B",
+      "thumbnail": "/images/products/2583987/2583987_image_1.webp",
+      "model": "components/W-01685-bundle-B",
+      "price": 199.0
+    },
+    {
+      "ItemName": "2583987-Bundle-C",
+      "code": "01685",
+      "name": "Wardrobe 1 Hang Rail 2 Shelf Unit White + 4 glass drawers",
+      "description": "Wardrobe 1 Hang Rail 2 Shelf Unit White - Bundle C",
+      "thumbnail": "/images/products/2583987/2583987_image_1.webp",
+      "model": "components/W-01685-bundle-C",
+      "price": 199.0
+    }
+  ]
+}

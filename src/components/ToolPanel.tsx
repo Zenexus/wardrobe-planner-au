@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import FloorTextureSelector from "./FloorTextureSelector";
 
 const ToolPanel = () => {
   const {
@@ -44,13 +45,18 @@ const ToolPanel = () => {
 
   return (
     <Html fullscreen prepend style={{ pointerEvents: "none" }}>
+      {/* Floor Texture Selector - positioned above other buttons */}
+      <div className="absolute bottom-[120px] left-[50px] z-[100] pointer-events-auto">
+        <FloorTextureSelector />
+      </div>
+
       <div className="absolute bottom-[50px] left-[50px] z-[100] flex gap-4 pointer-events-auto">
         {/* Show Measurements Button */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               className={cn(
-                "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
+                "rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer",
                 showWardrobeMeasurements
                   ? "bg-primary text-primary-foreground hover:bg-primary/80"
                   : ""
@@ -73,7 +79,7 @@ const ToolPanel = () => {
           <TooltipTrigger asChild>
             <Button
               className={cn(
-                "rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer",
+                "rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer",
                 lightsOn
                   ? "bg-primary text-primary-foreground hover:bg-primary/80"
                   : ""
@@ -96,7 +102,7 @@ const ToolPanel = () => {
               <TooltipTrigger asChild>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer text-destructive border-destructive hover:bg-destructive hover:text-white"
+                    className="rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer text-destructive border-destructive hover:bg-destructive hover:text-white"
                     variant="outline"
                   >
                     <Trash2 />

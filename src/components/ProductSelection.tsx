@@ -27,11 +27,13 @@ const COLOR_CONFIGS = {
     value: COLORS.WHITE,
     background: "#E6E6E6",
     label: "White",
+    image: undefined,
   },
   [COLORS.OAK]: {
     value: COLORS.OAK,
     background: "#D8B589",
     label: "Oak",
+    image: "/images/Oak.avif",
   },
 } as const;
 
@@ -129,7 +131,7 @@ const ColorSelector = ({
   availableColors,
 }: ColorSelectorProps) => (
   <section className="mt-4">
-    <h3 id="color-selection-label" className="text-lg font-bold mb-4">
+    <h3 id="color-selection-label" className="font-semibold mb-4">
       Change colour
     </h3>
 
@@ -147,6 +149,7 @@ const ColorSelector = ({
             value={config.value}
             onClick={() => onColorChange(color)}
             background={config.background}
+            image={config.image}
           />
         );
       })}
@@ -217,7 +220,9 @@ const ProductSelection = () => {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Design your Flexi Wardrobe</h1>
+        <h1 className="text-xl font-bold text-primary">
+          Design your Flexi Wardrobe
+        </h1>
       </header>
 
       <ColorSelector
@@ -227,7 +232,7 @@ const ProductSelection = () => {
       />
 
       <section className="mt-6">
-        <h2 className="text-lg font-bold mb-4">Depth</h2>
+        <h2 className="font-semibold mb-4">Depth</h2>
         <Tabs
           value={depthTab}
           onValueChange={handleDepthTabChange}
