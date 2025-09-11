@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { useState, useEffect, useRef } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { useDrop } from "react-dnd";
+import * as THREE from "three";
 import Experience from "@/components/Experience";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/store";
@@ -27,6 +29,8 @@ import {
 import { generateDesignCode } from "@/utils/generateCode";
 import DesignMemoryModal from "@/components/DesignMemoryModal";
 import { shouldTriggerSheet } from "@/constants/wardrobeConfig";
+import { calculateBundlePrice } from "@/utils/bundlePricing";
+import productsData from "@/products.json";
 
 import Lottie from "lottie-react";
 
@@ -54,14 +58,172 @@ const CanvasLoader = () => {
   );
 };
 
+// Helper component to handle raycasting within Canvas context
+const DropPositionCalculator = () => {
+  const { camera, gl } = useThree();
+  const raycaster = useRef(new THREE.Raycaster());
+  const mouse = useRef(new THREE.Vector2());
+  const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)); // Ground plane at y=0
+
+  const calculateDropPosition = (clientX: number, clientY: number) => {
+    // Convert screen coordinates to normalized device coordinates
+    const rect = gl.domElement.getBoundingClientRect();
+    mouse.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    // Set up raycaster
+    raycaster.current.setFromCamera(mouse.current, camera);
+
+    // Intersect with ground plane
+    const intersectionPoint = new THREE.Vector3();
+    const intersects = raycaster.current.ray.intersectPlane(
+      plane.current,
+      intersectionPoint
+    );
+
+    if (intersects) {
+      return [intersectionPoint.x, 0, intersectionPoint.z] as [
+        number,
+        number,
+        number,
+      ];
+    }
+
+    return null;
+  };
+
+  // Expose the calculation function
+  React.useEffect(() => {
+    (window as any).calculateDropPosition = calculateDropPosition;
+    return () => {
+      delete (window as any).calculateDropPosition;
+    };
+  }, [camera, gl]);
+
+  return null;
+};
+
 // Canvas wrapper with external loading state
-const CanvasWrapper = () => {
+const CanvasWrapper = ({
+  onCloseDetailSheet,
+}: {
+  onCloseDetailSheet: () => void;
+}) => {
   const [isLoading, setIsLoading] = useState(true);
   const lightsOn = useStore((state) => state.lightsOn);
+  const addWardrobeInstance = useStore((state) => state.addWardrobeInstance);
+  const updateWardrobeInstance = useStore(
+    (state) => state.updateWardrobeInstance
+  );
+  const focusedWardrobeInstance = useStore(
+    (state) => state.focusedWardrobeInstance
+  );
+
+  // Set up drop functionality
+  const [{ isOver }, drop] = useDrop({
+    accept: ["PRODUCT", "BUNDLE"],
+    drop: (item: any, monitor) => {
+      // Get the drop position from the monitor
+      const clientOffset = monitor.getClientOffset();
+      let dropPosition: [number, number, number] | undefined = undefined;
+
+      // Calculate 3D position from screen coordinates
+      if (clientOffset && (window as any).calculateDropPosition) {
+        dropPosition = (window as any).calculateDropPosition(
+          clientOffset.x,
+          clientOffset.y
+        );
+      }
+      if (item.product) {
+        // Handle product drop - always add new wardrobe at drop position
+        addWardrobeInstance(item.product, dropPosition, true); // Force exact position
+      } else if (item.bundle) {
+        // Handle bundle drop - replace focused wardrobe if exists, otherwise add new
+        if (focusedWardrobeInstance) {
+          // Replace the focused wardrobe with the bundle
+          let targetProduct;
+
+          // Handle original wardrobe selection
+          if (item.bundle.ItemName === "2583987-Original") {
+            const originalProduct = productsData.products.find(
+              (p) => p.itemNumber === "2583987"
+            );
+            if (originalProduct) {
+              targetProduct = originalProduct;
+            }
+          } else {
+            // Convert bundle to Product format with calculated price
+            const calculatedPrice = calculateBundlePrice(item.bundle);
+            targetProduct = {
+              itemNumber: item.bundle.ItemName,
+              name: item.bundle.name,
+              width: focusedWardrobeInstance.product.width, // Keep original dimensions
+              height: focusedWardrobeInstance.product.height,
+              depth: focusedWardrobeInstance.product.depth,
+              color: focusedWardrobeInstance.product.color,
+              desc: item.bundle.description,
+              intro: item.bundle.intro || item.bundle.description,
+              price: calculatedPrice, // Use calculated price
+              type: focusedWardrobeInstance.product.type,
+              category: focusedWardrobeInstance.product.category,
+              thumbnail: item.bundle.thumbnail,
+              model: item.bundle.model, // This is the key change - bundle model path
+              images: [item.bundle.thumbnail], // Use bundle thumbnail as image
+            };
+          }
+
+          if (targetProduct) {
+            // Replace the current wardrobe with the selected option
+            updateWardrobeInstance(focusedWardrobeInstance.id, {
+              product: targetProduct,
+            });
+
+            // Close the detail sheet after successful replacement
+            onCloseDetailSheet();
+          }
+        } else {
+          // No focused wardrobe, add as new wardrobe
+          const calculatedPrice = calculateBundlePrice(item.bundle);
+          const bundleProduct = {
+            itemNumber: item.bundle.ItemName,
+            name: item.bundle.name,
+            width: 60.6, // Default wardrobe dimensions
+            height: 200,
+            depth: 48,
+            color: "White",
+            desc: item.bundle.description,
+            intro: item.bundle.intro || item.bundle.description,
+            price: calculatedPrice,
+            type: "normal",
+            category: "Core Wardrobe Range",
+            thumbnail: item.bundle.thumbnail,
+            model: item.bundle.model,
+            images: [item.bundle.thumbnail],
+          };
+          addWardrobeInstance(bundleProduct, dropPosition, true); // Force exact position
+        }
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
 
   return (
-    <div className="w-7/10 h-screen relative overflow-hidden">
+    <div
+      ref={drop as any}
+      className={`w-7/10 h-screen relative overflow-hidden border-2 border-dashed ${
+        isOver ? "bg-primary-500 border-primary" : "border-transparent"
+      }`}
+    >
       {isLoading && <CanvasLoader />}
+      {/* {isOver && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <div className="text-2xl font-bold text-blue-600 bg-white bg-opacity-90 px-4 py-2 rounded-lg shadow-lg">
+            Drop to Add to Design
+          </div>
+        </div>
+      )} */}
       <Canvas
         shadows
         gl={{ preserveDrawingBuffer: true }}
@@ -163,6 +325,7 @@ const CanvasWrapper = () => {
           intensity={lightsOn ? 0.6 : 0.12}
           color="#cfe8ff"
         />
+        <DropPositionCalculator />
         <Experience />
       </Canvas>
     </div>
@@ -221,8 +384,7 @@ export default function Planner() {
   const focusedWardrobeInstance = useStore((s) => s.focusedWardrobeInstance);
   const [disableFinalise, setDisableFinalise] = useState(true);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  // Removed unused state variables: isSaving, saveError
   const navigate = useNavigate();
 
   // Modal state for saved design
@@ -333,8 +495,6 @@ export default function Planner() {
 
     // Save current design to DB with a generated design code
     try {
-      setIsSaving(true);
-      setSaveError(null);
       const designCode = generateDesignCode();
       setCurrentDesignCode(designCode);
       const { shoppingCart, totalPrice } =
@@ -353,11 +513,9 @@ export default function Planner() {
         totalPrice,
       });
     } catch (err) {
-      setSaveError(
-        err instanceof Error ? err.message : "Failed to save design"
-      );
+      console.error("Failed to save design:", err);
     } finally {
-      setIsSaving(false);
+      // Design saved, navigate to summary
     }
 
     navigate("/addon-organisors");
@@ -399,7 +557,7 @@ export default function Planner() {
         onResumeDesign={handleResumeDesign}
       />
       <div className="flex w-full h-screen overflow-hidden">
-        <CanvasWrapper />
+        <CanvasWrapper onCloseDetailSheet={() => setIsDetailOpen(false)} />
 
         {/* Leave Planner Button - positioned at top left corner */}
         <div className="absolute top-[50px] left-[50px] z-[100] pointer-events-auto">
@@ -455,9 +613,9 @@ export default function Planner() {
             style={{ scrollbarGutter: "stable" }}
           >
             {/* Auto-save indicator */}
-            <div className="flex justify-end mb-2">
+            {/* <div className="flex justify-end mb-2">
               <AutoSaveIndicator />
-            </div>
+            </div> */}
 
             {!customizeMode ? (
               <ProductSelection />

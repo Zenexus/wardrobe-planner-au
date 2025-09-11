@@ -1,4 +1,4 @@
-//This component is used to display bundle
+// This component is used to display bundle
 // if user clicks on a canvas wardrobe model
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -126,10 +126,6 @@ const WardrobeDetailSheet = ({
               Item #{product.itemNumber}
             </div>
             <div className="space-y-2">
-              <div>
-                <span className="font-semibold">Price: </span>$
-                {product.price.toFixed(2)}
-              </div>
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div>
                   <span className="text-gray-600">Width</span>

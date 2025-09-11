@@ -4,6 +4,7 @@ import {
   findAvailablePosition,
   getSuggestedPositions,
   hasAvailableSpace,
+  wouldCollideWithExisting,
 } from "./helper/wardrobePlacement";
 import {
   snapToWall,
@@ -76,7 +77,8 @@ type StoreState = {
   wardrobeInstances: WardrobeInstance[];
   addWardrobeInstance: (
     product: Product,
-    position?: [number, number, number]
+    position?: [number, number, number],
+    forcePosition?: boolean
   ) => { success: boolean; id?: string; message: string };
   removeWardrobeInstance: (id: string) => void;
   updateWardrobePosition: (
@@ -190,7 +192,8 @@ export const useStore = create<StoreState>((set, get) => ({
   wardrobeInstances: [],
   addWardrobeInstance: (
     product: Product,
-    position?: [number, number, number]
+    position?: [number, number, number],
+    forcePosition?: boolean
   ) => {
     const state = get();
 
@@ -237,14 +240,45 @@ export const useStore = create<StoreState>((set, get) => ({
       };
     }
 
-    // Use smart placement to find available position
-    const smartPosition = findAvailablePosition(
-      product.model,
-      state.wardrobeInstances,
-      position, // Use provided position as preferred if given
-      roomDimensions,
-      wallRoomDimensions // Pass enhanced dimensions for better wall placement
-    );
+    let smartPosition: [number, number, number] | null = null;
+
+    // If forcePosition is true and position is provided, use exact position (with collision check)
+    if (forcePosition && position) {
+      // Check for collisions at the exact position
+      if (
+        !wouldCollideWithExisting(
+          product.model,
+          position,
+          state.wardrobeInstances
+        )
+      ) {
+        smartPosition = position;
+        console.log(
+          `Using forced position: [${position[0].toFixed(2)}, ${position[1].toFixed(2)}, ${position[2].toFixed(2)}]`
+        );
+      } else {
+        console.warn(
+          "Forced position would cause collision, falling back to smart placement"
+        );
+        // Fall back to smart placement if forced position causes collision
+        smartPosition = findAvailablePosition(
+          product.model,
+          state.wardrobeInstances,
+          position,
+          roomDimensions,
+          wallRoomDimensions
+        );
+      }
+    } else {
+      // Use smart placement to find available position
+      smartPosition = findAvailablePosition(
+        product.model,
+        state.wardrobeInstances,
+        position, // Use provided position as preferred if given
+        roomDimensions,
+        wallRoomDimensions // Pass enhanced dimensions for better wall placement
+      );
+    }
 
     // Double check that placement was successful
     if (!smartPosition) {

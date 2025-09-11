@@ -1,3 +1,4 @@
+// home page use, no email form
 import ResumeDesignForm from "@/components/ResumeDesignForm";
 
 export default function MenuSheetContentHomePage() {

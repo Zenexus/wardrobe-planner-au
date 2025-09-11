@@ -102,7 +102,7 @@ const ToolPanel = () => {
               <TooltipTrigger asChild>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className="rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer text-destructive border-destructive hover:bg-destructive hover:text-white"
+                    className="rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer text-primary"
                     variant="outline"
                   >
                     <Trash2 />

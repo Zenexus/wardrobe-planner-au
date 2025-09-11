@@ -1,6 +1,7 @@
 import { Info } from "lucide-react";
 import { Product } from "../../types";
 import { useState } from "react";
+import { useDrag } from "react-dnd";
 import ProductDetailSheet from "../ProductDetailSheet";
 import { useStore } from "../../store";
 
@@ -18,6 +19,16 @@ export function ProductCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { globalSheetOpen } = useStore();
+
+  // Set up drag functionality
+  const [{ isDragging }, drag] = useDrag({
+    type: "PRODUCT",
+    item: { product },
+    canDrag: hasSpace && !globalSheetOpen && !isDetailOpen,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
 
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,11 +58,12 @@ export function ProductCard({
 
   return (
     <div
+      ref={drag as any}
       className={`p-4 hover:shadow-sm flex flex-col h-full relative transition-all ${
         hasSpace
           ? "bg-background cursor-pointer"
           : "bg-secondary cursor-not-allowed opacity-75"
-      }`}
+      } ${isDragging ? "opacity-50" : ""}`}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

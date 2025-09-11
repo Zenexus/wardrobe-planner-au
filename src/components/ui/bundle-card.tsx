@@ -1,4 +1,5 @@
 import { Button } from "./button";
+import { useDrag } from "react-dnd";
 import type { BundleWithPrice } from "@/types/bundle";
 import { getBundlePriceBreakdown } from "@/utils/bundlePricing";
 
@@ -19,13 +20,30 @@ export function BundleCard({
   const priceBreakdown =
     !isOriginal && bundle.packDetails ? getBundlePriceBreakdown(bundle) : null;
 
+  // Set up drag functionality
+  const [{ isDragging }, drag] = useDrag({
+    type: "BUNDLE",
+    item: { bundle },
+    canDrag: !isBlocked,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
   return (
     <div
+      ref={drag as any}
       className={`p-4 flex flex-col h-full relative transition-all ${
         isBlocked
           ? "bg-gray-100 cursor-not-allowed opacity-60"
           : "bg-white cursor-pointer hover:shadow-sm"
-      }`}
+      } ${isDragging ? "opacity-50" : ""}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!isBlocked && onAddToDesign) {
+          onAddToDesign();
+        }
+      }}
     >
       {/* Thumbnail - matching product card size */}
       <div className="relative w-full h-32">
@@ -71,14 +89,7 @@ export function BundleCard({
             Selected
           </div>
         ) : onAddToDesign ? (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToDesign();
-            }}
-            size="sm"
-            className="text-xs px-2 py-1 h-6"
-          >
+          <Button size="sm" className="text-xs px-2 py-1 h-6">
             {isOriginal ? "Basic Option" : "Bundle Option"}
           </Button>
         ) : null}

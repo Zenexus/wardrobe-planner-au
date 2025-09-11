@@ -36,6 +36,8 @@
     "nodemailer": "^7.0.5",
     "postprocessing": "^6.37.4",
     "react": "^19.1.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.62.0",
     "react-router-dom": "^7.6.3",
