@@ -7,6 +7,7 @@ import BunningsCard from "@/components/BunningsCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AssemblyOverviewList from "@/components/AssemblyOverviewList";
 import SummaryHeader from "@/components/SummaryHeader";
+import ExpandableBundleCard from "@/components/ExpandableBundleCard";
 import { HeartHandshake } from "lucide-react";
 
 // Type for grouped wardrobes
@@ -97,54 +98,10 @@ const Summary = () => {
             <TabsContent value="products" className="mt-6">
               <div className="space-y-4">
                 {groupedWardrobes.map((group) => (
-                  <div
+                  <ExpandableBundleCard
                     key={group.product.itemNumber}
-                    className="border border-border p-4 "
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <img
-                            src={group.product.thumbnail}
-                            alt={group.product.name}
-                            className="w-16 h-16 object-cover rounded-md"
-                          />
-                          <div>
-                            <h3 className="font-semibold text-foreground">
-                              {group.product.name}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              #{group.product.itemNumber}
-                            </p>
-                            <div>
-                              <span className="text-sm text-gray-600 pr-2">
-                                Dimensions:
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                {group.product.width} × {group.product.depth} ×{" "}
-                                {group.product.height} cm
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="flex items-start justify-end font-semibold text-gray-900">
-                          <span className="text-sm pt-0.5">$</span>
-                          <span className="text-lg">
-                            {Math.floor(group.totalPrice)}
-                          </span>
-                          <span className="text-sm pt-0.5">
-                            .{(group.totalPrice % 1).toFixed(2).substring(2)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Qty: {group.quantity}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    group={group}
+                  />
                 ))}
 
                 {/* Organizers section */}

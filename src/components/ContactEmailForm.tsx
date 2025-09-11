@@ -115,9 +115,9 @@ const ContactEmailForm = () => {
                     aria-label="Subscribe to updates"
                   />
                   <span className="text-gray-800">
-                    Send me Rack It News, events and exclusive offers. We will
-                    email you occasional news and special offers. We will not
-                    sell or distribute your email to any third party at any
+                    Send me Flexi Wardrobe News, events and exclusive offers. We
+                    will email you occasional news and special offers. We will
+                    not sell or distribute your email to any third party at any
                     time.
                   </span>
                 </div>

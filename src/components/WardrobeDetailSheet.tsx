@@ -1,12 +1,18 @@
-//This component is used to display bundle if user clicks on a canvas wardrobe model
+//This component is used to display bundle
+// if user clicks on a canvas wardrobe model
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useStore } from "@/store";
 import { getBundlesForWardrobe } from "@/constants/wardrobeConfig";
 import { BundleCard } from "@/components/ui/bundle-card";
 import bundlesData from "@/bundles.json";
-import type { Bundle } from "@/types/bundle";
+import productsData from "@/products.json";
+import type { Bundle, BundleWithPrice } from "@/types/bundle";
 import type { Product } from "@/types";
+import {
+  calculateBundlePrice,
+  calculateOriginalWardrobePrice,
+} from "@/utils/bundlePricing";
 
 type WardrobeDetailSheetProps = {
   open: boolean;
@@ -30,37 +36,75 @@ const WardrobeDetailSheet = ({
     bundleItemNames.includes(bundle.ItemName)
   );
 
+  // Create original wardrobe as a bundle option
+  const originalProduct = productsData.products.find(
+    (p) => p.itemNumber === "2583987"
+  );
+  const originalBundle: BundleWithPrice | null = originalProduct
+    ? {
+        ItemName: "2583987-Original",
+        code: "01685",
+        name: originalProduct.name,
+        description: "Original wardrobe without any bundles",
+        intro: originalProduct.intro,
+        thumbnail: originalProduct.images[0],
+        model: "components/W-01685",
+        price: calculateOriginalWardrobePrice(),
+        packDetails: [], // No accessories for original
+      }
+    : null;
+
+  // Combine original + bundles, with original first
+  // Ensure all bundles have calculated prices
+  const bundlesWithPrices: BundleWithPrice[] = bundles.map((bundle) => ({
+    ...bundle,
+    price: calculateBundlePrice(bundle), // Always calculate price
+  }));
+
+  const allOptions = originalBundle
+    ? [originalBundle, ...bundlesWithPrices]
+    : bundlesWithPrices;
+
+  // Determine which option is currently selected (blocked)
+  const currentModelPath = focusedWardrobeInstance.product.model;
+  const isOriginalSelected = currentModelPath === "components/W-01685";
+  const selectedBundleItemName = isOriginalSelected
+    ? "2583987-Original"
+    : bundles.find((b) => b.model === currentModelPath)?.ItemName;
+
   const handleAddBundleToDesign = (bundle: Bundle) => {
     if (!focusedWardrobeInstance) return;
 
-    // Convert bundle to Product format
-    const bundleProduct: Product = {
-      itemNumber: bundle.ItemName,
-      name: bundle.name,
-      width: focusedWardrobeInstance.product.width, // Keep original dimensions
-      height: focusedWardrobeInstance.product.height,
-      depth: focusedWardrobeInstance.product.depth,
-      color: focusedWardrobeInstance.product.color,
-      desc: bundle.description,
-      price: bundle.price,
-      type: focusedWardrobeInstance.product.type,
-      category: focusedWardrobeInstance.product.category,
-      thumbnail: bundle.thumbnail,
-      model: bundle.model, // This is the key change - bundle model path
-      images: [bundle.thumbnail], // Use bundle thumbnail as image
-    };
+    let targetProduct: Product;
 
-    // Replace the current wardrobe with the bundle
+    // Handle original wardrobe selection
+    if (bundle.ItemName === "2583987-Original" && originalProduct) {
+      targetProduct = originalProduct;
+    } else {
+      // Convert bundle to Product format with calculated price
+      const calculatedPrice = calculateBundlePrice(bundle);
+      targetProduct = {
+        itemNumber: bundle.ItemName,
+        name: bundle.name,
+        width: focusedWardrobeInstance.product.width, // Keep original dimensions
+        height: focusedWardrobeInstance.product.height,
+        depth: focusedWardrobeInstance.product.depth,
+        color: focusedWardrobeInstance.product.color,
+        desc: bundle.description,
+        intro: (bundle as any).intro || bundle.description,
+        price: calculatedPrice, // Use calculated price
+        type: focusedWardrobeInstance.product.type,
+        category: focusedWardrobeInstance.product.category,
+        thumbnail: bundle.thumbnail,
+        model: bundle.model, // This is the key change - bundle model path
+        images: [bundle.thumbnail], // Use bundle thumbnail as image
+      };
+    }
+
+    // Replace the current wardrobe with the selected option
     updateWardrobeInstance(focusedWardrobeInstance.id, {
-      product: bundleProduct,
+      product: targetProduct,
     });
-
-    console.log(
-      `Replaced wardrobe ${focusedWardrobeInstance.id} with bundle ${bundle.ItemName}`
-    );
-
-    // Provide user feedback
-    // You could add a toast notification here if you have a toast system
 
     // Close the sheet after replacement
     onOpenChange(false);
@@ -76,7 +120,7 @@ const WardrobeDetailSheet = ({
         <div className="sticky top-0 h-4 bg-gradient-to-b from-black/10 to-transparent z-10" />
         <div className="p-4 space-y-6">
           {/* Wardrobe Details */}
-          <div>
+          <div className="mt-4">
             <div className="text-xl font-bold mb-2">{product.name}</div>
             <div className="text-sm text-gray-600 mb-4">
               Item #{product.itemNumber}
@@ -103,20 +147,31 @@ const WardrobeDetailSheet = ({
             </div>
           </div>
 
-          {/* Bundle Products */}
-          {bundles.length > 0 && (
+          {/* All Options (Original + Bundles) */}
+          {allOptions.length > 0 && (
             <div>
               <div className="text-lg font-semibold mb-3">
-                Available Bundles ({bundles.length})
+                Available Options ({allOptions.length})
               </div>
               <div className="grid grid-cols-2 gap-4">
-                {bundles.map((bundle, index) => (
-                  <BundleCard
-                    key={`${bundle.ItemName}-${index}`}
-                    bundle={bundle}
-                    onAddToDesign={() => handleAddBundleToDesign(bundle)}
-                  />
-                ))}
+                {allOptions.map((option, index) => {
+                  const isBlocked = option.ItemName === selectedBundleItemName;
+                  const isOriginal = option.ItemName === "2583987-Original";
+
+                  return (
+                    <BundleCard
+                      key={`${option.ItemName}-${index}`}
+                      bundle={option}
+                      onAddToDesign={
+                        isBlocked
+                          ? undefined
+                          : () => handleAddBundleToDesign(option)
+                      }
+                      isBlocked={isBlocked}
+                      isOriginal={isOriginal}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}

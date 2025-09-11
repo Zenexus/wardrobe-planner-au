@@ -1,14 +1,32 @@
 import { Button } from "./button";
-import type { Bundle } from "@/types/bundle";
+import type { BundleWithPrice } from "@/types/bundle";
+import { getBundlePriceBreakdown } from "@/utils/bundlePricing";
 
 interface BundleCardProps {
-  bundle: Bundle;
+  bundle: BundleWithPrice;
   onAddToDesign?: () => void;
+  isBlocked?: boolean;
+  isOriginal?: boolean;
 }
 
-export function BundleCard({ bundle, onAddToDesign }: BundleCardProps) {
+export function BundleCard({
+  bundle,
+  onAddToDesign,
+  isBlocked = false,
+  isOriginal = false,
+}: BundleCardProps) {
+  // Get price breakdown for bundles (not for original)
+  const priceBreakdown =
+    !isOriginal && bundle.packDetails ? getBundlePriceBreakdown(bundle) : null;
+
   return (
-    <div className="p-4 hover:shadow-sm flex flex-col h-full relative transition-all bg-white cursor-pointer">
+    <div
+      className={`p-4 flex flex-col h-full relative transition-all ${
+        isBlocked
+          ? "bg-gray-100 cursor-not-allowed opacity-60"
+          : "bg-white cursor-pointer hover:shadow-sm"
+      }`}
+    >
       {/* Thumbnail - matching product card size */}
       <div className="relative w-full h-32">
         <img
@@ -22,17 +40,37 @@ export function BundleCard({ bundle, onAddToDesign }: BundleCardProps) {
       </div>
 
       {/* Bundle Info - compact like product cards */}
-      <div className="font-semibold text-sm pt-4">{bundle.name}</div>
+      <div className="font-semibold text-sm pt-4 flex-grow">{bundle.name}</div>
 
       {/* Bundle Details - compact */}
       <div className="text-xs text-gray-500 mt-1">
-        Bundle: {bundle.ItemName}
+        {isOriginal ? "Item: 2583987" : `Bundle: ${bundle.ItemName}`}
       </div>
+
+      {/* Price Breakdown for Bundles */}
+      {priceBreakdown && (
+        <div className="text-xs text-gray-600 mt-2 space-y-1">
+          <div>Base: ${priceBreakdown.basePrice.toFixed(2)}</div>
+          {priceBreakdown.accessories.length > 0 && (
+            <div>
+              + {priceBreakdown.accessories.length} accessory
+              {priceBreakdown.accessories.length > 1 ? "ies" : ""}: $
+              {priceBreakdown.accessoriesTotal.toFixed(2)}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Price and Button */}
       <div className="mt-2 flex justify-between items-center">
-        <span className="font-semibold">${bundle.price.toFixed(2)}</span>
-        {onAddToDesign && (
+        <span className={`font-semibold ${isBlocked ? "text-gray-500" : ""}`}>
+          ${bundle.price.toFixed(2)}
+        </span>
+        {isBlocked ? (
+          <div className="text-xs text-gray-500 px-2 py-1 h-6 flex items-center">
+            Selected
+          </div>
+        ) : onAddToDesign ? (
           <Button
             onClick={(e) => {
               e.stopPropagation();
@@ -41,9 +79,9 @@ export function BundleCard({ bundle, onAddToDesign }: BundleCardProps) {
             size="sm"
             className="text-xs px-2 py-1 h-6"
           >
-            Upgrade
+            {isOriginal ? "Basic Option" : "Bundle Option"}
           </Button>
-        )}
+        ) : null}
       </div>
     </div>
   );
