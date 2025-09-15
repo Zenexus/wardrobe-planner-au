@@ -1,7 +1,83 @@
-import { render } from "@react-email/render";
 import nodemailer from "nodemailer";
-import { EmailTemplate } from "../src/components/EmailTemplate";
-import { ContactEmailTemplate } from "../src/components/ContactEmailTemplate";
+
+// Simple HTML email templates
+function createEmailTemplate(url: string, showImageCid?: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Flexi Wardrobe Design</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; background-color: #f6f9fc; margin: 0; padding: 20px;">
+        <div style="max-width: 580px; margin: 0 auto; background-color: white; padding: 40px; border-radius: 8px;">
+          <h1 style="color: #333; margin-bottom: 20px;">Your Flexi Wardrobe Design</h1>
+          <p style="color: #666; margin-bottom: 30px;">Click the button below to view your design:</p>
+          <a href="${url}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Design</a>
+          ${showImageCid ? `<div style="margin-top: 30px;"><img src="cid:${showImageCid}" alt="Design screenshot" style="max-width: 100%; height: auto; border-radius: 4px;"></div>` : ""}
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function createContactEmailTemplate(props: {
+  name: string;
+  email: string;
+  postcode?: string;
+  subscribe: boolean;
+}): string {
+  const { name, email, postcode, subscribe } = props;
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contact Form Submission</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; background-color: #f6f9fc; margin: 0; padding: 20px;">
+        <div style="max-width: 580px; margin: 0 auto; background-color: white; padding: 40px; border-radius: 8px;">
+          <h1 style="color: #333; margin-bottom: 20px;">New Contact Form Submission</h1>
+          <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 20px 0;">
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #333;">Name:</strong> 
+            <span style="color: #666;">${name}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #333;">Email:</strong> 
+            <span style="color: #666;">${email}</span>
+          </div>
+          
+          ${
+            postcode
+              ? `
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #333;">Postcode:</strong> 
+            <span style="color: #666;">${postcode}</span>
+          </div>
+          `
+              : ""
+          }
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #333;">Newsletter Subscription:</strong> 
+            <span style="color: #666;">${subscribe ? "Yes" : "No"}</span>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 20px 0;">
+          
+          <p style="color: #999; font-size: 14px; margin: 0;">
+            This email was sent from the Flexi Wardrobe Builder contact form.
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+}
 
 // Nearly-static SMTP configuration. Keep credentials in env.
 const SMTP_HOST = "smtp.forwardemail.net";
@@ -68,18 +144,16 @@ export default async function handler(req: any, res: any) {
     let emailHtml: string;
     if (isContactForm) {
       // For contact form submissions, send to admin/support email
-      emailHtml = await render(
-        ContactEmailTemplate({
-          name,
-          email: to,
-          postcode,
-          subscribe: Boolean(subscribe),
-        })
-      );
+      emailHtml = createContactEmailTemplate({
+        name,
+        email: to,
+        postcode,
+        subscribe: Boolean(subscribe),
+      });
     } else {
       // For design sharing, use the original template
       const cid = screenshotBase64 ? "design-screenshot" : undefined;
-      emailHtml = await render(EmailTemplate({ url, showImageCid: cid }));
+      emailHtml = createEmailTemplate(url, cid);
     }
 
     const attachments = [] as any[];
@@ -126,6 +200,8 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ ok: true });
   } catch (error: any) {
+    console.error("Email API Error:", error);
+    console.error("Error stack:", error?.stack);
     return res
       .status(500)
       .json({ ok: false, error: error?.message || "Unknown error" });
