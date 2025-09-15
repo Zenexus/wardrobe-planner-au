@@ -75,6 +75,7 @@ interface DraggableObjectProps {
   wardrobeInstances?: WardrobeInstance[];
   modelPath?: string;
   roomDimensions?: WallRoomDimensions;
+  customizeMode?: boolean;
 }
 
 const DraggableObject: React.FC<DraggableObjectProps> = ({
@@ -91,6 +92,7 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
   wardrobeInstances,
   modelPath,
   roomDimensions,
+  customizeMode = false,
 }) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
@@ -153,7 +155,8 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
 
   const handlePointerDown = useCallback(
     (event: ThreeEvent<PointerEvent>) => {
-      if (!rigidBodyRef.current || !meshRef.current) return;
+      // Disable all interactions when in customize mode
+      if (customizeMode || !rigidBodyRef.current || !meshRef.current) return;
 
       event.stopPropagation();
       setIsDragging(true);
@@ -218,12 +221,20 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       // Prevent orbit controls from interfering
       gl.domElement.style.cursor = "grabbing";
     },
-    [camera, gl.domElement, id, setDraggedObjectId, setGlobalHasDragging]
+    [
+      camera,
+      gl.domElement,
+      id,
+      setDraggedObjectId,
+      setGlobalHasDragging,
+      customizeMode,
+    ]
   );
 
   const handlePointerMove = useCallback(
     (event: MouseEvent | TouchEvent) => {
-      if (!isDragging || !rigidBodyRef.current) return;
+      // Disable dragging when in customize mode
+      if (customizeMode || !isDragging || !rigidBodyRef.current) return;
 
       event.stopPropagation();
 
@@ -449,11 +460,13 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       wardrobeInstances,
       isTransitioning,
       setIsTransitioning,
+      customizeMode,
     ]
   );
 
   const handlePointerUp = useCallback(
     (event: MouseEvent | TouchEvent) => {
+      // Allow pointer up to reset state even in customize mode, but don't process interactions
       if (!isDragging || !rigidBodyRef.current) return;
 
       event.stopPropagation();
@@ -757,6 +770,9 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
           onPointerDown={handlePointerDown}
           onClick={(event) => {
             // Handle click selection as backup if child components don't handle it
+            // Disable click interactions when in customize mode
+            if (customizeMode) return;
+
             if (!isDragging && wasClick) {
               event.stopPropagation();
 
@@ -784,10 +800,14 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             }
           }}
           onPointerOver={() =>
-            !isDragging && (gl.domElement.style.cursor = "grab")
+            !isDragging &&
+            !customizeMode &&
+            (gl.domElement.style.cursor = "grab")
           }
           onPointerOut={() =>
-            !isDragging && (gl.domElement.style.cursor = "auto")
+            !isDragging &&
+            !customizeMode &&
+            (gl.domElement.style.cursor = "auto")
           }
         >
           {children ? (
@@ -1342,6 +1362,7 @@ const Experience: React.FC = () => {
             wardrobeInstances={wardrobeInstances}
             modelPath={instance.product.model}
             roomDimensions={roomDimensions}
+            customizeMode={customizeMode}
           >
             {getWardrobeComponent(instance.product.model, (event) => {
               // Simple click handler - main logic is now in DraggableObject

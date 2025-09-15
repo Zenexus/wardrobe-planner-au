@@ -12,7 +12,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-// email send method deprecated – no API call
 import { Checkbox } from "@/components/ui/checkbox";
 
 const ContactEmailSchema = z.object({
@@ -40,14 +39,45 @@ const ContactEmailForm = () => {
   >(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const onSubmit = async (_: ContactEmailValues) => {
+  const onSubmit = async (values: ContactEmailValues) => {
     setStatus("loading");
     setErrorMessage("");
 
-    setTimeout(() => {
-      setStatus("success");
-      form.reset();
-    }, 400);
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: values.email,
+          subject: "Contact Form Submission - Flexi Wardrobe Builder",
+          from: "no-reply@example.com",
+          // You can customize the email content here
+          name: values.name,
+          postcode: values.postcode,
+          subscribe: values.subscribe,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.ok) {
+        setStatus("success");
+        form.reset();
+      } else {
+        setStatus("error");
+        setErrorMessage(
+          result.error || "Failed to send email. Please try again."
+        );
+      }
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(
+        "Network error. Please check your connection and try again."
+      );
+      console.error("Email submission error:", error);
+    }
   };
 
   return (

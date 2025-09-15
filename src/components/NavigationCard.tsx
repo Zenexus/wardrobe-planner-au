@@ -34,13 +34,13 @@ const NavigationActionCard = ({
     if (type === "link") {
       return (
         <div
-          className="bg-[#003b4a] text-white rounded-full hover:bg-white hover:text-[#003b4a] cursor-pointer transition-colors"
+          className="bg-primary text-background rounded-full hover:bg-background hover:text-primary cursor-pointer transition-colors"
           onClick={(e) => {
-            e.stopPropagation(); // Prevent card click when button is clicked
+            e.stopPropagation();
             handleCardClick();
           }}
         >
-          <CircleArrowRight className="w-16 h-16 stroke-1" />
+          <CircleArrowRight className="w-12 h-12 stroke-1" />
         </div>
       );
     } else if (type === "openSheet") {
@@ -48,10 +48,10 @@ const NavigationActionCard = ({
         <Sheet>
           <SheetTrigger asChild>
             <div
-              className="bg-[#f5f5f5] text-[#003b4a] rounded-full hover:bg-white hover:text-[#003b4a] cursor-pointer transition-colors"
-              onClick={(e) => e.stopPropagation()} // Prevent card click when button is clicked
+              className="bg-secondary text-primary rounded-full hover:bg-background hover:text-primary cursor-pointer transition-colors"
+              onClick={(e) => e.stopPropagation()}
             >
-              <CircleArrowRight className="w-16 h-16 stroke-1" />
+              <CircleArrowRight className="w-12 h-12 stroke-1" />
             </div>
           </SheetTrigger>
           <SheetContent side="right">
@@ -68,7 +68,7 @@ const NavigationActionCard = ({
       <Sheet>
         <SheetTrigger asChild>
           <div
-            className="h-140 cursor-pointer transition-transform hover:scale-105"
+            className="h-120 cursor-pointer"
             style={{ backgroundColor: bgColor }}
           >
             <div className="w-full h-[60%]">
@@ -79,11 +79,11 @@ const NavigationActionCard = ({
               />
             </div>
             <div
-              className="p-6 flex flex-col justify-between gap-10 items-start"
+              className="p-6 flex flex-col justify-between items-start"
               style={{ color: textColor }}
             >
               <div className="pb-6">
-                <p className="text-lg font-bold pb-2 hover:underline">
+                <p className="text-lg h-16 font-bold pb-2 hover:underline">
                   {title}
                 </p>
                 <p className="text-sm">{description}</p>
@@ -103,7 +103,7 @@ const NavigationActionCard = ({
   // For link type, the entire card is clickable
   return (
     <div
-      className="h-140 cursor-pointer transition-transform hover:scale-105"
+      className="h-120 cursor-pointer"
       style={{ backgroundColor: bgColor }}
       onClick={handleCardClick}
     >
@@ -115,15 +115,14 @@ const NavigationActionCard = ({
         />
       </div>
       <div
-        className="p-6 flex flex-col justify-between gap-10 items-start"
+        className="p-6 flex flex-col justify-between items-start"
         style={{ color: textColor }}
       >
-        <div className="pb-0 lg:pb-6">
-          <p className="text-lg font-bold pb-2 hover:underline">{title}</p>
+        <div className="pb-4">
+          <p className="text-lg font-bold pb-2 hover:underline h-16">{title}</p>
           <p className="text-sm">{description}</p>
         </div>
-
-        {renderActionButton()}
+        <div className="pr-1">{renderActionButton()}</div>
       </div>
     </div>
   );
