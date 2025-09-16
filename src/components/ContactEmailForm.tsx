@@ -52,8 +52,7 @@ const ContactEmailForm = () => {
         body: JSON.stringify({
           to: values.email,
           subject: "Contact Form Submission - Flexi Wardrobe Builder",
-          from: "no-reply@example.com",
-          // You can customize the email content here
+          // Removed hardcoded 'from' - let API use environment variable
           name: values.name,
           postcode: values.postcode,
           subscribe: values.subscribe,
