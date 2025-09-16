@@ -61,7 +61,7 @@ const Summary = () => {
 
   // Get grouped wardrobes
   const groupedWardrobes = groupWardrobesByItemNumber(wardrobeInstances);
-  console.log(groupedWardrobes);
+
   // Calculate total price for wardrobes
   const wardrobeTotalPrice = wardrobeInstances.reduce((sum, instance) => {
     return sum + instance.product.price;
@@ -76,22 +76,26 @@ const Summary = () => {
   const totalPrice = wardrobeTotalPrice + organizerTotalPrice;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <SummaryHeader />
       <div className="px-10">
         <div className="pl-6 pt-4">
-          <h1 className="text-3xl font-bold text-gray-900">Design Summary</h1>
+          <h1 className="text-3xl font-bold text-foreground">Design Summary</h1>
         </div>
       </div>
 
       {/* Main content area */}
-      <div className="flex min-h-[calc(100vh-140px)] px-10 mt-10">
+      <div className="flex min-h-[calc(100vh-140px)] px-4 lg:px-10 mt-10 flex-col lg:flex-row gap-6 lg:gap-0">
         {/* Left side - Tabs (60%) */}
-        <div className="w-[60%] bg-white p-6">
-          <Tabs defaultValue="products" className="w-full">
-            <TabsList>
-              <TabsTrigger value="products">Product list</TabsTrigger>
-              <TabsTrigger value="assembly">Assembly overview</TabsTrigger>
+        <div className="w-full lg:w-[60%] bg-background p-6">
+          <Tabs defaultValue="products">
+            <TabsList className="w-[200px] lg:w-[350px]">
+              <TabsTrigger value="products" className="text-xs lg:text-sm">
+                Product list
+              </TabsTrigger>
+              <TabsTrigger value="assembly" className="text-xs lg:text-sm">
+                Assembly overview
+              </TabsTrigger>
               {/* Gallery tab intentionally hidden for now */}
             </TabsList>
 
@@ -108,7 +112,7 @@ const Summary = () => {
                 {selectedOrganizers.length > 0 && (
                   <>
                     <div className="border-t border-gray-200 pt-4 mt-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      <h3 className="text-lg font-semibold text-foreground mb-4">
                         Add-on Organisers
                       </h3>
                     </div>
@@ -129,14 +133,14 @@ const Summary = () => {
                                 <h3 className="font-semibold text-foreground">
                                   {item.organizer.name}
                                 </h3>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-secondary-foreground">
                                   #{item.organizer.itemNumber}
                                 </p>
                                 <div>
-                                  <span className="text-sm text-gray-600 pr-2">
+                                  <span className="text-sm text-secondary-foreground pr-2">
                                     Dimensions:
                                   </span>
-                                  <span className="text-sm text-gray-600">
+                                  <span className="text-sm text-secondary-foreground">
                                     {item.organizer.width} ×{" "}
                                     {item.organizer.depth} ×{" "}
                                     {item.organizer.height} cm
@@ -147,7 +151,7 @@ const Summary = () => {
                           </div>
 
                           <div className="text-right">
-                            <div className="flex items-start justify-end font-semibold text-gray-900">
+                            <div className="flex items-start justify-end font-semibold text-foreground">
                               <span className="text-sm pt-0.5">$</span>
                               <span className="text-lg">
                                 {Math.floor(
@@ -161,7 +165,7 @@ const Summary = () => {
                                   .substring(2)}
                               </span>
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-secondary-foreground">
                               Qty: {item.quantity}
                             </div>
                           </div>
@@ -172,7 +176,7 @@ const Summary = () => {
                 )}
 
                 {/* Total section */}
-                <div className="border-t-2 border-gray-100 pt-4 mt-6">
+                <div className="border-t-2 border-border pt-4 mt-6">
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="text-lg font-semibold">
@@ -187,7 +191,7 @@ const Summary = () => {
                         total)
                       </span>
                     </div>
-                    <div className="flex items-start text-2xl font-bold text-gray-900">
+                    <div className="flex items-start text-2xl font-bold text-foreground">
                       <span className="text-lg pt-1">$</span>
                       <span className="text-2xl">{Math.floor(totalPrice)}</span>
                       <span className="text-lg pt-1">
@@ -200,7 +204,7 @@ const Summary = () => {
             </TabsContent>
 
             <TabsContent value="assembly" className="mt-6">
-              <div className="text-gray-700">
+              <div className="text-secondary-foreground">
                 <h2 className="text-xl font-semibold mb-4">
                   Assembly overview
                 </h2>
@@ -214,9 +218,9 @@ const Summary = () => {
           </div>
 
           <div className="mt-4">
-            <Alert className="bg-gray-100">
+            <Alert className="bg-secondary">
               <Info className="h-5 w-5" />
-              <AlertDescription className="text-gray-800">
+              <AlertDescription className="text-foreground">
                 Please check with your local Bunnings store for stock
                 availability. If your local store does not have all of your
                 required components, you may place an order at your local
@@ -227,17 +231,17 @@ const Summary = () => {
         </div>
 
         {/* Right side - Screenshot (40%) */}
-        <div className="w-[40%] p-6">
+        <div className="w-full lg:w-[40%] p-6">
           {screenshot ? (
-            <div className="w-full flex justify-center">
+            <div className="w-full flex justify-center border-[1px] border-primary px-10">
               <img
                 src={screenshot}
                 alt="Design screenshot"
-                className="max-w-full max-h-[80vh] border border-gray-200 bg-white"
+                className="max-h-[60vh] w-full border border-border bg-background"
               />
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-500">
+            <div className="h-full flex items-center justify-center text-secondary-foreground">
               <div className="text-center">
                 <p className="text-lg">No screenshot available</p>
                 <p className="text-sm mt-2">Return and press Finalise again.</p>
@@ -246,14 +250,14 @@ const Summary = () => {
           )}
 
           <div className="mt-10 flex justify-start gap-2 items-start">
-            <HeartHandshake className="w-5 h-5 text-gray-900 flex-shrink-0 mt-1" />
+            <HeartHandshake className="w-5 h-5 text-foreground flex-shrink-0 mt-1" />
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-foreground">
                 Need help? We're right here.
               </h3>
 
               <div>
-                <p className="text-gray-700 mb-4">
+                <p className="text-secondary-foreground mb-4">
                   Whether you've a question or would like us to review your
                   design before you buy, we'd love to help.
                 </p>
@@ -263,17 +267,17 @@ const Summary = () => {
                     href="https://flexistorage.com.au/contact-us/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline cursor-pointer text-gray-700 hover:text-gray-900"
+                    className="underline cursor-pointer text-secondary-foreground hover:text-foreground"
                   >
                     Contact us
                   </a>
                 </div>
 
-                <p className=" text-gray-600 mb-2">
+                <p className=" text-secondary-foreground mb-2">
                   Keep this design code handy:
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="bg-gray-100 px-3 py-2 rounded font-mono text-lg font-bold text-gray-900">
+                  <code className="bg-secondary px-3 py-2 rounded font-mono text-lg font-bold text-foreground">
                     {useStore.getState().currentDesignCode || "WDC75D"}
                   </code>
                   <button
@@ -293,7 +297,7 @@ const Summary = () => {
                     {showCopiedMessage ? "Copied!" : "Copy"}
                   </button>
                 </div>
-                <p className="text-gray-500 mt-2">
+                <p className="text-secondary-foreground mt-2">
                   Use this code to retrieve your design later or share it with
                   our team.
                 </p>
@@ -301,7 +305,7 @@ const Summary = () => {
             </div>
           </div>
 
-          <div className="mt-20 text-xs text-gray-600 leading-relaxed space-y-2 break-words">
+          <div className="mt-20 text-xs text-secondary-foreground leading-relaxed space-y-2 break-words">
             <p>
               * While we endeavour to provide accurate and up to date
               information, prices and availability may vary by store. Please

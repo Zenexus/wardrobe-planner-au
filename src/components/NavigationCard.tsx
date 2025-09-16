@@ -40,7 +40,7 @@ const NavigationActionCard = ({
             handleCardClick();
           }}
         >
-          <CircleArrowRight className="w-12 h-12 stroke-1" />
+          <CircleArrowRight className="w-10 h-10 stroke-1" />
         </div>
       );
     } else if (type === "openSheet") {
@@ -48,13 +48,16 @@ const NavigationActionCard = ({
         <Sheet>
           <SheetTrigger asChild>
             <div
-              className="bg-secondary text-primary rounded-full hover:bg-background hover:text-primary cursor-pointer transition-colors"
+              className="bg-secondary text-primary rounded-full hover:bg-[var(--tertiary)] hover:text-background cursor-pointer transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              <CircleArrowRight className="w-12 h-12 stroke-1" />
+              <CircleArrowRight className="w-10 h-10 stroke-1" />
             </div>
           </SheetTrigger>
-          <SheetContent side="right">
+          <SheetContent side="top" className="sm:hidden h-[50vh]">
+            <MenuSheetContentHomePage />
+          </SheetContent>
+          <SheetContent side="right" className="hidden sm:block">
             <MenuSheetContentHomePage />
           </SheetContent>
         </Sheet>
@@ -62,48 +65,9 @@ const NavigationActionCard = ({
     }
   };
 
-  // For openSheet type, we need to wrap the entire card in a Sheet
-  if (type === "openSheet") {
-    return (
-      <Sheet>
-        <SheetTrigger asChild>
-          <div
-            className="h-120 cursor-pointer"
-            style={{ backgroundColor: bgColor }}
-          >
-            <div className="w-full h-[60%]">
-              <img
-                src={imageSrc}
-                alt={imageAlt}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div
-              className="p-6 flex flex-col justify-between items-start"
-              style={{ color: textColor }}
-            >
-              <div className="pb-6">
-                <p className="text-lg h-16 font-bold pb-2 hover:underline">
-                  {title}
-                </p>
-                <p className="text-sm">{description}</p>
-              </div>
-
-              {renderActionButton()}
-            </div>
-          </div>
-        </SheetTrigger>
-        <SheetContent side="right">
-          <MenuSheetContentHomePage />
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
-  // For link type, the entire card is clickable
   return (
     <div
-      className="h-120 cursor-pointer"
+      className="h-120 cursor-pointer border-[1px] border-primary"
       style={{ backgroundColor: bgColor }}
       onClick={handleCardClick}
     >
@@ -122,7 +86,7 @@ const NavigationActionCard = ({
           <p className="text-lg font-bold pb-2 hover:underline h-16">{title}</p>
           <p className="text-sm">{description}</p>
         </div>
-        <div className="pr-1">{renderActionButton()}</div>
+        <div className="">{renderActionButton()}</div>
       </div>
     </div>
   );

@@ -19,8 +19,8 @@ export default function SummaryHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-50 bg-white">
-      <div className="px-10 py-6">
+    <header className="sticky top-0 z-50 bg-background">
+      <div className="px-4 lg:px-10 py-6">
         <div className="pl-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -33,7 +33,7 @@ export default function SummaryHeader() {
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded-full"
+                    className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full"
                     onClick={() => navigate("/addon-organisors")}
                     aria-label="Back to Add-On Organisers"
                   >
@@ -44,17 +44,17 @@ export default function SummaryHeader() {
               </Tooltip>
             </div>
 
-            <div className="flex items-center gap-2 pr-4">
+            <div className="flex items-center gap-0 lg:gap-2 pr-0 lg:pr-4">
               <Dialog>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DialogTrigger asChild>
                       <button
                         type="button"
-                        className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded-full transition-colors"
+                        className="w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors"
                         aria-label="Popular List"
                       >
-                        <HeartPlus size={24} />
+                        <HeartPlus />
                       </button>
                     </DialogTrigger>
                   </TooltipTrigger>
@@ -77,9 +77,9 @@ export default function SummaryHeader() {
                       <button
                         type="button"
                         aria-label="Open menu"
-                        className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
+                        className="w-16 h-16 flex items-center justify-center hover:bg-secondary rounded-full transition-colors cursor-pointer"
                       >
-                        <Menu size={24} />
+                        <Menu />
                       </button>
                     </SheetTrigger>
                   </TooltipTrigger>

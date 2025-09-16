@@ -152,7 +152,7 @@ function AssemblyCompositionItemCard({ item }: { item: CompositionItem }) {
             {(item.included?.split("\n") ?? []).map((line, idx) => (
               <div key={idx} className="flex items-start gap-1">
                 <Check
-                  className="size-3 mt-0.5 text-[#003B4A]"
+                  className="size-3 mt-0.5 text-primary shrink-0"
                   strokeWidth={2.5}
                 />
                 <span>{line}</span>

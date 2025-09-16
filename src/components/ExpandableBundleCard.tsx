@@ -121,17 +121,19 @@ export default function ExpandableBundleCard({
                     className="w-16 h-16 object-cover rounded-md"
                   />
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       <h3 className="font-semibold text-foreground">
                         {group.product.name}
                       </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-600">
+                        #{group.product.itemNumber}
+                      </p>
                       <span className="text-xs bg-primary text-background px-2 py-1 rounded-full">
                         Bundle Option
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      #{group.product.itemNumber}
-                    </p>
                     <div>
                       <span className="text-sm text-gray-600 pr-2">
                         Dimensions:

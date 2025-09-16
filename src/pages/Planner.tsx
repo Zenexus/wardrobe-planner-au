@@ -85,7 +85,7 @@ const DropPositionCalculator = () => {
       return [intersectionPoint.x, 0, intersectionPoint.z] as [
         number,
         number,
-        number,
+        number
       ];
     }
 
@@ -217,13 +217,7 @@ const CanvasWrapper = ({
       }`}
     >
       {isLoading && <CanvasLoader />}
-      {/* {isOver && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="text-2xl font-bold text-blue-600 bg-white bg-opacity-90 px-4 py-2 rounded-lg shadow-lg">
-            Drop to Add to Design
-          </div>
-        </div>
-      )} */}
+
       <Canvas
         shadows
         gl={{ preserveDrawingBuffer: true }}
@@ -233,8 +227,6 @@ const CanvasWrapper = ({
           setTimeout(() => setIsLoading(false), 1000); // Small delay to ensure everything is loaded
         }}
       >
-        {/* Enhanced lighting setup */}
-
         {/* Main directional light (sun) */}
         <directionalLight
           castShadow

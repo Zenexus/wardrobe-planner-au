@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/store";
+import { getBundleComposition } from "@/utils/bundleComposition";
 
 type AccountType = "normal" | "powerPass";
 
 export default function BunningsCard() {
   const wardrobeInstances = useStore((s) => s.wardrobeInstances);
+  const selectedOrganizers = useStore((s) => s.selectedOrganizers);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const groupedCart = useMemo(() => {
@@ -13,18 +15,54 @@ export default function BunningsCard() {
       string,
       { itemNumber: string; qty: number; price: number }
     >();
+
+    // Add wardrobe instances (decompose bundles)
     for (const instance of wardrobeInstances) {
-      const key = instance.product.itemNumber;
-      const price = instance.product.price;
-      const current = map.get(key);
-      if (current) {
-        current.qty += 1;
+      const bundleComposition = getBundleComposition(instance);
+
+      if (bundleComposition.isBundle) {
+        // For bundles, add each component item
+        for (const item of bundleComposition.totalItems) {
+          const key = item.itemNumber;
+          const price = item.price;
+          const quantity = item.quantity;
+
+          const current = map.get(key);
+          if (current) {
+            current.qty += quantity;
+          } else {
+            map.set(key, { itemNumber: key, qty: quantity, price });
+          }
+        }
       } else {
-        map.set(key, { itemNumber: key, qty: 1, price });
+        // For regular products, add as before
+        const key = instance.product.itemNumber;
+        const price = instance.product.price;
+        const current = map.get(key);
+        if (current) {
+          current.qty += 1;
+        } else {
+          map.set(key, { itemNumber: key, qty: 1, price });
+        }
       }
     }
+
+    // Add selected organizers
+    for (const selectedOrganizer of selectedOrganizers) {
+      const key = selectedOrganizer.organizer.itemNumber;
+      const price = selectedOrganizer.organizer.price;
+      const quantity = selectedOrganizer.quantity;
+
+      const current = map.get(key);
+      if (current) {
+        current.qty += quantity;
+      } else {
+        map.set(key, { itemNumber: key, qty: quantity, price });
+      }
+    }
+
     return Array.from(map.values());
-  }, [wardrobeInstances]);
+  }, [wardrobeInstances, selectedOrganizers]);
 
   const makeShareUrls = useCallback(
     (accountType: AccountType) => {
@@ -40,11 +78,11 @@ export default function BunningsCard() {
           ? "https://trade.bunnings."
           : "https://www.bunnings.";
       const baseURL = `${prefix}${domain}/share-cart?items=`;
-
+      // FIXME: Update UTM parameters
       const utmWebsite =
-        "&utm_source=rack-it&utm_medium=supplier&utm_campaign=planner&utm_content=website";
+        "&utm_source=wardrobe-planner&utm_medium=supplier&utm_campaign=planner&utm_content=website";
       const utmEmail =
-        "&utm_source=rack-it&utm_medium=supplier&utm_campaign=planner&utm_content=email";
+        "&utm_source=wardrobe-planner&utm_medium=supplier&utm_campaign=planner&utm_content=email";
 
       const items = groupedCart
         .map((i) => `${i.itemNumber}:${i.qty}`)
