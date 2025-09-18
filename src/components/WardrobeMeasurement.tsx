@@ -108,13 +108,13 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
         pointerEvents="none"
       >
         <div
-          className="px-3 py-2 rounded-sm shadow-md text-sm font-medium whitespace-nowrap"
+          className="px-2 py-1.5 rounded-sm shadow-sm text-xs font-normal whitespace-nowrap"
           style={{
             backgroundColor: labelColor,
             borderColor: color,
             color: color,
-            fontSize: "12px",
-            lineHeight: "1.2",
+            fontSize: "10px",
+            lineHeight: "1.1",
           }}
         >
           {value} cm

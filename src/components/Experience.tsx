@@ -41,10 +41,12 @@ import { Model as W04145 } from "./w-04145";
 // Test fixtures
 import { Model as WindowModel } from "./Window";
 import { Model as DoorModel } from "./Door";
+import { Model as TreeModel } from "./Tree";
+import { Model as CabinetModel } from "./Cabinet";
+
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import ToolPanel from "@/components/ToolPanel";
-import WallMeasurements from "@/components/WallMeasurements";
-import WardrobeMeasurements from "@/components/WardrobeMeasurements";
+import GroupedWardrobeMeasurements from "@/components/GroupedWardrobeMeasurements";
 import FocusedWardrobePanel from "./FocusedWardrobePanel";
 import {
   getClosestWall,
@@ -1375,24 +1377,25 @@ const Experience: React.FC = () => {
           </DraggableObject>
         ))}
 
-        {/* Wardrobe measurements - moved outside DraggableObject to avoid ref interference */}
-        {wardrobeInstances.map((instance) => (
-          <WardrobeMeasurements
-            key={`measurements-${instance.id}`}
-            wardrobeId={instance.id}
-            position={instance.position} // Use absolute position since it's outside DraggableObject
-            modelPath={instance.product.model}
-          />
-        ))}
+        {/* Grouped Wardrobe measurements - intelligent grouping by wall */}
+        <GroupedWardrobeMeasurements wardrobeInstances={wardrobeInstances} />
 
         {/* Test Models - Window and Door */}
-        <RigidBody type="fixed" position={[15, 0, 0]}>
+        {/* <RigidBody type="fixed" position={[15, 0, 0]}>
           <WindowModel />
         </RigidBody>
 
         <RigidBody type="fixed" position={[20, 0, 0]}>
           <DoorModel />
-        </RigidBody>
+        </RigidBody> */}
+
+        {/* <RigidBody type="fixed" position={[-4, 0, 4]}>
+          <TreeModel scale={[0.5, 0.5, 0.5]} />
+        </RigidBody> */}
+
+        {/* <RigidBody type="dynamic" position={[0, 1, 0]} scale={[1.5, 1.5, 1.5]}>
+          <CabinetModel />
+        </RigidBody> */}
 
         {/* Wall Measurements - only shown in customize mode */}
         {/* <WallMeasurements walls={walls} /> */}
