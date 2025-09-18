@@ -19,6 +19,7 @@ import {
 import WardrobeDetailSheet from "@/components/WardrobeDetailSheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   saveDesignStateWithSync,
   generateShoppingCart,
@@ -373,6 +374,9 @@ export default function Planner() {
     (s) => s.setCanvasScreenshotDataUrl
   );
   const setCurrentDesignCode = useStore((s) => s.setCurrentDesignCode);
+
+  // Enable keyboard shortcuts for undo/redo
+  useKeyboardShortcuts();
   const focusedWardrobeInstance = useStore((s) => s.focusedWardrobeInstance);
   const [disableFinalise, setDisableFinalise] = useState(true);
   const [isDetailOpen, setIsDetailOpen] = useState(false);

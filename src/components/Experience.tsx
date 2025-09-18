@@ -38,6 +38,9 @@ import { Model as W04142 } from "./w-04142";
 import { Model as W04143 } from "./w-04143";
 import { Model as W04144 } from "./w-04144";
 import { Model as W04145 } from "./w-04145";
+// Test fixtures
+import { Model as WindowModel } from "./Window";
+import { Model as DoorModel } from "./Door";
 import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
 import ToolPanel from "@/components/ToolPanel";
 import WallMeasurements from "@/components/WallMeasurements";
@@ -1381,6 +1384,15 @@ const Experience: React.FC = () => {
             modelPath={instance.product.model}
           />
         ))}
+
+        {/* Test Models - Window and Door */}
+        <RigidBody type="fixed" position={[15, 0, 0]}>
+          <WindowModel />
+        </RigidBody>
+
+        <RigidBody type="fixed" position={[20, 0, 0]}>
+          <DoorModel />
+        </RigidBody>
 
         {/* Wall Measurements - only shown in customize mode */}
         {/* <WallMeasurements walls={walls} /> */}

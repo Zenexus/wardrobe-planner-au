@@ -1,6 +1,6 @@
 import { Html } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
-import { Ruler, Trash2, Lightbulb } from "lucide-react";
+import { Ruler, Trash2, Lightbulb, Undo, Redo } from "lucide-react";
 import { useStore } from "@/store";
 import { cn } from "@/lib/utils";
 import {
@@ -30,6 +30,10 @@ const ToolPanel = () => {
     setLightsOn,
     wardrobeInstances,
     clearAllWardrobes,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   } = useStore();
 
   const handleMeasurementsClick = () => {
@@ -38,6 +42,14 @@ const ToolPanel = () => {
 
   const handleToggleLights = () => {
     setLightsOn(!lightsOn);
+  };
+
+  const handleUndo = () => {
+    undo();
+  };
+
+  const handleRedo = () => {
+    redo();
   };
 
   // Show the tool panel only when not in customize mode
@@ -51,6 +63,36 @@ const ToolPanel = () => {
       </div>
 
       <div className="absolute bottom-[50px] left-[50px] z-[100] flex gap-4 pointer-events-auto">
+        {/* Undo Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer"
+              onClick={handleUndo}
+              disabled={!canUndo()}
+              variant="outline"
+            >
+              <Undo />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Undo</TooltipContent>
+        </Tooltip>
+
+        {/* Redo Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="rounded-full flex items-center justify-center p-2 w-12 h-12 cursor-pointer"
+              onClick={handleRedo}
+              disabled={!canRedo()}
+              variant="outline"
+            >
+              <Redo />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Redo</TooltipContent>
+        </Tooltip>
+
         {/* Show Measurements Button */}
         <Tooltip>
           <TooltipTrigger asChild>
