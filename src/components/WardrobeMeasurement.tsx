@@ -1,8 +1,8 @@
 import React from "react";
-import { Vector3, BufferGeometry, Line, LineBasicMaterial } from "three";
+import { Vector3 } from "three";
 import { Html } from "@react-three/drei";
 
-interface WardrobeMeasurementProps {
+type WardrobeMeasurementProps = {
   start: [number, number, number];
   end: [number, number, number];
   label: string;
@@ -11,28 +11,23 @@ interface WardrobeMeasurementProps {
   lineColor?: string; // Color for the measurement lines
   labelColor?: string; // Background color for the label
   offset?: number; // Offset from the wardrobe surface
-}
+};
 
 const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
   start,
   end,
   value,
   color,
-  lineColor = "black", // Default to black if not specified
-  labelColor = "black", // Default to black if not specified
+  lineColor = "black",
+  labelColor = "black",
 }) => {
   const startVec = new Vector3(...start);
   const endVec = new Vector3(...end);
   const midpoint = new Vector3().lerpVectors(startVec, endVec, 0.5);
 
-  // Create line geometry
-  const lineGeometry = new BufferGeometry().setFromPoints([startVec, endVec]);
-
-  // Calculate direction for perpendicular caps
   const direction = new Vector3().subVectors(endVec, startVec).normalize();
-  const capLength = 0.1; // Length of the cap lines
+  const capLength = 0.1;
 
-  // Create perpendicular vector for caps
   let perpendicular = new Vector3();
   if (Math.abs(direction.y) < 0.9) {
     perpendicular.crossVectors(direction, new Vector3(0, 1, 0)).normalize();
@@ -40,7 +35,6 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
     perpendicular.crossVectors(direction, new Vector3(1, 0, 0)).normalize();
   }
 
-  // Create cap line points
   const startCapPoint1 = new Vector3().addVectors(
     startVec,
     perpendicular.clone().multiplyScalar(capLength / 2)
@@ -58,49 +52,53 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
     perpendicular.clone().multiplyScalar(-capLength / 2)
   );
 
-  // Create cap geometries
-  const startCapGeometry = new BufferGeometry().setFromPoints([
-    startCapPoint1,
-    startCapPoint2,
-  ]);
-  const endCapGeometry = new BufferGeometry().setFromPoints([
-    endCapPoint1,
-    endCapPoint2,
-  ]);
-
   return (
     <group>
-      {/* Main measurement line */}
-      <primitive
-        object={
-          new Line(
-            lineGeometry,
-            new LineBasicMaterial({ color: lineColor, linewidth: 3 })
-          )
-        }
-      />
+      <line>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[
+              new Float32Array([...startVec.toArray(), ...endVec.toArray()]),
+              3,
+            ]}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial color={lineColor} linewidth={3} />
+      </line>
 
-      {/* Start cap */}
-      <primitive
-        object={
-          new Line(
-            startCapGeometry,
-            new LineBasicMaterial({ color: lineColor, linewidth: 3 })
-          )
-        }
-      />
+      <line>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[
+              new Float32Array([
+                ...startCapPoint1.toArray(),
+                ...startCapPoint2.toArray(),
+              ]),
+              3,
+            ]}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial color={lineColor} linewidth={3} />
+      </line>
 
-      {/* End cap */}
-      <primitive
-        object={
-          new Line(
-            endCapGeometry,
-            new LineBasicMaterial({ color: lineColor, linewidth: 3 })
-          )
-        }
-      />
+      <line>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[
+              new Float32Array([
+                ...endCapPoint1.toArray(),
+                ...endCapPoint2.toArray(),
+              ]),
+              3,
+            ]}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial color={lineColor} linewidth={3} />
+      </line>
 
-      {/* Measurement label */}
       <Html
         position={[midpoint.x, midpoint.y, midpoint.z]}
         center
@@ -108,13 +106,12 @@ const WardrobeMeasurement: React.FC<WardrobeMeasurementProps> = ({
         pointerEvents="none"
       >
         <div
-          className="px-2 py-1.5 rounded-sm shadow-sm text-xs font-normal whitespace-nowrap"
+          className="py-1.5 px-2 rounded-lg shadow-sm font-normal text-xs whitespace-nowrap"
           style={{
             backgroundColor: labelColor,
             borderColor: color,
             color: color,
-            fontSize: "10px",
-            lineHeight: "1.1",
+            lineHeight: "0.8",
           }}
         >
           {value} cm

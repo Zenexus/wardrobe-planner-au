@@ -45,6 +45,67 @@ const GroupedWardrobeMeasurements: React.FC<
     [wallsDimensions]
   );
 
+  // Helper function to determine wall index based on rotation instead of proximity
+  const getWallIndexFromRotation = (
+    rotation: number,
+    position: [number, number, number]
+  ): number => {
+    // Normalize rotation to [0, 2π) range
+    const normalizedRotation =
+      ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+    // Define rotation values for each wall (from wallConstraints.ts)
+    const rightWallRotation = Math.PI * 0.5; // 90°
+    const leftWallRotation = Math.PI * 1.5; // 270° (equivalent to -90° normalized)
+    const backWallRotation = 0; // 0°
+    const frontWallRotation = Math.PI; // 180°
+
+    // Use tolerance for floating point precision
+    const tolerance = Math.PI / 8; // 22.5 degrees tolerance
+
+    // Find the closest wall rotation
+    const distances = [
+      {
+        wallIndex: 0,
+        distance: Math.abs(normalizedRotation - rightWallRotation),
+      },
+      {
+        wallIndex: 1,
+        distance: Math.abs(normalizedRotation - leftWallRotation),
+      },
+      {
+        wallIndex: 2,
+        distance: Math.abs(normalizedRotation - backWallRotation),
+      },
+      {
+        wallIndex: 3,
+        distance: Math.abs(normalizedRotation - frontWallRotation),
+      },
+    ];
+
+    // Also check distance to 2π for back wall (0° and 360° are the same)
+    if (normalizedRotation > Math.PI) {
+      distances[2].distance = Math.min(
+        distances[2].distance,
+        Math.abs(normalizedRotation - 2 * Math.PI)
+      );
+    }
+
+    // Find minimum distance
+    const closest = distances.reduce((prev, current) =>
+      prev.distance < current.distance ? prev : current
+    );
+
+    // Only use rotation-based assignment if it's within tolerance
+    if (closest.distance < tolerance) {
+      return closest.wallIndex;
+    }
+
+    // Fallback to proximity-based detection for edge cases
+    const wallConstraint = getClosestWall(position, roomDimensions);
+    return wallConstraint.wallIndex;
+  };
+
   // Group wardrobes by wall
   const wallGroups = useMemo(() => {
     if (!showWardrobeMeasurements) return new Map<number, WallGroup>();
@@ -66,11 +127,11 @@ const GroupedWardrobeMeasurements: React.FC<
 
       // Group wall-attached wardrobes by wall
       if (requiresWallAttachment(instance.product.model)) {
-        const wallConstraint = getClosestWall(
-          instance.position,
-          roomDimensions
+        // Use rotation-based wall assignment instead of proximity-based
+        const wallIndex = getWallIndexFromRotation(
+          instance.rotation || 0,
+          instance.position
         );
-        const wallIndex = wallConstraint.wallIndex;
 
         if (!groups.has(wallIndex)) {
           groups.set(wallIndex, {
@@ -159,63 +220,509 @@ const GroupedWardrobeMeasurements: React.FC<
         const [x, y, z] = position;
         const offset = 0.1;
 
-        // Show individual wardrobe measurements (always visible when measurements on)
-        const individualMeasurements = [
-          // Width measurement
-          {
-            start: [
-              x - dimensions.width / 2,
-              y + dimensions.height + offset,
-              z,
-            ] as [number, number, number],
-            end: [
-              x + dimensions.width / 2,
-              y + dimensions.height + offset,
-              z,
-            ] as [number, number, number],
-            label: "width",
-            value: Math.round(dimensions.width * 100),
+        // Define measurement configuration types
+        type MeasurementConfig = {
+          start: [number, number, number];
+          end: [number, number, number];
+          label: string;
+          value: number;
+        };
+
+        type WallConfig = {
+          [key: string]: MeasurementConfig;
+        };
+
+        type ShapeConfig = {
+          front: WallConfig;
+          back: WallConfig;
+          left: WallConfig;
+          right: WallConfig;
+        };
+
+        // Get wardrobe shape and wall orientation
+        const product = productsData.products.find(
+          (p) => p.model === instance.product.model
+        );
+        const wardrobeShape = product?.type || "normal"; // "normal", "corner", or future "polygon"
+
+        // Map wallIndex to wall orientation
+        const wallIndexToOrientation = {
+          0: "right",
+          1: "left",
+          2: "front",
+          3: "back",
+        } as const;
+        const wallOrientation =
+          wallIndexToOrientation[
+            wallIndex as keyof typeof wallIndexToOrientation
+          ] || "front";
+
+        // Measurement configuration map
+        const measurementConfigurations: { [key: string]: ShapeConfig } = {
+          normal: {
+            front: {
+              width: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                label: "width",
+                value: Math.round(dimensions.width * 100),
+              },
+              height: {
+                start: [x - dimensions.width / 2 - offset, y, z] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x - dimensions.width / 2 - offset,
+                  y + dimensions.height,
+                  z,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x + dimensions.width / 2 + offset,
+                  y + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2 + offset,
+                  y + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth",
+                value: Math.round(dimensions.depth * 100),
+              },
+            },
+            back: {
+              width: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                label: "width",
+                value: Math.round(dimensions.width * 100),
+              },
+              height: {
+                start: [x + dimensions.width / 2 + offset, y, z] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x + dimensions.width / 2 + offset,
+                  y + dimensions.height,
+                  z,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x - dimensions.width / 2 - offset,
+                  y + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x - dimensions.width / 2 - offset,
+                  y + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth",
+                value: Math.round(dimensions.depth * 100),
+              },
+            },
+            left: {
+              width: {
+                start: [
+                  x,
+                  y + dimensions.height + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x,
+                  y + dimensions.height + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth", // Note: for left wall, width measurement shows depth
+                value: Math.round(dimensions.depth * 100),
+              },
+              height: {
+                start: [x, y, z - dimensions.depth / 2 - offset] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x,
+                  y + dimensions.height,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + offset,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + offset,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                label: "width", // Note: for left wall, depth measurement shows width
+                value: Math.round(dimensions.width * 100),
+              },
+            },
+            right: {
+              width: {
+                start: [
+                  x,
+                  y + dimensions.height + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x,
+                  y + dimensions.height + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth", // Note: for right wall, width measurement shows depth
+                value: Math.round(dimensions.depth * 100),
+              },
+              height: {
+                start: [x, y, z + dimensions.depth / 2 + offset] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x,
+                  y + dimensions.height,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + offset,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + offset,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                label: "width", // Note: for right wall, depth measurement shows width
+                value: Math.round(dimensions.width * 100),
+              },
+            },
+          },
+          corner: {
+            front: {
+              width: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                label: "width",
+                value: Math.round(dimensions.width * 100),
+              },
+              height: {
+                start: [x - dimensions.width / 2 - offset, y, z] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x - dimensions.width / 2 - offset,
+                  y + dimensions.height,
+                  z,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x + dimensions.width / 2 + offset,
+                  y + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2 + offset,
+                  y + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth",
+                value: Math.round(dimensions.depth * 100),
+              },
+              corner: {
+                start: [
+                  x - dimensions.width / 2 - offset,
+                  y + dimensions.height / 2,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + dimensions.height / 2,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                label: "corner span",
+                value: Math.round(
+                  Math.sqrt(
+                    dimensions.width * dimensions.width +
+                      dimensions.depth * dimensions.depth
+                  ) * 100
+                ),
+              },
+            },
+            back: {
+              width: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + dimensions.height + offset,
+                  z,
+                ] as [number, number, number],
+                label: "width",
+                value: Math.round(dimensions.width * 100),
+              },
+              height: {
+                start: [x + dimensions.width / 2 + offset, y, z] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x + dimensions.width / 2 + offset,
+                  y + dimensions.height,
+                  z,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x - dimensions.width / 2 - offset,
+                  y + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x - dimensions.width / 2 - offset,
+                  y + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth",
+                value: Math.round(dimensions.depth * 100),
+              },
+              corner: {
+                start: [
+                  x + dimensions.width / 2 + offset,
+                  y + dimensions.height / 2,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height / 2,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                label: "corner span",
+                value: Math.round(
+                  Math.sqrt(
+                    dimensions.width * dimensions.width +
+                      dimensions.depth * dimensions.depth
+                  ) * 100
+                ),
+              },
+            },
+            left: {
+              width: {
+                start: [
+                  x,
+                  y + dimensions.height + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x,
+                  y + dimensions.height + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth",
+                value: Math.round(dimensions.depth * 100),
+              },
+              height: {
+                start: [x, y, z - dimensions.depth / 2 - offset] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x,
+                  y + dimensions.height,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + offset,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + offset,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                label: "width",
+                value: Math.round(dimensions.width * 100),
+              },
+              corner: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height / 2,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2 + offset,
+                  y + dimensions.height / 2,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "corner span",
+                value: Math.round(
+                  Math.sqrt(
+                    dimensions.width * dimensions.width +
+                      dimensions.depth * dimensions.depth
+                  ) * 100
+                ),
+              },
+            },
+            right: {
+              width: {
+                start: [
+                  x,
+                  y + dimensions.height + offset,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  x,
+                  y + dimensions.height + offset,
+                  z + dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "depth",
+                value: Math.round(dimensions.depth * 100),
+              },
+              height: {
+                start: [x, y, z + dimensions.depth / 2 + offset] as [
+                  number,
+                  number,
+                  number
+                ],
+                end: [
+                  x,
+                  y + dimensions.height,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                label: "height",
+                value: Math.round(dimensions.height * 100),
+              },
+              depth: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + offset,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2,
+                  y + offset,
+                  z - dimensions.depth / 2 - offset,
+                ] as [number, number, number],
+                label: "width",
+                value: Math.round(dimensions.width * 100),
+              },
+              corner: {
+                start: [
+                  x - dimensions.width / 2,
+                  y + dimensions.height / 2,
+                  z + dimensions.depth / 2 + offset,
+                ] as [number, number, number],
+                end: [
+                  x + dimensions.width / 2 + offset,
+                  y + dimensions.height / 2,
+                  z - dimensions.depth / 2,
+                ] as [number, number, number],
+                label: "corner span",
+                value: Math.round(
+                  Math.sqrt(
+                    dimensions.width * dimensions.width +
+                      dimensions.depth * dimensions.depth
+                  ) * 100
+                ),
+              },
+            },
+          },
+          // Future extensibility for polygon shapes
+          polygon: {
+            front: {
+              // Custom measurements for polygon shapes can be added here
+            },
+            back: {},
+            left: {},
+            right: {},
+          },
+        };
+
+        // Get the appropriate measurement configuration
+        const shapeConfig =
+          measurementConfigurations[
+            wardrobeShape as keyof typeof measurementConfigurations
+          ] || measurementConfigurations.normal;
+        const wallConfig =
+          shapeConfig[wallOrientation as keyof typeof shapeConfig] ||
+          shapeConfig.front;
+
+        // Generate individual measurements from the map
+        const individualMeasurements = Object.entries(wallConfig).map(
+          ([_, config]) => ({
+            start: (config as MeasurementConfig).start,
+            end: (config as MeasurementConfig).end,
+            label: (config as MeasurementConfig).label,
+            value: (config as MeasurementConfig).value,
             color: "#fff",
             lineColor: "black",
             labelColor: "black",
-          },
-          // Height measurement (always visible when measurements on)
-          {
-            start: [x - dimensions.width / 2 - offset, y, z] as [
-              number,
-              number,
-              number
-            ],
-            end: [
-              x - dimensions.width / 2 - offset,
-              y + dimensions.height,
-              z,
-            ] as [number, number, number],
-            label: "height",
-            value: Math.round(dimensions.height * 100),
-            color: "#fff",
-            lineColor: "black",
-            labelColor: "black",
-          },
-          // Depth measurement (always visible when measurements on)
-          {
-            start: [
-              x + dimensions.width / 2 + offset,
-              y + offset,
-              z - dimensions.depth / 2,
-            ] as [number, number, number],
-            end: [
-              x + dimensions.width / 2 + offset,
-              y + offset,
-              z + dimensions.depth / 2,
-            ] as [number, number, number],
-            label: "depth",
-            value: Math.round(dimensions.depth * 100),
-            color: "#fff",
-            lineColor: "black",
-            labelColor: "black",
-          },
-        ];
+          })
+        );
 
         individualMeasurements.forEach((measurement, index) => {
           measurements.push(
@@ -407,13 +914,35 @@ const GroupedWardrobeMeasurements: React.FC<
           let leftTarget = leftWallX;
           let leftLabel = "to left wall";
 
-          // Check for closer wardrobes to the left
+          // Get the active wardrobe's wall for filtering
+          let activeWardrobeWall = -1;
+          if (requiresWallAttachment(activeInstance.product.model)) {
+            // Use rotation-based wall assignment instead of proximity-based
+            activeWardrobeWall = getWallIndexFromRotation(
+              activeInstance.rotation || 0,
+              activeInstance.position
+            );
+          }
+
+          // Check for closer wardrobes to the left - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
             const product = productsData.products.find(
               (p) => p.model === instance.product.model
             );
             if (!product) return;
+
+            // Skip wardrobes on different walls
+            if (
+              requiresWallAttachment(instance.product.model) &&
+              activeWardrobeWall !== -1
+            ) {
+              const otherWallIndex = getWallIndexFromRotation(
+                instance.rotation || 0,
+                instance.position
+              );
+              if (otherWallIndex !== activeWardrobeWall) return;
+            }
 
             const otherWidth = product.width * r3fScale;
             const otherRightEdge = instance.position[0] + otherWidth / 2;
@@ -433,13 +962,25 @@ const GroupedWardrobeMeasurements: React.FC<
           let rightTarget = rightWallX;
           let rightLabel = "to right wall";
 
-          // Check for closer wardrobes to the right
+          // Check for closer wardrobes to the right - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
             const product = productsData.products.find(
               (p) => p.model === instance.product.model
             );
             if (!product) return;
+
+            // Skip wardrobes on different walls
+            if (
+              requiresWallAttachment(instance.product.model) &&
+              activeWardrobeWall !== -1
+            ) {
+              const otherWallIndex = getWallIndexFromRotation(
+                instance.rotation || 0,
+                instance.position
+              );
+              if (otherWallIndex !== activeWardrobeWall) return;
+            }
 
             const otherWidth = product.width * r3fScale;
             const otherLeftEdge = instance.position[0] - otherWidth / 2;
@@ -457,59 +998,332 @@ const GroupedWardrobeMeasurements: React.FC<
           const ceilingDistance =
             roomHeight - (activeY + activeDimensions.height);
 
-          // Blue measurement lines for active wardrobe (dragged or selected)
-          const dragMeasurements = [
-            // Left distance measurement
-            {
-              start: [
-                leftTarget,
-                activeY + activeDimensions.height / 2,
-                activeZ,
-              ] as [number, number, number],
-              end: [
-                activeX - activeDimensions.width / 2,
-                activeY + activeDimensions.height / 2,
-                activeZ,
-              ] as [number, number, number],
-              label: leftLabel,
-              value: Math.round(leftDistance * 100),
-              color: "#fff",
-              lineColor: "blue",
-              labelColor: "blue",
+          // Calculate additional distances for different orientations
+          const roomDepth = roomDimensions.depth;
+          const frontWallZ = -roomDepth / 2;
+          const backWallZ = roomDepth / 2;
+
+          // Find closest front object/wall
+          let frontDistance = activeZ - activeDimensions.depth / 2 - frontWallZ;
+          let frontTarget = frontWallZ;
+          let frontLabel = "to front wall";
+
+          // Check for closer wardrobes to the front - only consider wardrobes on the same wall
+          wardrobeInstances.forEach((instance) => {
+            if (instance.id === activeWardrobeId) return;
+            const product = productsData.products.find(
+              (p) => p.model === instance.product.model
+            );
+            if (!product) return;
+
+            // Skip wardrobes on different walls
+            if (
+              requiresWallAttachment(instance.product.model) &&
+              activeWardrobeWall !== -1
+            ) {
+              const otherWallIndex = getWallIndexFromRotation(
+                instance.rotation || 0,
+                instance.position
+              );
+              if (otherWallIndex !== activeWardrobeWall) return;
+            }
+
+            const otherDepth = product.depth * r3fScale;
+            const otherBackEdge = instance.position[2] + otherDepth / 2;
+            const distanceToOther =
+              activeZ - activeDimensions.depth / 2 - otherBackEdge;
+
+            if (distanceToOther > 0 && distanceToOther < frontDistance) {
+              frontDistance = distanceToOther;
+              frontTarget = otherBackEdge;
+              frontLabel = "to wardrobe";
+            }
+          });
+
+          // Find closest back object/wall
+          let backDistance = backWallZ - (activeZ + activeDimensions.depth / 2);
+          let backTarget = backWallZ;
+          let backLabel = "to back wall";
+
+          // Check for closer wardrobes to the back - only consider wardrobes on the same wall
+          wardrobeInstances.forEach((instance) => {
+            if (instance.id === activeWardrobeId) return;
+            const product = productsData.products.find(
+              (p) => p.model === instance.product.model
+            );
+            if (!product) return;
+
+            // Skip wardrobes on different walls
+            if (
+              requiresWallAttachment(instance.product.model) &&
+              activeWardrobeWall !== -1
+            ) {
+              const otherWallIndex = getWallIndexFromRotation(
+                instance.rotation || 0,
+                instance.position
+              );
+              if (otherWallIndex !== activeWardrobeWall) return;
+            }
+
+            const otherDepth = product.depth * r3fScale;
+            const otherFrontEdge = instance.position[2] - otherDepth / 2;
+            const distanceToOther =
+              otherFrontEdge - (activeZ + activeDimensions.depth / 2);
+
+            if (distanceToOther > 0 && distanceToOther < backDistance) {
+              backDistance = distanceToOther;
+              backTarget = otherFrontEdge;
+              backLabel = "to wardrobe";
+            }
+          });
+
+          // Determine which wall the wardrobe is facing for appropriate measurements
+          // Use rotation-based wall assignment instead of proximity
+          const facingWallIndex = getWallIndexFromRotation(
+            activeInstance.rotation || 0,
+            activeInstance.position
+          );
+
+          // Map wall index to wall orientation for measurement configuration
+          const wallIndexToOrientation = {
+            0: "right",
+            1: "left",
+            2: "back",
+            3: "front",
+          } as const;
+
+          const facingWall =
+            wallIndexToOrientation[
+              facingWallIndex as keyof typeof wallIndexToOrientation
+            ] || "back";
+
+          // Blue measurement configurations for different wall orientations
+          type DragMeasurementConfig = {
+            start: [number, number, number];
+            end: [number, number, number];
+            label: string;
+            value: number;
+            color: string;
+            lineColor: string;
+            labelColor: string;
+          };
+
+          type DragMeasurements = {
+            [key: string]: DragMeasurementConfig;
+          };
+
+          type WallDragMeasurements = {
+            front: DragMeasurements;
+            back: DragMeasurements;
+            left: DragMeasurements;
+            right: DragMeasurements;
+          };
+
+          const dragMeasurementConfigs: WallDragMeasurements = {
+            // wall
+            front: {
+              horizontal: {
+                start: [
+                  leftTarget,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                end: [
+                  activeX - activeDimensions.width / 2,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                label: leftLabel,
+                value: Math.round(leftDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              horizontalRight: {
+                start: [
+                  activeX + activeDimensions.width / 2,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                end: [
+                  rightTarget,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                label: rightLabel,
+                value: Math.round(rightDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              vertical: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height,
+                  activeZ,
+                ] as [number, number, number],
+                end: [activeX, roomHeight, activeZ] as [number, number, number],
+                label: "to ceiling",
+                value: Math.round(ceilingDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
             },
-            // Right distance measurement
-            {
-              start: [
-                activeX + activeDimensions.width / 2,
-                activeY + activeDimensions.height / 2,
-                activeZ,
-              ] as [number, number, number],
-              end: [
-                rightTarget,
-                activeY + activeDimensions.height / 2,
-                activeZ,
-              ] as [number, number, number],
-              label: rightLabel,
-              value: Math.round(rightDistance * 100),
-              color: "#fff",
-              lineColor: "blue",
-              labelColor: "blue",
+            // back is default, sit in the back wall, facing the front
+            back: {
+              horizontal: {
+                start: [
+                  leftTarget,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                end: [
+                  activeX - activeDimensions.width / 2,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                label: leftLabel,
+                value: Math.round(leftDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              horizontalRight: {
+                start: [
+                  activeX + activeDimensions.width / 2,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                end: [
+                  rightTarget,
+                  activeY + activeDimensions.height / 2,
+                  activeZ,
+                ] as [number, number, number],
+                label: rightLabel,
+                value: Math.round(rightDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              vertical: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height,
+                  activeZ,
+                ] as [number, number, number],
+                end: [activeX, roomHeight, activeZ] as [number, number, number],
+                label: "to ceiling",
+                value: Math.round(ceilingDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
             },
-            // Ceiling distance measurement
-            {
-              start: [activeX, activeY + activeDimensions.height, activeZ] as [
-                number,
-                number,
-                number
-              ],
-              end: [activeX, roomHeight, activeZ] as [number, number, number],
-              label: "to ceiling",
-              value: Math.round(ceilingDistance * 100),
-              color: "#fff",
-              lineColor: "blue",
-              labelColor: "blue",
+            left: {
+              depth: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  frontTarget,
+                ] as [number, number, number],
+                end: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  activeZ - activeDimensions.depth / 2,
+                ] as [number, number, number],
+                label: frontLabel,
+                value: Math.round(frontDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              depthBack: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  activeZ + activeDimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  backTarget,
+                ] as [number, number, number],
+                label: backLabel,
+                value: Math.round(backDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              vertical: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height,
+                  activeZ,
+                ] as [number, number, number],
+                end: [activeX, roomHeight, activeZ] as [number, number, number],
+                label: "to ceiling",
+                value: Math.round(ceilingDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
             },
-          ];
+            right: {
+              depth: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  frontTarget,
+                ] as [number, number, number],
+                end: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  activeZ - activeDimensions.depth / 2,
+                ] as [number, number, number],
+                label: frontLabel,
+                value: Math.round(frontDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              depthBack: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  activeZ + activeDimensions.depth / 2,
+                ] as [number, number, number],
+                end: [
+                  activeX,
+                  activeY + activeDimensions.height / 2,
+                  backTarget,
+                ] as [number, number, number],
+                label: backLabel,
+                value: Math.round(backDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+              vertical: {
+                start: [
+                  activeX,
+                  activeY + activeDimensions.height,
+                  activeZ,
+                ] as [number, number, number],
+                end: [activeX, roomHeight, activeZ] as [number, number, number],
+                label: "to ceiling",
+                value: Math.round(ceilingDistance * 100),
+                color: "#fff",
+                lineColor: "blue",
+                labelColor: "blue",
+              },
+            },
+          };
+
+          // Get the appropriate measurements based on wardrobe facing direction
+          const activeMeasurements =
+            dragMeasurementConfigs[facingWall] || dragMeasurementConfigs.back;
+          const dragMeasurements = Object.values(activeMeasurements);
 
           dragMeasurements.forEach((measurement, index) => {
             measurements.push(
