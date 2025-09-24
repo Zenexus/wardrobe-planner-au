@@ -222,7 +222,7 @@ const CanvasWrapper = ({
       <Canvas
         shadows
         gl={{ preserveDrawingBuffer: true }}
-        camera={{ position: [5, 5, 5], fov: 60 }}
+        camera={{ position: [5, 5, 5], fov: 45 }}
         onCreated={() => {
           // Hide loading when Canvas is created and ready
           setTimeout(() => setIsLoading(false), 1000); // Small delay to ensure everything is loaded
@@ -556,20 +556,22 @@ export default function Planner() {
         <CanvasWrapper onCloseDetailSheet={() => setIsDetailOpen(false)} />
 
         {/* Leave Planner Button - positioned at top left corner */}
-        <div className="absolute top-[50px] left-[50px] z-[100] pointer-events-auto">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Leave Planner</TooltipContent>
-          </Tooltip>
-        </div>
+        {!customizeMode && (
+          <div className="absolute top-[50px] left-[50px] z-[100] pointer-events-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                  className="rounded-full flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Leave Planner</TooltipContent>
+            </Tooltip>
+          </div>
+        )}
 
         <section className="w-3/10 h-screen bg-primary-foreground flex flex-col overflow-hidden">
           <div className="flex justify-end items-center gap-4 px-8 py-2 h-28 shadow-lg flex-shrink-0">

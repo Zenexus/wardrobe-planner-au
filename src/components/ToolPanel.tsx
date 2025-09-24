@@ -116,8 +116,9 @@ const ToolPanel = () => {
           </TooltipContent>
         </Tooltip>
 
-        {/* Toggle Lights Button */}
-        <Tooltip>
+        {/* Toggle Lights Button : currently not used*/}
+
+        {/* <Tooltip>
           <TooltipTrigger asChild>
             <Button
               className={cn(
@@ -135,7 +136,7 @@ const ToolPanel = () => {
           <TooltipContent>
             {lightsOn ? "Turn lights off" : "Turn lights on"}
           </TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
 
         {/* Clear All Wardrobes with confirmation */}
         {wardrobeInstances.length > 0 && (

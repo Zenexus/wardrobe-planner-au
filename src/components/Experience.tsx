@@ -1194,7 +1194,7 @@ const Experience: React.FC = () => {
     <>
       {/* Invisible background plane to catch clicks on empty space */}
       <mesh
-        position={[0, 0, -15]}
+        position={[0, 0, -12]}
         onClick={handleBackgroundClick}
         visible={false}
       >

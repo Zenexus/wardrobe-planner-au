@@ -165,22 +165,85 @@ const GroupedWardrobeMeasurements: React.FC<
           rightmostX,
         });
       }
-      // Handle corner wardrobes separately
+      // Handle corner wardrobes separately - they join both adjacent walls
       else if (requiresCornerPlacement(instance.product.model)) {
-        // Corner wardrobes get their own group with special handling
-        const uniqueIndex =
-          1000 + parseInt(instance.id.split("-")[1]) || 1000 + Math.random();
-        groups.set(uniqueIndex, {
-          wallIndex: uniqueIndex,
-          wardrobes: [
-            {
-              instance,
-              position: instance.position,
-              dimensions,
-              leftmostX: instance.position[0] - dimensions.width / 2,
-              rightmostX: instance.position[0] + dimensions.width / 2,
-            },
-          ],
+        // Determine which corner this L-shape wardrobe is in based on rotation
+        const rotation = instance.rotation || 0;
+        const normalizedRotation =
+          ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+        // Map rotations to corner indices and their adjacent walls
+        // From wallConstraints.ts corner definitions
+        let adjacentWalls: number[] = [];
+        const tolerance = Math.PI / 8; // 22.5 degrees tolerance
+
+        if (Math.abs(normalizedRotation - Math.PI * 1.5) < tolerance) {
+          // Corner 0 (Front-left): rotation 270° - joins Left wall (1) and Front wall (3)
+          adjacentWalls = [1, 3];
+        } else if (Math.abs(normalizedRotation - Math.PI) < tolerance) {
+          // Corner 1 (Front-right): rotation 180° - joins Right wall (0) and Front wall (3)
+          adjacentWalls = [0, 3];
+        } else if (Math.abs(normalizedRotation - Math.PI * 0.5) < tolerance) {
+          // Corner 2 (Back-right): rotation 90° - joins Right wall (0) and Back wall (2)
+          adjacentWalls = [0, 2];
+        } else if (
+          Math.abs(normalizedRotation - Math.PI * 2) < tolerance ||
+          Math.abs(normalizedRotation) < tolerance
+        ) {
+          // Corner 3 (Back-left): rotation 360°/0° - joins Left wall (1) and Back wall (2)
+          adjacentWalls = [1, 2];
+        } else {
+          // Fallback: try to determine based on position
+          const [x, , z] = instance.position;
+
+          if (x < 0 && z < 0) {
+            // Front-left corner
+            adjacentWalls = [1, 3];
+          } else if (x > 0 && z < 0) {
+            // Front-right corner
+            adjacentWalls = [0, 3];
+          } else if (x > 0 && z > 0) {
+            // Back-right corner
+            adjacentWalls = [0, 2];
+          } else {
+            // Back-left corner
+            adjacentWalls = [1, 2];
+          }
+        }
+
+        // Add the L-shape wardrobe to both adjacent wall groups
+        adjacentWalls.forEach((wallIndex) => {
+          if (!groups.has(wallIndex)) {
+            groups.set(wallIndex, {
+              wallIndex,
+              wardrobes: [],
+            });
+          }
+
+          const group = groups.get(wallIndex)!;
+
+          // Calculate leftmost and rightmost coordinates based on wall orientation
+          const [x, , z] = instance.position;
+          let leftmostX: number, rightmostX: number;
+
+          // Determine the axis along which wardrobes are arranged on this wall
+          if (wallIndex === 0 || wallIndex === 1) {
+            // Right wall (0) or Left wall (1) - wardrobes arranged along Z axis
+            leftmostX = z - dimensions.width / 2;
+            rightmostX = z + dimensions.width / 2;
+          } else {
+            // Front wall (2) or Back wall (3) - wardrobes arranged along X axis
+            leftmostX = x - dimensions.width / 2;
+            rightmostX = x + dimensions.width / 2;
+          }
+
+          group.wardrobes.push({
+            instance,
+            position: instance.position,
+            dimensions,
+            leftmostX,
+            rightmostX,
+          });
         });
       } else {
         // For freestanding wardrobes, treat each as its own group
@@ -211,11 +274,24 @@ const GroupedWardrobeMeasurements: React.FC<
     wallGroups.forEach((group, wallIndex) => {
       if (group.wardrobes.length === 0) return;
 
+      // Validate that all wardrobes in the group still exist in wardrobeInstances
+      const validWardrobes = group.wardrobes.filter((groupWardrobe) =>
+        wardrobeInstances.some(
+          (instance) => instance.id === groupWardrobe.instance.id
+        )
+      );
+
+      // If no valid wardrobes remain, skip this group
+      if (validWardrobes.length === 0) return;
+
+      // Update the group to only contain valid wardrobes
+      const validGroup = { ...group, wardrobes: validWardrobes };
+
       // Note: Group activity check removed since we now handle blue measurements separately
 
       // For single wardrobe, show individual measurements
-      if (group.wardrobes.length === 1) {
-        const wardrobe = group.wardrobes[0];
+      if (validGroup.wardrobes.length === 1) {
+        const wardrobe = validGroup.wardrobes[0];
         const { instance, position, dimensions } = wardrobe;
         const [x, y, z] = position;
         const offset = 0.1;
@@ -438,6 +514,8 @@ const GroupedWardrobeMeasurements: React.FC<
             },
           },
           corner: {
+            // front means the first default position
+            // The corner means L-shaped wardrobe, this section is control the black measurements lines
             front: {
               width: {
                 start: [
@@ -480,25 +558,6 @@ const GroupedWardrobeMeasurements: React.FC<
                 ] as [number, number, number],
                 label: "depth",
                 value: Math.round(dimensions.depth * 100),
-              },
-              corner: {
-                start: [
-                  x - dimensions.width / 2 - offset,
-                  y + dimensions.height / 2,
-                  z - dimensions.depth / 2,
-                ] as [number, number, number],
-                end: [
-                  x + dimensions.width / 2,
-                  y + dimensions.height / 2,
-                  z + dimensions.depth / 2 + offset,
-                ] as [number, number, number],
-                label: "corner span",
-                value: Math.round(
-                  Math.sqrt(
-                    dimensions.width * dimensions.width +
-                      dimensions.depth * dimensions.depth
-                  ) * 100
-                ),
               },
             },
             back: {
@@ -544,25 +603,6 @@ const GroupedWardrobeMeasurements: React.FC<
                 label: "depth",
                 value: Math.round(dimensions.depth * 100),
               },
-              corner: {
-                start: [
-                  x + dimensions.width / 2 + offset,
-                  y + dimensions.height / 2,
-                  z - dimensions.depth / 2,
-                ] as [number, number, number],
-                end: [
-                  x - dimensions.width / 2,
-                  y + dimensions.height / 2,
-                  z + dimensions.depth / 2 + offset,
-                ] as [number, number, number],
-                label: "corner span",
-                value: Math.round(
-                  Math.sqrt(
-                    dimensions.width * dimensions.width +
-                      dimensions.depth * dimensions.depth
-                  ) * 100
-                ),
-              },
             },
             left: {
               width: {
@@ -607,25 +647,6 @@ const GroupedWardrobeMeasurements: React.FC<
                 label: "width",
                 value: Math.round(dimensions.width * 100),
               },
-              corner: {
-                start: [
-                  x - dimensions.width / 2,
-                  y + dimensions.height / 2,
-                  z - dimensions.depth / 2 - offset,
-                ] as [number, number, number],
-                end: [
-                  x + dimensions.width / 2 + offset,
-                  y + dimensions.height / 2,
-                  z + dimensions.depth / 2,
-                ] as [number, number, number],
-                label: "corner span",
-                value: Math.round(
-                  Math.sqrt(
-                    dimensions.width * dimensions.width +
-                      dimensions.depth * dimensions.depth
-                  ) * 100
-                ),
-              },
             },
             right: {
               width: {
@@ -669,25 +690,6 @@ const GroupedWardrobeMeasurements: React.FC<
                 ] as [number, number, number],
                 label: "width",
                 value: Math.round(dimensions.width * 100),
-              },
-              corner: {
-                start: [
-                  x - dimensions.width / 2,
-                  y + dimensions.height / 2,
-                  z + dimensions.depth / 2 + offset,
-                ] as [number, number, number],
-                end: [
-                  x + dimensions.width / 2 + offset,
-                  y + dimensions.height / 2,
-                  z - dimensions.depth / 2,
-                ] as [number, number, number],
-                label: "corner span",
-                value: Math.round(
-                  Math.sqrt(
-                    dimensions.width * dimensions.width +
-                      dimensions.depth * dimensions.depth
-                  ) * 100
-                ),
               },
             },
           },
@@ -742,10 +744,10 @@ const GroupedWardrobeMeasurements: React.FC<
         // Multiple wardrobes on same wall - show grouped measurements
 
         // Find leftmost and rightmost positions
-        const leftmostWardrobe = group.wardrobes.reduce((prev, current) =>
+        const leftmostWardrobe = validGroup.wardrobes.reduce((prev, current) =>
           prev.leftmostX < current.leftmostX ? prev : current
         );
-        const rightmostWardrobe = group.wardrobes.reduce((prev, current) =>
+        const rightmostWardrobe = validGroup.wardrobes.reduce((prev, current) =>
           prev.rightmostX > current.rightmostX ? prev : current
         );
 
@@ -755,7 +757,7 @@ const GroupedWardrobeMeasurements: React.FC<
         const totalGroupWidth = groupRightCoord - groupLeftCoord;
 
         // Find the highest wardrobe for positioning the width measurement
-        const highestWardrobe = group.wardrobes.reduce((prev, current) =>
+        const highestWardrobe = validGroup.wardrobes.reduce((prev, current) =>
           current.position[1] + current.dimensions.height >
           prev.position[1] + prev.dimensions.height
             ? current
@@ -838,10 +840,17 @@ const GroupedWardrobeMeasurements: React.FC<
           ];
         }
 
+        // Create unique keys based on wall index and wardrobe IDs in the group
+        const wardrobeIds = validGroup.wardrobes
+          .map((w) => w.instance.id)
+          .sort()
+          .join("-");
+        const groupKey = `wall-${wallIndex}-wardrobes-${wardrobeIds}`;
+
         // Group width measurement - from leftmost to rightmost (always visible when measurements on)
         measurements.push(
           <WardrobeMeasurement
-            key={`group-width-${wallIndex}`}
+            key={`${groupKey}-width`}
             start={widthStart}
             end={widthEnd}
             label="total width"
@@ -855,7 +864,7 @@ const GroupedWardrobeMeasurements: React.FC<
         // Height measurement - at leftmost wardrobe position (always visible when measurements on)
         measurements.push(
           <WardrobeMeasurement
-            key={`group-height-${wallIndex}`}
+            key={`${groupKey}-height`}
             start={heightStart}
             end={heightEnd}
             label="height"
@@ -869,7 +878,7 @@ const GroupedWardrobeMeasurements: React.FC<
         // Depth measurement - at rightmost wardrobe position (always visible when measurements on)
         measurements.push(
           <WardrobeMeasurement
-            key={`group-depth-${wallIndex}`}
+            key={`${groupKey}-depth`}
             start={depthStart}
             end={depthEnd}
             label="depth"
@@ -889,6 +898,11 @@ const GroupedWardrobeMeasurements: React.FC<
         (w) => w.id === activeWardrobeId
       );
       if (activeInstance) {
+        // Skip blue measurements for L-shaped (corner) wardrobes - they now use black measurements
+        if (requiresCornerPlacement(activeInstance.product.model)) {
+          return measurements;
+        }
+
         const activeProduct = productsData.products.find(
           (p) => p.model === activeInstance.product.model
         );
@@ -932,6 +946,12 @@ const GroupedWardrobeMeasurements: React.FC<
             );
             if (!product) return;
 
+            // Skip L-shape (corner) wardrobes entirely for blue measurements
+            // They should only affect measurements within their own wall groups
+            if (requiresCornerPlacement(instance.product.model)) {
+              return;
+            }
+
             // Skip wardrobes on different walls
             if (
               requiresWallAttachment(instance.product.model) &&
@@ -969,6 +989,12 @@ const GroupedWardrobeMeasurements: React.FC<
               (p) => p.model === instance.product.model
             );
             if (!product) return;
+
+            // Skip L-shape (corner) wardrobes entirely for blue measurements
+            // They should only affect measurements within their own wall groups
+            if (requiresCornerPlacement(instance.product.model)) {
+              return;
+            }
 
             // Skip wardrobes on different walls
             if (
@@ -1016,6 +1042,12 @@ const GroupedWardrobeMeasurements: React.FC<
             );
             if (!product) return;
 
+            // Skip L-shape (corner) wardrobes entirely for blue measurements
+            // They should only affect measurements within their own wall groups
+            if (requiresCornerPlacement(instance.product.model)) {
+              return;
+            }
+
             // Skip wardrobes on different walls
             if (
               requiresWallAttachment(instance.product.model) &&
@@ -1052,6 +1084,12 @@ const GroupedWardrobeMeasurements: React.FC<
               (p) => p.model === instance.product.model
             );
             if (!product) return;
+
+            // Skip L-shape (corner) wardrobes entirely for blue measurements
+            // They should only affect measurements within their own wall groups
+            if (requiresCornerPlacement(instance.product.model)) {
+              return;
+            }
 
             // Skip wardrobes on different walls
             if (
