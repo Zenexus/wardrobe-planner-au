@@ -1,5 +1,7 @@
+import React, { useState, useEffect } from "react";
 import { WardrobeInstance } from "@/types";
 import { Button } from "@/components/ui/button";
+import { useStore } from "@/store";
 import {
   Download,
   Youtube,
@@ -187,6 +189,29 @@ function AssemblyCompositionItemCard({ item }: { item: CompositionItem }) {
 export default function AssemblyOverviewList({
   instances,
 }: AssemblyOverviewListProps) {
+  const { getBundles, getProducts, getAccessories } = useStore();
+  const [bundlesData, setBundlesData] = useState<any[]>([]);
+  const [productsData, setProductsData] = useState<any[]>([]);
+  const [accessoriesData, setAccessoriesData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [bundles, products, accessories] = await Promise.all([
+          getBundles(),
+          getProducts(),
+          getAccessories(),
+        ]);
+        setBundlesData(bundles);
+        setProductsData(products);
+        setAccessoriesData(accessories);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      }
+    };
+    loadData();
+  }, [getBundles, getProducts, getAccessories]);
+
   const groups = groupWardrobesByItemNumber(instances);
 
   if (groups.length === 0) {
@@ -198,7 +223,12 @@ export default function AssemblyOverviewList({
   return (
     <div className="space-y-4">
       {groups.map((group) => {
-        const composition = getBundleComposition(group.firstInstance);
+        const composition = getBundleComposition(
+          group.firstInstance,
+          bundlesData,
+          productsData,
+          accessoriesData
+        );
 
         return (
           <div

@@ -31,7 +31,6 @@ import { generateDesignCode } from "@/utils/generateCode";
 import DesignMemoryModal from "@/components/DesignMemoryModal";
 import { shouldTriggerSheet } from "@/constants/wardrobeConfig";
 import { calculateBundlePrice } from "@/utils/bundlePricing";
-import productsData from "@/products.json";
 
 import Lottie from "lottie-react";
 
@@ -146,7 +145,7 @@ const CanvasWrapper = ({
 
           // Handle original wardrobe selection
           if (item.bundle.ItemName === "2583987-Original") {
-            const originalProduct = productsData.products.find(
+            const originalProduct = products.find(
               (p) => p.itemNumber === "2583987"
             );
             if (originalProduct) {
@@ -369,11 +368,13 @@ const AutoSaveIndicator = () => {
 };
 
 export default function Planner() {
-  const { customizeMode, wardrobeInstances } = useStore();
+  const { customizeMode, wardrobeInstances, getProducts } = useStore();
   const setCanvasScreenshotDataUrl = useStore(
     (s) => s.setCanvasScreenshotDataUrl
   );
   const setCurrentDesignCode = useStore((s) => s.setCurrentDesignCode);
+
+  const [products, setProducts] = useState<any[]>([]);
 
   // Enable keyboard shortcuts for undo/redo
   useKeyboardShortcuts();
@@ -392,6 +393,19 @@ export default function Planner() {
 
   // Enable auto-save for this component
   useAutoSave();
+
+  // Load products
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
 
   // Check for saved design on planner page load
   useEffect(() => {

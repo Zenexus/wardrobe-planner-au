@@ -1,7 +1,7 @@
 // This file contains the logic for placing wardrobes in the room
 
 import { WardrobeInstance } from "../types";
-import productsData from "../products.json";
+// Products data will be passed as parameters to functions
 import { R3F_SCALE } from "../store";
 import {
   requiresWallAttachment,
@@ -65,10 +65,12 @@ export function wouldCollideWithExisting(
   productModel: string,
   position: [number, number, number],
   existingInstances: WardrobeInstance[],
-  padding: number = 0.2
+  padding: number = 0.2,
+  productsData?: any[]
 ): boolean {
+  if (!productsData) return false;
   // Get product dimensions
-  const product = productsData.products.find((p) => p.model === productModel);
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return false;
 
   // Create temporary instance to get bounding box
@@ -100,9 +102,11 @@ export function hasAvailableSpace(
   productModel: string,
   existingInstances: WardrobeInstance[],
   roomDimensions = { width: 5, depth: 4 },
-  wallRoomDimensions?: WallRoomDimensions
+  wallRoomDimensions?: WallRoomDimensions,
+  productsData?: any[]
 ): boolean {
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return false;
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return false;
 
   // Quick check: if no existing wardrobes, space is available
@@ -293,9 +297,11 @@ function findSmartWallPosition(
   existingInstances: WardrobeInstance[],
   roomDimensions: { width: number; depth: number },
   yPosition: number,
-  passedWallRoomDimensions?: WallRoomDimensions
+  passedWallRoomDimensions?: WallRoomDimensions,
+  productsData?: any[]
 ): [number, number, number] | null {
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return null;
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return null;
 
   const wallRoomDimensions: WallRoomDimensions = passedWallRoomDimensions || {
@@ -409,9 +415,11 @@ export function findAvailablePosition(
   existingInstances: WardrobeInstance[],
   preferredPosition?: [number, number, number],
   roomDimensions = { width: 5, depth: 4 }, // Default room size in R3F units
-  wallRoomDimensions?: WallRoomDimensions // Optional detailed room dimensions for better placement
+  wallRoomDimensions?: WallRoomDimensions, // Optional detailed room dimensions for better placement
+  productsData?: any[]
 ): [number, number, number] | null {
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return null;
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) {
     console.warn(`Product not found: ${productModel}`);
     return null; // Return null instead of fallback position
@@ -487,7 +495,8 @@ export function findAvailablePosition(
       existingInstances,
       roomDimensions,
       yPosition,
-      wallRoomDimensions
+      wallRoomDimensions,
+      productsData
     );
 
     if (smartPosition) {
@@ -551,14 +560,16 @@ export function findAvailablePosition(
 export function getSuggestedPositions(
   targetInstanceId: string,
   productModel: string,
-  existingInstances: WardrobeInstance[]
+  existingInstances: WardrobeInstance[],
+  productsData?: any[]
 ): [number, number, number][] {
   const targetInstance = existingInstances.find(
     (w) => w.id === targetInstanceId
   );
   if (!targetInstance) return [];
 
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return [];
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return [];
 
   const [targetX, targetY, targetZ] = targetInstance.position;

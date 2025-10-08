@@ -1,6 +1,3 @@
-import bundlesData from "@/bundles.json";
-import productsData from "@/products.json";
-import accessoriesData from "@/accessories.json";
 import type { WardrobeInstance } from "@/types";
 
 export type CompositionItem = {
@@ -31,15 +28,21 @@ export type BundleComposition = {
 /**
  * Check if a wardrobe instance is a bundle and get its composition
  * @param wardrobeInstance - The wardrobe instance to check
+ * @param bundlesData - Array of bundles data
+ * @param productsData - Array of products data
+ * @param accessoriesData - Array of accessories data
  * @returns Bundle composition details
  */
 export function getBundleComposition(
-  wardrobeInstance: WardrobeInstance
+  wardrobeInstance: WardrobeInstance,
+  bundlesData: any[],
+  productsData: any[],
+  accessoriesData: any[]
 ): BundleComposition {
   const itemNumber = wardrobeInstance.product.itemNumber;
 
-  // Check if this is a bundle by looking for it in bundles.json
-  const bundle = bundlesData.bundles.find((b) => b.ItemName === itemNumber);
+  // Check if this is a bundle by looking for it in bundles data
+  const bundle = bundlesData.find((b) => b.ItemName === itemNumber);
 
   if (!bundle || !bundle.packDetails) {
     // Not a bundle, return simple composition
@@ -52,7 +55,7 @@ export function getBundleComposition(
   }
 
   // Get base wardrobe (2583987)
-  const baseWardrobeProduct = productsData.products.find(
+  const baseWardrobeProduct = productsData.find(
     (p) => p.itemNumber === "2583987"
   );
   const baseWardrobe: CompositionItem | null = baseWardrobeProduct
@@ -88,7 +91,7 @@ export function getBundleComposition(
 
   const accessories: CompositionItem[] = Array.from(accessoryMap.entries())
     .map(([itemNumber, quantity]) => {
-      const accessory = accessoriesData.accessories.find(
+      const accessory = accessoriesData.find(
         (a) => a.itemNumber === itemNumber
       );
       if (!accessory) {

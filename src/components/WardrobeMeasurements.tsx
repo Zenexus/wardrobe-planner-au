@@ -1,7 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import WardrobeMeasurement from "./WardrobeMeasurement";
 import { useStore } from "../store";
-import productsData from "../products.json";
 
 type WardrobeMeasurementsProps = {
   wardrobeId: string;
@@ -20,11 +19,26 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
     draggedObjectId,
     selectedObjectId,
     getWardrobeInstance,
+    getProducts,
   } = useStore();
+
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
 
   // Get wardrobe dimensions and type from products.json
   const wardrobeData = useMemo(() => {
-    const product = productsData.products.find((p) => p.model === modelPath);
+    const product = products.find((p) => p.model === modelPath);
 
     if (!product) {
       console.warn(`Product not found for model: ${modelPath}`);
@@ -42,7 +56,7 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
       depth: product.depth,
       type: product.type,
     };
-  }, [modelPath]);
+  }, [modelPath, products]);
 
   const { width, height, depth, type } = wardrobeData;
 

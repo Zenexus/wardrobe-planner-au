@@ -7,8 +7,8 @@ import { useGLTF } from "@react-three/drei";
 import { ThreeElements } from "@react-three/fiber";
 import { GLTF } from "three-stdlib";
 import * as THREE from "three";
-import { forwardRef, useMemo } from "react";
-import productsData from "../products.json";
+import { forwardRef, useMemo, useState, useEffect } from "react";
+import { useStore } from "../store";
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -28,11 +28,24 @@ export const ModernWardrobe = forwardRef<
     "/models/01687.gltf"
   ) as unknown as GLTFResult;
 
+  const getProducts = useStore((state) => state.getProducts);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
+
   // Get real product dimensions from products.json
   const { scaleFactor, yOffset } = useMemo(() => {
-    const product = productsData.products.find(
-      (p) => p.model === "components/W-01687"
-    );
+    const product = products.find((p) => p.model === "components/W-01687");
     if (!product) {
       console.warn("Product dimensions not found for W-01687");
       return { scaleFactor: 1.0, yOffset: 0 }; // Fallback
@@ -51,7 +64,7 @@ export const ModernWardrobe = forwardRef<
     const yOffset = modelBuiltInYOffset * scaleFactor;
 
     return { scaleFactor, yOffset };
-  }, []);
+  }, [products]);
 
   return (
     <group {...props} dispose={null} onClick={props.onClick}>

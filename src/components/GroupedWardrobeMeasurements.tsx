@@ -1,7 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import WardrobeMeasurement from "./WardrobeMeasurement";
 import { useStore } from "../store";
-import productsData from "../products.json";
 import { WardrobeInstance } from "../types";
 import {
   requiresWallAttachment,
@@ -33,7 +32,22 @@ const GroupedWardrobeMeasurements: React.FC<
     wallsDimensions,
     draggedObjectId,
     selectedObjectId,
+    getProducts,
   } = useStore();
+
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
 
   const roomDimensions: WallRoomDimensions = useMemo(
     () => ({
@@ -113,9 +127,7 @@ const GroupedWardrobeMeasurements: React.FC<
     const groups = new Map<number, WallGroup>();
 
     wardrobeInstances.forEach((instance) => {
-      const product = productsData.products.find(
-        (p) => p.model === instance.product.model
-      );
+      const product = products.find((p) => p.model === instance.product.model);
       if (!product) return;
 
       const r3fScale = 0.01;
@@ -265,7 +277,7 @@ const GroupedWardrobeMeasurements: React.FC<
     });
 
     return groups;
-  }, [wardrobeInstances, showWardrobeMeasurements, roomDimensions]);
+  }, [wardrobeInstances, showWardrobeMeasurements, roomDimensions, products]);
 
   // Generate measurements for each wall group
   const groupMeasurements = useMemo(() => {
@@ -316,7 +328,7 @@ const GroupedWardrobeMeasurements: React.FC<
         };
 
         // Get wardrobe shape and wall orientation
-        const product = productsData.products.find(
+        const product = products.find(
           (p) => p.model === instance.product.model
         );
         const wardrobeShape = product?.type || "normal"; // "normal", "corner", or future "polygon"
@@ -903,7 +915,7 @@ const GroupedWardrobeMeasurements: React.FC<
           return measurements;
         }
 
-        const activeProduct = productsData.products.find(
+        const activeProduct = products.find(
           (p) => p.model === activeInstance.product.model
         );
         if (activeProduct) {
@@ -941,7 +953,7 @@ const GroupedWardrobeMeasurements: React.FC<
           // Check for closer wardrobes to the left - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = productsData.products.find(
+            const product = products.find(
               (p) => p.model === instance.product.model
             );
             if (!product) return;
@@ -985,7 +997,7 @@ const GroupedWardrobeMeasurements: React.FC<
           // Check for closer wardrobes to the right - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = productsData.products.find(
+            const product = products.find(
               (p) => p.model === instance.product.model
             );
             if (!product) return;
@@ -1037,7 +1049,7 @@ const GroupedWardrobeMeasurements: React.FC<
           // Check for closer wardrobes to the front - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = productsData.products.find(
+            const product = products.find(
               (p) => p.model === instance.product.model
             );
             if (!product) return;
@@ -1080,7 +1092,7 @@ const GroupedWardrobeMeasurements: React.FC<
           // Check for closer wardrobes to the back - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = productsData.products.find(
+            const product = products.find(
               (p) => p.model === instance.product.model
             );
             if (!product) return;

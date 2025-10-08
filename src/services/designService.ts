@@ -6,7 +6,6 @@ import {
   updateDoc,
   serverTimestamp,
   query,
-  where,
   getDocs,
   orderBy,
   limit,
@@ -18,45 +17,49 @@ export interface FirebaseDesignState extends SavedDesignState {
   id?: string;
   createdAt?: any;
   updatedAt?: any;
+  unixTimestamp?: number; // Unix timestamp in seconds
 }
 
+// currently the firebase use this name
 const DESIGNS_COLLECTION = "designs";
 
 /**
  * Save design state to Firebase
  * @param designState - The design state to save
- * @param designId - Optional specific ID, if not provided will generate one
- * @param userId - Optional user ID for multi-user support
+ * @param firebaseId - Optional specific ID for updates, if not provided will use designId as document ID
  */
 export const saveDesignToFirebase = async (
   designState: SavedDesignState,
   firebaseId?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
+    const currentUnixTimestamp = Math.floor(Date.now() / 1000);
     const designData: Omit<FirebaseDesignState, "id"> = {
       ...designState,
+      unixTimestamp: currentUnixTimestamp,
       updatedAt: serverTimestamp(),
     };
 
     let docRef;
+    const documentId = firebaseId || designState.designId;
 
     if (firebaseId) {
-      // Update existing design
+      // Update existing design using firebaseId
       docRef = doc(db, DESIGNS_COLLECTION, firebaseId);
       await updateDoc(docRef, {
         ...designData,
         updatedAt: serverTimestamp(),
       });
     } else {
-      // Create new design
-      docRef = doc(collection(db, DESIGNS_COLLECTION));
+      // Create new design using designId as document ID
+      docRef = doc(db, DESIGNS_COLLECTION, designState.designId);
       await setDoc(docRef, {
         ...designData,
         createdAt: serverTimestamp(),
       });
     }
 
-    return { success: true, id: docRef.id };
+    return { success: true, id: documentId };
   } catch (error) {
     console.error("Error saving design to Firebase:", error);
     return {
@@ -67,8 +70,8 @@ export const saveDesignToFirebase = async (
 };
 
 /**
- * Get design state from Firebase by ID
- * @param designId - The design ID to retrieve
+ * Get design state from Firebase by designId (now used as document ID)
+ * @param designId - The design ID to retrieve (e.g., W3K8ZQ12)
  */
 export const getDesignFromFirebase = async (
   designId: string
@@ -106,7 +109,7 @@ export const getDesignFromFirebase = async (
 };
 
 /**
- * Get design by designId (human-friendly code)
+ * Get design by designId (human-friendly code) - now just an alias for getDesignFromFirebase
  * @param designCode - The design code (e.g., W3K8ZQ12)
  */
 export const getDesignByCode = async (
@@ -116,38 +119,8 @@ export const getDesignByCode = async (
   data?: FirebaseDesignState;
   error?: string;
 }> => {
-  try {
-    const q = query(
-      collection(db, DESIGNS_COLLECTION),
-      where("designId", "==", designCode),
-      limit(1)
-    );
-
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      const doc = querySnapshot.docs[0];
-      const data = doc.data() as FirebaseDesignState;
-      return {
-        success: true,
-        data: {
-          ...data,
-          id: doc.id,
-        },
-      };
-    } else {
-      return {
-        success: false,
-        error: "Design not found",
-      };
-    }
-  } catch (error) {
-    console.error("Error getting design by code from Firebase:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
+  // Since we now use designId as document ID, this is just a direct lookup
+  return getDesignFromFirebase(designCode);
 };
 
 /**
@@ -195,7 +168,7 @@ export const getLatestDesign = async (): Promise<{
 
 /**
  * Delete a design from Firebase
- * @param designId - The design ID to delete
+ * @param designId - The design ID to delete (e.g., W3K8ZQ12)
  */
 export const deleteDesignFromFirebase = async (
   designId: string
@@ -205,6 +178,7 @@ export const deleteDesignFromFirebase = async (
     await updateDoc(docRef, {
       deleted: true,
       deletedAt: serverTimestamp(),
+      unixTimestamp: Math.floor(Date.now() / 1000), // Update unix timestamp on deletion
     });
 
     return { success: true };

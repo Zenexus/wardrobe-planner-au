@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Menu, Plus, Minus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,15 +11,29 @@ import {
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useStore } from "@/store";
 import { Organizer } from "@/types";
-import organisorsData from "@/organisor.json";
 
 const AddOnOrganisors = () => {
   const navigate = useNavigate();
-  const { selectedOrganizers, addOrganizer, updateOrganizerQuantity } =
-    useStore();
+  const {
+    selectedOrganizers,
+    addOrganizer,
+    updateOrganizerQuantity,
+    getOrganisors,
+  } = useStore();
 
-  // Extract organizers from JSON data
-  const organizers: Organizer[] = organisorsData.organisors;
+  const [organizers, setOrganizers] = useState<Organizer[]>([]);
+
+  useEffect(() => {
+    const loadOrganizers = async () => {
+      try {
+        const organizersData = await getOrganisors();
+        setOrganizers(organizersData);
+      } catch (error) {
+        console.error("Failed to load organizers:", error);
+      }
+    };
+    loadOrganizers();
+  }, [getOrganisors]);
 
   // Handle adding/updating organizer quantity
   const handleOrganizerQuantityChange = (
