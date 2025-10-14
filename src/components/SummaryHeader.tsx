@@ -64,8 +64,78 @@ export default function SummaryHeader() {
                   <DialogHeader>
                     <DialogTitle>Popular List</DialogTitle>
                   </DialogHeader>
-                  <div className="py-4">
-                    {/* Content will be added later */}
+
+                  <div className="py-4 overflow-y-auto max-h-[80vh]">
+                    <div
+                      onClick={() =>
+                        window.open("https://rack-it.com.au/", "_blank")
+                      }
+                      className="mb-4 cursor-pointer border-2 border-transparent hover:border-gray-300 hover:border-dashed rounded-md p-2"
+                    >
+                      <p className="text-lg font-semibold text-[#003b4a]">
+                        Rack it planner
+                      </p>
+                      <p className="text-xs mb-2">
+                        Try Our Online Planner — See Our Range & Design Your
+                        Ultimate Storage Space In 4 Easy Steps Today. Learn
+                        More! Design your Rack It garage setup, then shop
+                        in-store at Bunnings or checkout online. Rack It Starter
+                        Kit. Rack It Storage Planner. Rack It Shelving System.
+                        Rack It Garage Shelving. Available at Bunnings.
+                      </p>
+                      <img
+                        src="/banners/rack_it_planner_banner.jpg"
+                        alt="Rack it planner"
+                        className="rounded-md w-full object-cover"
+                      />
+                    </div>
+
+                    <div
+                      onClick={() =>
+                        window.open("https://flexistorage.com.au/", "_blank")
+                      }
+                      className="mb-4 cursor-pointer border-2 border-transparent hover:border-gray-300 hover:border-dashed rounded-md p-2"
+                    >
+                      <p className="text-lg font-semibold text-[#003b4a]">
+                        Home Solution
+                      </p>
+                      <p className="text-xs mb-2">
+                        Flexi Storage offers customizable wall-mounted systems
+                        (Double/Single Slot), free-standing frames, and starter
+                        kits for easy, flexible home storage.
+                      </p>
+                      <img
+                        className="rounded-md w-full object-cover"
+                        src="/banners/home_solution_banner.jpg"
+                        alt="Home Solution"
+                      />
+                    </div>
+                    <div
+                      onClick={() =>
+                        window.open(
+                          "https://flexistorage.com.au/clever-cube",
+                          "_blank"
+                        )
+                      }
+                      className="mb-4 cursor-pointer border-2 border-transparent hover:border-gray-300 hover:border-dashed rounded-md p-2"
+                    >
+                      <p className="text-lg font-semibold text-[#003b4a]">
+                        Clever Cube
+                      </p>
+                      <p className="text-xs mb-2">
+                        Create & Organise Your Space With Flexi Storage. Many
+                        Options, Simple To Use & Affordable! Need More Space?
+                        Explore Our Carefully Designed, Affordable Storage
+                        Solutions Online Now! Get Help. View Products.
+                        Highlights: Offering A Range Of Products, Where To Buy
+                        Option Available.
+                      </p>
+                      <img
+                        className="rounded-md w-full object-cover"
+                        src="/banners/clever_cube_banner.jpg"
+                        alt="Clever Cube"
+                      />
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>

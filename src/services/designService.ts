@@ -22,6 +22,8 @@ export interface FirebaseDesignState extends SavedDesignState {
 
 // currently the firebase use this name
 const DESIGNS_COLLECTION = "designs";
+const BUNNINGS_DESIGNS_COLLECTION = "bunnings_designs";
+const BUNNINGS_TRADE_DESIGNS_COLLECTION = "bunnings_trade_designs";
 
 /**
  * Save design state to Firebase
@@ -159,6 +161,98 @@ export const getLatestDesign = async (): Promise<{
     }
   } catch (error) {
     console.error("Error getting latest design from Firebase:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
+
+/**
+ * Save design state to Bunnings collection
+ * @param designState - The design state to save
+ * @param firebaseId - Optional specific ID for updates, if not provided will use designId as document ID
+ */
+export const saveDesignToBunnings = async (
+  designState: SavedDesignState,
+  firebaseId?: string
+): Promise<{ success: boolean; id?: string; error?: string }> => {
+  try {
+    const currentUnixTimestamp = Math.floor(Date.now() / 1000);
+    const designData: Omit<FirebaseDesignState, "id"> = {
+      ...designState,
+      unixTimestamp: currentUnixTimestamp,
+      updatedAt: serverTimestamp(),
+    };
+
+    let docRef;
+    const documentId = firebaseId || designState.designId;
+
+    if (firebaseId) {
+      // Update existing design using firebaseId
+      docRef = doc(db, BUNNINGS_DESIGNS_COLLECTION, firebaseId);
+      await updateDoc(docRef, {
+        ...designData,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      // Create new design using designId as document ID
+      docRef = doc(db, BUNNINGS_DESIGNS_COLLECTION, designState.designId);
+      await setDoc(docRef, {
+        ...designData,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    return { success: true, id: documentId };
+  } catch (error) {
+    console.error("Error saving design to Bunnings:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
+
+/**
+ * Save design state to Bunnings Trade collection
+ * @param designState - The design state to save
+ * @param firebaseId - Optional specific ID for updates, if not provided will use designId as document ID
+ */
+export const saveDesignToBunningsTrade = async (
+  designState: SavedDesignState,
+  firebaseId?: string
+): Promise<{ success: boolean; id?: string; error?: string }> => {
+  try {
+    const currentUnixTimestamp = Math.floor(Date.now() / 1000);
+    const designData: Omit<FirebaseDesignState, "id"> = {
+      ...designState,
+      unixTimestamp: currentUnixTimestamp,
+      updatedAt: serverTimestamp(),
+    };
+
+    let docRef;
+    const documentId = firebaseId || designState.designId;
+
+    if (firebaseId) {
+      // Update existing design using firebaseId
+      docRef = doc(db, BUNNINGS_TRADE_DESIGNS_COLLECTION, firebaseId);
+      await updateDoc(docRef, {
+        ...designData,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      // Create new design using designId as document ID
+      docRef = doc(db, BUNNINGS_TRADE_DESIGNS_COLLECTION, designState.designId);
+      await setDoc(docRef, {
+        ...designData,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    return { success: true, id: documentId };
+  } catch (error) {
+    console.error("Error saving design to Bunnings Trade:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
