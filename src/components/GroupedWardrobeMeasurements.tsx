@@ -904,8 +904,9 @@ const GroupedWardrobeMeasurements: React.FC<
     });
 
     // Add blue measurements for actively dragged OR selected wardrobe
+    // Only if measurements are enabled
     const activeWardrobeId = draggedObjectId || selectedObjectId;
-    if (activeWardrobeId) {
+    if (activeWardrobeId && showWardrobeMeasurements) {
       const activeInstance = wardrobeInstances.find(
         (w) => w.id === activeWardrobeId
       );
@@ -931,14 +932,12 @@ const GroupedWardrobeMeasurements: React.FC<
           // Calculate room boundaries
           const roomWidth = roomDimensions.width;
           const roomHeight = roomDimensions.height;
+          const roomDepth = roomDimensions.depth;
 
           const leftWallX = -roomWidth / 2;
           const rightWallX = roomWidth / 2;
-
-          // Find closest left object/wall
-          let leftDistance = activeX - activeDimensions.width / 2 - leftWallX; // Distance to left wall
-          let leftTarget = leftWallX;
-          let leftLabel = "to left wall";
+          const frontWallZ = -roomDepth / 2;
+          const backWallZ = roomDepth / 2;
 
           // Get the active wardrobe's wall for filtering
           let activeWardrobeWall = -1;
@@ -950,16 +949,34 @@ const GroupedWardrobeMeasurements: React.FC<
             );
           }
 
+          // Determine which axis to use based on wall orientation
+          // Vertical walls (0=right, 1=left): wardrobes slide along Z-axis
+          // Horizontal walls (2=back, 3=front): wardrobes slide along X-axis
+          const isVerticalWall =
+            activeWardrobeWall === 0 || activeWardrobeWall === 1;
+
+          // Find closest left object/wall (or front for vertical walls)
+          let leftDistance: number;
+          let leftTarget: number;
+          let leftLabel = "to left wall";
+
+          if (isVerticalWall) {
+            // Vertical walls: measure along Z-axis (front direction)
+            leftDistance = activeZ - activeDimensions.width / 2 - frontWallZ;
+            leftTarget = frontWallZ;
+            leftLabel = "to front wall";
+          } else {
+            // Horizontal walls: measure along X-axis
+            leftDistance = activeX - activeDimensions.width / 2 - leftWallX;
+            leftTarget = leftWallX;
+            leftLabel = "to left wall";
+          }
+
           // Check for closer wardrobes to the left - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = products.find(
-              (p) => p.model === instance.product.model
-            );
-            if (!product) return;
 
             // Skip L-shape (corner) wardrobes entirely for blue measurements
-            // They should only affect measurements within their own wall groups
             if (requiresCornerPlacement(instance.product.model)) {
               return;
             }
@@ -976,10 +993,22 @@ const GroupedWardrobeMeasurements: React.FC<
               if (otherWallIndex !== activeWardrobeWall) return;
             }
 
-            const otherWidth = product.width * r3fScale;
-            const otherRightEdge = instance.position[0] + otherWidth / 2;
-            const distanceToOther =
-              activeX - activeDimensions.width / 2 - otherRightEdge;
+            // Use product data directly from instance (same as snapping logic)
+            const otherWidth = instance.product.width * r3fScale;
+            let otherRightEdge: number;
+            let distanceToOther: number;
+
+            if (isVerticalWall) {
+              // Vertical walls: use Z coordinates
+              otherRightEdge = instance.position[2] + otherWidth / 2;
+              distanceToOther =
+                activeZ - activeDimensions.width / 2 - otherRightEdge;
+            } else {
+              // Horizontal walls: use X coordinates
+              otherRightEdge = instance.position[0] + otherWidth / 2;
+              distanceToOther =
+                activeX - activeDimensions.width / 2 - otherRightEdge;
+            }
 
             if (distanceToOther > 0 && distanceToOther < leftDistance) {
               leftDistance = distanceToOther;
@@ -988,22 +1017,28 @@ const GroupedWardrobeMeasurements: React.FC<
             }
           });
 
-          // Find closest right object/wall
-          let rightDistance =
-            rightWallX - (activeX + activeDimensions.width / 2); // Distance to right wall
-          let rightTarget = rightWallX;
+          // Find closest right object/wall (or back for vertical walls)
+          let rightDistance: number;
+          let rightTarget: number;
           let rightLabel = "to right wall";
+
+          if (isVerticalWall) {
+            // Vertical walls: measure along Z-axis (back direction)
+            rightDistance = backWallZ - (activeZ + activeDimensions.width / 2);
+            rightTarget = backWallZ;
+            rightLabel = "to back wall";
+          } else {
+            // Horizontal walls: measure along X-axis
+            rightDistance = rightWallX - (activeX + activeDimensions.width / 2);
+            rightTarget = rightWallX;
+            rightLabel = "to right wall";
+          }
 
           // Check for closer wardrobes to the right - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = products.find(
-              (p) => p.model === instance.product.model
-            );
-            if (!product) return;
 
             // Skip L-shape (corner) wardrobes entirely for blue measurements
-            // They should only affect measurements within their own wall groups
             if (requiresCornerPlacement(instance.product.model)) {
               return;
             }
@@ -1020,10 +1055,22 @@ const GroupedWardrobeMeasurements: React.FC<
               if (otherWallIndex !== activeWardrobeWall) return;
             }
 
-            const otherWidth = product.width * r3fScale;
-            const otherLeftEdge = instance.position[0] - otherWidth / 2;
-            const distanceToOther =
-              otherLeftEdge - (activeX + activeDimensions.width / 2);
+            // Use product data directly from instance (same as snapping logic)
+            const otherWidth = instance.product.width * r3fScale;
+            let otherLeftEdge: number;
+            let distanceToOther: number;
+
+            if (isVerticalWall) {
+              // Vertical walls: use Z coordinates
+              otherLeftEdge = instance.position[2] - otherWidth / 2;
+              distanceToOther =
+                otherLeftEdge - (activeZ + activeDimensions.width / 2);
+            } else {
+              // Horizontal walls: use X coordinates
+              otherLeftEdge = instance.position[0] - otherWidth / 2;
+              distanceToOther =
+                otherLeftEdge - (activeX + activeDimensions.width / 2);
+            }
 
             if (distanceToOther > 0 && distanceToOther < rightDistance) {
               rightDistance = distanceToOther;
@@ -1036,11 +1083,6 @@ const GroupedWardrobeMeasurements: React.FC<
           const ceilingDistance =
             roomHeight - (activeY + activeDimensions.height);
 
-          // Calculate additional distances for different orientations
-          const roomDepth = roomDimensions.depth;
-          const frontWallZ = -roomDepth / 2;
-          const backWallZ = roomDepth / 2;
-
           // Find closest front object/wall
           let frontDistance = activeZ - activeDimensions.depth / 2 - frontWallZ;
           let frontTarget = frontWallZ;
@@ -1049,10 +1091,6 @@ const GroupedWardrobeMeasurements: React.FC<
           // Check for closer wardrobes to the front - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = products.find(
-              (p) => p.model === instance.product.model
-            );
-            if (!product) return;
 
             // Skip L-shape (corner) wardrobes entirely for blue measurements
             // They should only affect measurements within their own wall groups
@@ -1072,7 +1110,8 @@ const GroupedWardrobeMeasurements: React.FC<
               if (otherWallIndex !== activeWardrobeWall) return;
             }
 
-            const otherDepth = product.depth * r3fScale;
+            // Use product data directly from instance (same as snapping logic)
+            const otherDepth = instance.product.depth * r3fScale;
             const otherBackEdge = instance.position[2] + otherDepth / 2;
             const distanceToOther =
               activeZ - activeDimensions.depth / 2 - otherBackEdge;
@@ -1092,10 +1131,6 @@ const GroupedWardrobeMeasurements: React.FC<
           // Check for closer wardrobes to the back - only consider wardrobes on the same wall
           wardrobeInstances.forEach((instance) => {
             if (instance.id === activeWardrobeId) return;
-            const product = products.find(
-              (p) => p.model === instance.product.model
-            );
-            if (!product) return;
 
             // Skip L-shape (corner) wardrobes entirely for blue measurements
             // They should only affect measurements within their own wall groups
@@ -1115,7 +1150,8 @@ const GroupedWardrobeMeasurements: React.FC<
               if (otherWallIndex !== activeWardrobeWall) return;
             }
 
-            const otherDepth = product.depth * r3fScale;
+            // Use product data directly from instance (same as snapping logic)
+            const otherDepth = instance.product.depth * r3fScale;
             const otherFrontEdge = instance.position[2] - otherDepth / 2;
             const distanceToOther =
               otherFrontEdge - (activeZ + activeDimensions.depth / 2);
@@ -1375,7 +1411,25 @@ const GroupedWardrobeMeasurements: React.FC<
             dragMeasurementConfigs[facingWall] || dragMeasurementConfigs.back;
           const dragMeasurements = Object.values(activeMeasurements);
 
+          // Minimum distance threshold to show measurements
+          // This should be slightly larger than SNAP_ENGAGE_DISTANCE to account for:
+          // 1. Snap hysteresis (wardrobes snap at 20cm but stay snapped until 45cm)
+          // 2. Physics settling time and floating point precision
+          // 3. Store update delays during drag
+          const MIN_MEASUREMENT_DISTANCE = 25; // cm (slightly > 20cm snap threshold)
+
           dragMeasurements.forEach((measurement, index) => {
+            // Skip measurements that are too small (e.g., when wardrobes are snapped)
+            // Also skip measurements to other wardrobes if very close (indicating snap)
+            const isVeryClose = measurement.value < MIN_MEASUREMENT_DISTANCE;
+            const isToWardrobe = measurement.label === "to wardrobe";
+
+            // Only hide if it's to another wardrobe and very close
+            // Always show distances to walls (for reference)
+            if (isToWardrobe && isVeryClose) {
+              return; // Hide this measurement - wardrobes are snapped
+            }
+
             measurements.push(
               <WardrobeMeasurement
                 key={`active-${activeWardrobeId}-${index}`}
@@ -1400,6 +1454,8 @@ const GroupedWardrobeMeasurements: React.FC<
     selectedObjectId,
     wardrobeInstances,
     roomDimensions,
+    showWardrobeMeasurements,
+    products,
   ]);
 
   if (!showWardrobeMeasurements) {

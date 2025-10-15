@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { Ruler, Trash2, Lightbulb, Undo, Redo } from "lucide-react";
 import { useStore } from "@/store";
@@ -56,7 +55,7 @@ const ToolPanel = () => {
   if (customizeMode) return null;
 
   return (
-    <Html fullscreen prepend style={{ pointerEvents: "none" }}>
+    <>
       {/* Floor Texture Selector - positioned above other buttons */}
       <div className="absolute bottom-[120px] left-[50px] z-[100] pointer-events-auto">
         <FloorTextureSelector />
@@ -179,7 +178,7 @@ const ToolPanel = () => {
           </AlertDialog>
         )}
       </div>
-    </Html>
+    </>
   );
 };
 

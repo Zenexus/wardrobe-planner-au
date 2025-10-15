@@ -20,6 +20,9 @@ import WardrobeDetailSheet from "@/components/WardrobeDetailSheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import ToolPanel from "@/components/ToolPanel";
+import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
+import FocusedWardrobePanel from "@/components/FocusedWardrobePanel";
 import {
   saveDesignStateWithSync,
   generateShoppingCart,
@@ -106,8 +109,10 @@ const DropPositionCalculator = () => {
 // Canvas wrapper with external loading state
 const CanvasWrapper = ({
   onCloseDetailSheet,
+  products,
 }: {
   onCloseDetailSheet: () => void;
+  products: any[];
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const lightsOn = useStore((state) => state.lightsOn);
@@ -146,7 +151,7 @@ const CanvasWrapper = ({
           // Handle original wardrobe selection
           if (item.bundle.ItemName === "2583987-Original") {
             const originalProduct = products.find(
-              (p) => p.itemNumber === "2583987"
+              (p: any) => p.itemNumber === "2583987"
             );
             if (originalProduct) {
               targetProduct = originalProduct;
@@ -567,7 +572,10 @@ export default function Planner() {
         onResumeDesign={handleResumeDesign}
       />
       <div className="flex w-full h-screen overflow-hidden">
-        <CanvasWrapper onCloseDetailSheet={() => setIsDetailOpen(false)} />
+        <CanvasWrapper
+          onCloseDetailSheet={() => setIsDetailOpen(false)}
+          products={products}
+        />
 
         {/* Leave Planner Button - positioned at top left corner */}
         {!customizeMode && (
@@ -585,6 +593,16 @@ export default function Planner() {
               <TooltipContent>Leave Planner</TooltipContent>
             </Tooltip>
           </div>
+        )}
+
+        {/* Tool Panel - fixed bottom left */}
+        <ToolPanel />
+
+        {/* Conditional bottom center panel - FocusedWardrobePanel or CustomiseRoomPanel */}
+        {focusedWardrobeInstance ? (
+          <FocusedWardrobePanel />
+        ) : (
+          <CustomiseRoomPanel />
         )}
 
         <section className="w-3/10 h-screen bg-primary-foreground flex flex-col overflow-hidden">

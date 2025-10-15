@@ -7,8 +7,7 @@ import { useGLTF } from "@react-three/drei";
 import { ThreeElements } from "@react-three/fiber";
 import { GLTF } from "three-stdlib";
 import * as THREE from "three";
-import { forwardRef, useMemo, useState, useEffect } from "react";
-import { useStore } from "../store";
+import { forwardRef } from "react";
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -28,47 +27,13 @@ export const ModernWardrobe = forwardRef<
     "/models/01687.gltf"
   ) as unknown as GLTFResult;
 
-  const getProducts = useStore((state) => state.getProducts);
-  const [products, setProducts] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const productsData = await getProducts();
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Failed to load products:", error);
-      }
-    };
-    loadProducts();
-  }, [getProducts]);
-
-  // Get real product dimensions from products.json
-  const { scaleFactor, yOffset } = useMemo(() => {
-    const product = products.find((p) => p.model === "components/W-01687");
-    if (!product) {
-      console.warn("Product dimensions not found for W-01687");
-      return { scaleFactor: 1.0, yOffset: 0 }; // Fallback
-    }
-
-    // Calculate scale factor based on actual product dimensions
-    // The model should be scaled to match the real-world dimensions
-    // Assuming the model is designed for 200cm height, we scale it to match the product height
-    const targetHeight = product.height / 100; // Convert cm to R3F units (1 R3F unit = 100cm)
-    const modelHeight = 2.0; // Assuming the model is 2 units tall in its original scale
-    const scaleFactor = targetHeight / modelHeight;
-
-    // Counteract the built-in Y translation in the GLTF model (0.9481528997421265)
-    // to place the wardrobe bottom at Y=0
-    const modelBuiltInYOffset = 0.9;
-    const yOffset = modelBuiltInYOffset * scaleFactor;
-
-    return { scaleFactor, yOffset };
-  }, [products]);
+  // Simplified: Use consistent positioning like other wardrobe models
+  // The GLTF model has a built-in Y offset of approximately 0.989 to sit properly on the floor
+  const modelBuiltInYPosition = 0.9;
 
   return (
     <group {...props} dispose={null} onClick={props.onClick}>
-      <group scale={scaleFactor} position={[0, yOffset, 0]}>
+      <group position={[0, modelBuiltInYPosition, 0]}>
         <mesh
           ref={ref}
           castShadow

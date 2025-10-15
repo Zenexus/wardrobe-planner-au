@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { Trash2, Info } from "lucide-react";
 import { useStore } from "@/store";
@@ -16,7 +15,6 @@ const FocusedWardrobePanel = () => {
     setFocusedWardrobeInstance,
     removeWardrobeInstance,
     setSelectedObjectId,
-    globalSheetOpen,
   } = useStore();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -60,44 +58,42 @@ const FocusedWardrobePanel = () => {
   const { product } = focusedWardrobeInstance;
 
   return (
-    <Html fullscreen prepend>
-      <div className="absolute flex gap-4 bottom-[50px] left-1/2 -translate-x-1/2 z-[100] max-w-[150px] h-[50px] w-full mx-4">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={handleDelete}
-              className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
-            >
-              <Trash2 />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Delete this wardrobe</TooltipContent>
-        </Tooltip>
+    <div className="absolute flex gap-4 bottom-[50px] left-[35%] -translate-x-1/2 z-[100] max-w-[150px] h-[50px] w-full mx-4 pointer-events-auto">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={handleDelete}
+            className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
+          >
+            <Trash2 />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete this wardrobe</TooltipContent>
+      </Tooltip>
 
-        <ProductDetailSheet
-          product={product}
-          open={isSheetOpen}
-          onOpenChange={handleSheetOpenChange}
-          onSheetClose={() => {
-            // Prevent any unwanted actions when sheet closes
-            // The handleSheetOpenChange already handles the proper cleanup
-          }}
-          trigger={
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleViewDetails}
-                  className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
-                >
-                  <Info />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View wardrobe details</TooltipContent>
-            </Tooltip>
-          }
-        />
-      </div>
-    </Html>
+      <ProductDetailSheet
+        product={product}
+        open={isSheetOpen}
+        onOpenChange={handleSheetOpenChange}
+        onSheetClose={() => {
+          // Prevent any unwanted actions when sheet closes
+          // The handleSheetOpenChange already handles the proper cleanup
+        }}
+        trigger={
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleViewDetails}
+                className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
+              >
+                <Info />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>View wardrobe details</TooltipContent>
+          </Tooltip>
+        }
+      />
+    </div>
   );
 };
 
