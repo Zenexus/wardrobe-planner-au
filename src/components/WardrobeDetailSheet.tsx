@@ -26,25 +26,29 @@ const WardrobeDetailSheet = ({
   const updateWardrobeInstance = useStore((s) => s.updateWardrobeInstance);
   const getBundles = useStore((s) => s.getBundles);
   const getProducts = useStore((s) => s.getProducts);
+  const getAccessories = useStore((s) => s.getAccessories);
 
   const [bundles, setBundles] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [accessories, setAccessories] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [bundlesData, productsData] = await Promise.all([
+        const [bundlesData, productsData, accessoriesData] = await Promise.all([
           getBundles(),
           getProducts(),
+          getAccessories(),
         ]);
         setBundles(bundlesData);
         setProducts(productsData);
+        setAccessories(accessoriesData);
       } catch (error) {
         console.error("Failed to load data:", error);
       }
     };
     loadData();
-  }, [getBundles, getProducts]);
+  }, [getBundles, getProducts, getAccessories]);
 
   if (!focusedWardrobeInstance) return null;
 
@@ -67,7 +71,7 @@ const WardrobeDetailSheet = ({
         intro: originalProduct.intro,
         thumbnail: originalProduct.images[0],
         model: "components/W-01685",
-        price: calculateOriginalWardrobePrice(),
+        price: calculateOriginalWardrobePrice(products),
         packDetails: [], // No accessories for original
       }
     : null;
@@ -77,7 +81,7 @@ const WardrobeDetailSheet = ({
   const bundlesWithPrices: BundleWithPrice[] = filteredBundles.map(
     (bundle) => ({
       ...bundle,
-      price: calculateBundlePrice(bundle), // Always calculate price
+      price: calculateBundlePrice(bundle, products, accessories), // Always calculate price
     })
   );
 
@@ -102,7 +106,11 @@ const WardrobeDetailSheet = ({
       targetProduct = originalProduct;
     } else {
       // Convert bundle to Product format with calculated price
-      const calculatedPrice = calculateBundlePrice(bundle);
+      const calculatedPrice = calculateBundlePrice(
+        bundle,
+        products,
+        accessories
+      );
       targetProduct = {
         itemNumber: bundle.ItemName,
         name: bundle.name,
@@ -178,6 +186,8 @@ const WardrobeDetailSheet = ({
                     <BundleCard
                       key={`${option.ItemName}-${index}`}
                       bundle={option}
+                      productsData={products}
+                      accessoriesData={accessories}
                       onAddToDesign={
                         isBlocked
                           ? undefined

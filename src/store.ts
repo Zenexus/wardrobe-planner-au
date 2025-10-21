@@ -28,7 +28,7 @@ export const ROOM_DIMENSIONS = {
   DEFAULT_WIDTH: 500, // 500cm = 5 meters
   DEFAULT_DEPTH: 400, // 400cm = 4 meters
   DEFAULT_HEIGHT: 250, // 250cm = 2.5 meters
-  WALL_THICKNESS: 5, // 5cm wall thickness
+  WALL_THICKNESS: 0.5, // 0.5cm wall thickness (5mm - very thin to prevent clipping)
 };
 
 export const DIMENSION_LIMITS = {
@@ -38,7 +38,7 @@ export const DIMENSION_LIMITS = {
   },
   WIDTH_LENGTH: {
     MIN: 400, // 400cm = 4 meters
-    MAX: 2000, // 2000cm = 20 meters
+    MAX: 1000, // 2000cm = 20 meters
   },
 };
 

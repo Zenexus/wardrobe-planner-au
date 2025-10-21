@@ -143,15 +143,14 @@ export function snapToWall(
 
 /**
  * Constrains movement along a wall for wall-attached wardrobes
- * STRICT MODE: Wardrobes are locked to their wall and can ONLY slide left/right
- * NO wall transitions allowed - they must stay on their assigned wall
+ * Allows wall transitions when wardrobe is dragged to a different wall
  */
 export function constrainMovementAlongWall(
   targetPosition: [number, number, number],
   wallConstraint: WallConstraint,
   instance: WardrobeInstance,
   roomDimensions: RoomDimensions,
-  _isCurrentlyTransitioning: boolean = false
+  isCurrentlyTransitioning: boolean = false
 ): {
   position: [number, number, number];
   shouldTransition: boolean;
@@ -174,12 +173,43 @@ export function constrainMovementAlongWall(
   // This accounts for model pivot point variations and floating-point precision
   const WALL_CLEARANCE_BUFFER = 0.02; // 2cm safety margin
 
-  // STRICT MODE: No transitions allowed
+  // Check if wardrobe should transition to a different wall
+  // Detect when user drags the wardrobe close to a perpendicular wall
+  const TRANSITION_THRESHOLD = 0.5; // 50cm from perpendicular wall to trigger transition
+
+  let shouldTransition = false;
+  let newWallConstraint: WallConstraint | undefined = undefined;
   let constrainedX = targetX;
   let constrainedZ = targetZ;
-  const shouldTransition = false; // Always false - no transitions
   const allowFreeMovement = false; // Never allow free movement
-  const newWallConstraint: WallConstraint | undefined = undefined;
+
+  // Only check for transitions if not already transitioning
+  if (!isCurrentlyTransitioning) {
+    // Check if wardrobe is close enough to a perpendicular wall to transition
+    const closestWall = getClosestWall(targetPosition, roomDimensions);
+
+    // If the closest wall is different from current wall, consider transition
+    if (closestWall.wallIndex !== wallConstraint.wallIndex) {
+      // Calculate distance to the new wall
+      let distanceToNewWall = 0;
+
+      if (closestWall.constrainedAxis === "x") {
+        distanceToNewWall = Math.abs(targetX - closestWall.wallPosition);
+      } else {
+        distanceToNewWall = Math.abs(targetZ - closestWall.wallPosition);
+      }
+
+      // If within transition threshold, trigger transition
+      if (distanceToNewWall < TRANSITION_THRESHOLD) {
+        shouldTransition = true;
+        newWallConstraint = closestWall;
+
+        // During transition, allow smoother movement
+        // Constrain to new wall immediately
+        wallConstraint = closestWall;
+      }
+    }
+  }
 
   // STRICT WALL CONSTRAINTS: Lock to wall, only allow left/right sliding
   switch (wallConstraint.wallIndex) {
@@ -191,8 +221,17 @@ export function constrainMovementAlongWall(
         (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
 
       // ONLY allow movement along Z axis (left/right along the wall)
-      const maxZ_right = roomDimensions.depth / 2 - wardrobeWidth / 2;
-      const minZ_right = -roomDimensions.depth / 2 + wardrobeWidth / 2;
+      // Account for perpendicular wall thickness AND clearance buffer
+      const maxZ_right =
+        roomDimensions.depth / 2 -
+        roomDimensions.thickness / 2 -
+        wardrobeWidth / 2 -
+        WALL_CLEARANCE_BUFFER;
+      const minZ_right =
+        -roomDimensions.depth / 2 +
+        roomDimensions.thickness / 2 +
+        wardrobeWidth / 2 +
+        WALL_CLEARANCE_BUFFER;
       constrainedZ = Math.max(minZ_right, Math.min(maxZ_right, targetZ));
       break;
 
@@ -204,8 +243,17 @@ export function constrainMovementAlongWall(
         (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
 
       // ONLY allow movement along Z axis (left/right along the wall)
-      const maxZ_left = roomDimensions.depth / 2 - wardrobeWidth / 2;
-      const minZ_left = -roomDimensions.depth / 2 + wardrobeWidth / 2;
+      // Account for perpendicular wall thickness AND clearance buffer
+      const maxZ_left =
+        roomDimensions.depth / 2 -
+        roomDimensions.thickness / 2 -
+        wardrobeWidth / 2 -
+        WALL_CLEARANCE_BUFFER;
+      const minZ_left =
+        -roomDimensions.depth / 2 +
+        roomDimensions.thickness / 2 +
+        wardrobeWidth / 2 +
+        WALL_CLEARANCE_BUFFER;
       constrainedZ = Math.max(minZ_left, Math.min(maxZ_left, targetZ));
       break;
 
@@ -217,8 +265,17 @@ export function constrainMovementAlongWall(
         (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
 
       // ONLY allow movement along X axis (left/right along the wall)
-      const maxX_back = roomDimensions.width / 2 - wardrobeWidth / 2;
-      const minX_back = -roomDimensions.width / 2 + wardrobeWidth / 2;
+      // Account for perpendicular wall thickness AND clearance buffer
+      const maxX_back =
+        roomDimensions.width / 2 -
+        roomDimensions.thickness / 2 -
+        wardrobeWidth / 2 -
+        WALL_CLEARANCE_BUFFER;
+      const minX_back =
+        -roomDimensions.width / 2 +
+        roomDimensions.thickness / 2 +
+        wardrobeWidth / 2 +
+        WALL_CLEARANCE_BUFFER;
       constrainedX = Math.max(minX_back, Math.min(maxX_back, targetX));
       break;
 
@@ -230,8 +287,17 @@ export function constrainMovementAlongWall(
         (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
 
       // ONLY allow movement along X axis (left/right along the wall)
-      const maxX_front = roomDimensions.width / 2 - wardrobeWidth / 2;
-      const minX_front = -roomDimensions.width / 2 + wardrobeWidth / 2;
+      // Account for perpendicular wall thickness AND clearance buffer
+      const maxX_front =
+        roomDimensions.width / 2 -
+        roomDimensions.thickness / 2 -
+        wardrobeWidth / 2 -
+        WALL_CLEARANCE_BUFFER;
+      const minX_front =
+        -roomDimensions.width / 2 +
+        roomDimensions.thickness / 2 +
+        wardrobeWidth / 2 +
+        WALL_CLEARANCE_BUFFER;
       constrainedX = Math.max(minX_front, Math.min(maxX_front, targetX));
       break;
   }

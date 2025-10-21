@@ -599,8 +599,8 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         intersectionPoint.current.z - dragOffset.z
       );
 
-      // Apply STRICT wall constraints for traditional wardrobes
-      // Wardrobes are locked to their wall and can only slide left/right
+      // Apply wall constraints for traditional wardrobes with transition support
+      // Wardrobes can slide left/right and transition to adjacent walls
       if (
         isWallConstrained &&
         wallConstraint &&
@@ -617,8 +617,23 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
             isTransitioning
           );
 
-          // Apply the strictly constrained position
-          // (No transitions allowed - wardrobe stays locked to its wall)
+          // Check if wardrobe should transition to a new wall
+          if (
+            constraintResult.shouldTransition &&
+            constraintResult.newWallConstraint
+          ) {
+            // Start transition - update wall constraint and rotation
+            setWallConstraint(constraintResult.newWallConstraint);
+            setCurrentRotation(constraintResult.newWallConstraint.rotation);
+            setIsTransitioning(true);
+
+            // Immediately notify about rotation change
+            if (onRotationChange) {
+              onRotationChange(id, constraintResult.newWallConstraint.rotation);
+            }
+          }
+
+          // Apply the constrained position
           targetPosition.set(
             constraintResult.position[0],
             constraintResult.position[1],
