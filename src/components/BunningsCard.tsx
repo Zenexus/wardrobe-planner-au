@@ -1,14 +1,46 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/store";
 import { getBundleComposition } from "@/utils/bundleComposition";
+import {
+  saveDesignToBunnings,
+  saveDesignToBunningsTrade,
+} from "@/services/designService";
+import { generateShoppingCart } from "@/utils/memorySystem";
 
 type AccountType = "normal" | "powerPass";
 
 export default function BunningsCard() {
   const wardrobeInstances = useStore((s) => s.wardrobeInstances);
   const selectedOrganizers = useStore((s) => s.selectedOrganizers);
+  const wallsDimensions = useStore((s) => s.wallsDimensions);
+  const customizeMode = useStore((s) => s.customizeMode);
+  const selectedColor = useStore((s) => s.selectedColor);
+  const depthTab = useStore((s) => s.depthTab);
+  const currentDesignCode = useStore((s) => s.currentDesignCode);
+  const { getBundles, getProducts, getAccessories } = useStore();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [bundlesData, setBundlesData] = useState<any[]>([]);
+  const [productsData, setProductsData] = useState<any[]>([]);
+  const [accessoriesData, setAccessoriesData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [bundles, products, accessories] = await Promise.all([
+          getBundles(),
+          getProducts(),
+          getAccessories(),
+        ]);
+        setBundlesData(bundles);
+        setProductsData(products);
+        setAccessoriesData(accessories);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      }
+    };
+    loadData();
+  }, [getBundles, getProducts, getAccessories]);
 
   const groupedCart = useMemo(() => {
     const map = new Map<
@@ -18,7 +50,12 @@ export default function BunningsCard() {
 
     // Add wardrobe instances (decompose bundles)
     for (const instance of wardrobeInstances) {
-      const bundleComposition = getBundleComposition(instance);
+      const bundleComposition = getBundleComposition(
+        instance,
+        bundlesData,
+        productsData,
+        accessoriesData
+      );
 
       if (bundleComposition.isBundle) {
         // For bundles, add each component item
@@ -62,7 +99,13 @@ export default function BunningsCard() {
     }
 
     return Array.from(map.values());
-  }, [wardrobeInstances, selectedOrganizers]);
+  }, [
+    wardrobeInstances,
+    selectedOrganizers,
+    bundlesData,
+    productsData,
+    accessoriesData,
+  ]);
 
   const makeShareUrls = useCallback(
     (accountType: AccountType) => {
@@ -117,12 +160,56 @@ export default function BunningsCard() {
     return { ok: true } as const;
   }, [groupedCart]);
 
-  const handleCheckout = (accountType: AccountType) => {
+  const getCurrentDesignState = useCallback(() => {
+    const { shoppingCart, totalPrice } =
+      generateShoppingCart(wardrobeInstances);
+    const designId = currentDesignCode || `W${Date.now().toString().slice(-6)}`;
+
+    return {
+      version: "1.0.0",
+      date: new Date().toISOString(),
+      designId,
+      designData: {
+        wardrobeInstances,
+        wallsDimensions,
+        customizeMode,
+        selectedColor,
+        depthTab,
+      },
+      shoppingCart,
+      totalPrice,
+    };
+  }, [
+    wardrobeInstances,
+    wallsDimensions,
+    customizeMode,
+    selectedColor,
+    depthTab,
+    currentDesignCode,
+  ]);
+
+  const handleCheckout = async (accountType: AccountType) => {
     const v = validate();
     if (!v.ok) {
       setErrorMessage(v.reason);
       return;
     }
+
+    // Save design to appropriate collection
+    try {
+      const designState = getCurrentDesignState();
+
+      if (accountType === "normal") {
+        await saveDesignToBunnings(designState);
+      } else {
+        await saveDesignToBunningsTrade(designState);
+      }
+    } catch (error) {
+      console.error("Failed to save design:", error);
+      setErrorMessage("Failed to save design. Please try again.");
+      return;
+    }
+
     const { website, email } = makeShareUrls(accountType);
 
     const websiteQs = website.split("?")[1] || "";

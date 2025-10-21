@@ -5,6 +5,8 @@ import { getBundlePriceBreakdown } from "@/utils/bundlePricing";
 
 interface BundleCardProps {
   bundle: BundleWithPrice;
+  productsData?: any[];
+  accessoriesData?: any[];
   onAddToDesign?: () => void;
   isBlocked?: boolean;
   isOriginal?: boolean;
@@ -12,13 +14,17 @@ interface BundleCardProps {
 
 export function BundleCard({
   bundle,
+  productsData,
+  accessoriesData,
   onAddToDesign,
   isBlocked = false,
   isOriginal = false,
 }: BundleCardProps) {
   // Get price breakdown for bundles (not for original)
   const priceBreakdown =
-    !isOriginal && bundle.packDetails ? getBundlePriceBreakdown(bundle) : null;
+    !isOriginal && bundle.packDetails
+      ? getBundlePriceBreakdown(bundle, productsData, accessoriesData)
+      : null;
 
   // Set up drag functionality
   const [{ isDragging }, drag] = useDrag({

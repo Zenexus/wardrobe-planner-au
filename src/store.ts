@@ -21,13 +21,14 @@ import {
   SavedDesignState,
   generateShoppingCart,
 } from "./utils/memorySystem";
+import WardrobePlannerProductService from "./services/productListService";
 
 // Real-world dimension constants (in CM)
 export const ROOM_DIMENSIONS = {
   DEFAULT_WIDTH: 500, // 500cm = 5 meters
   DEFAULT_DEPTH: 400, // 400cm = 4 meters
   DEFAULT_HEIGHT: 250, // 250cm = 2.5 meters
-  WALL_THICKNESS: 5, // 5cm wall thickness
+  WALL_THICKNESS: 0.5, // 0.5cm wall thickness (5mm - very thin to prevent clipping)
 };
 
 export const DIMENSION_LIMITS = {
@@ -37,7 +38,7 @@ export const DIMENSION_LIMITS = {
   },
   WIDTH_LENGTH: {
     MIN: 400, // 400cm = 4 meters
-    MAX: 2000, // 2000cm = 20 meters
+    MAX: 1000, // 2000cm = 20 meters
   },
 };
 
@@ -64,6 +65,10 @@ type StoreState = {
   setDraggedObjectId: (draggedObjectId: string | null) => void;
   selectedObjectId: string | null;
   setSelectedObjectId: (selectedObjectId: string | null) => void;
+
+  // Products cache for helper functions
+  productsCache: any[];
+  setProductsCache: (products: any[]) => void;
 
   // Color selection state
   selectedColor: "White" | "Oak";
@@ -173,6 +178,13 @@ type StoreState = {
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
+
+  // Product service methods
+  getProducts: () => Promise<any[]>;
+  getAccessories: () => Promise<any[]>;
+  getOrganisors: () => Promise<any[]>;
+  getBundles: () => Promise<any[]>;
+  getAllWardrobeProducts: () => Promise<any[]>;
 };
 
 export const useStore = create<StoreState>((set, get) => {
@@ -184,6 +196,16 @@ export const useStore = create<StoreState>((set, get) => {
     }
   }, 100);
 
+  // Initialize products cache
+  setTimeout(async () => {
+    try {
+      const products = await WardrobePlannerProductService.getProducts();
+      get().setProductsCache(products);
+    } catch (error) {
+      console.error("Failed to initialize products cache:", error);
+    }
+  }, 0);
+
   return {
     globalHasDragging: false,
     setGlobalHasDragging: (globalHasDragging: boolean) =>
@@ -194,6 +216,10 @@ export const useStore = create<StoreState>((set, get) => {
     selectedObjectId: null,
     setSelectedObjectId: (selectedObjectId: string | null) =>
       set({ selectedObjectId }),
+
+    // Products cache
+    productsCache: [],
+    setProductsCache: (products: any[]) => set({ productsCache: products }),
 
     // Color selection state
     selectedColor: "White",
@@ -245,7 +271,8 @@ export const useStore = create<StoreState>((set, get) => {
           product.model,
           state.wardrobeInstances,
           roomDimensions,
-          wallRoomDimensions
+          wallRoomDimensions,
+          state.productsCache
         )
       ) {
         const isTraditional = product.model === "components/W-01684";
@@ -277,7 +304,9 @@ export const useStore = create<StoreState>((set, get) => {
           !wouldCollideWithExisting(
             product.model,
             position,
-            state.wardrobeInstances
+            state.wardrobeInstances,
+            0.2,
+            state.productsCache
           )
         ) {
           smartPosition = position;
@@ -296,7 +325,8 @@ export const useStore = create<StoreState>((set, get) => {
             state.wardrobeInstances,
             position,
             roomDimensions,
-            wallRoomDimensions
+            wallRoomDimensions,
+            state.productsCache
           );
         }
       } else {
@@ -306,7 +336,8 @@ export const useStore = create<StoreState>((set, get) => {
           state.wardrobeInstances,
           position, // Use provided position as preferred if given
           roomDimensions,
-          wallRoomDimensions // Pass enhanced dimensions for better wall placement
+          wallRoomDimensions, // Pass enhanced dimensions for better wall placement
+          state.productsCache
         );
       }
 
@@ -463,7 +494,8 @@ export const useStore = create<StoreState>((set, get) => {
       return getSuggestedPositions(
         targetInstanceId,
         productModel,
-        state.wardrobeInstances
+        state.wardrobeInstances,
+        state.productsCache
       );
     },
     checkSpaceAvailability: (productModel: string) => {
@@ -475,7 +507,9 @@ export const useStore = create<StoreState>((set, get) => {
       return hasAvailableSpace(
         productModel,
         state.wardrobeInstances,
-        roomDimensions
+        roomDimensions,
+        undefined,
+        state.productsCache
       );
     },
     clearAllWardrobes: () => {
@@ -1037,5 +1071,13 @@ export const useStore = create<StoreState>((set, get) => {
         });
       }
     },
+
+    // Product service methods implementation
+    getProducts: () => WardrobePlannerProductService.getProducts(),
+    getAccessories: () => WardrobePlannerProductService.getAccessories(),
+    getOrganisors: () => WardrobePlannerProductService.getOrganisors(),
+    getBundles: () => WardrobePlannerProductService.getBundles(),
+    getAllWardrobeProducts: () =>
+      WardrobePlannerProductService.getAllWardrobeProducts(),
   };
 });

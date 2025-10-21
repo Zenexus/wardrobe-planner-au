@@ -20,6 +20,9 @@ import WardrobeDetailSheet from "@/components/WardrobeDetailSheet";
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import ToolPanel from "@/components/ToolPanel";
+import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
+import FocusedWardrobePanel from "@/components/FocusedWardrobePanel";
 import {
   saveDesignStateWithSync,
   generateShoppingCart,
@@ -31,7 +34,6 @@ import { generateDesignCode } from "@/utils/generateCode";
 import DesignMemoryModal from "@/components/DesignMemoryModal";
 import { shouldTriggerSheet } from "@/constants/wardrobeConfig";
 import { calculateBundlePrice } from "@/utils/bundlePricing";
-import productsData from "@/products.json";
 
 import Lottie from "lottie-react";
 
@@ -107,8 +109,10 @@ const DropPositionCalculator = () => {
 // Canvas wrapper with external loading state
 const CanvasWrapper = ({
   onCloseDetailSheet,
+  products,
 }: {
   onCloseDetailSheet: () => void;
+  products: any[];
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const lightsOn = useStore((state) => state.lightsOn);
@@ -146,8 +150,8 @@ const CanvasWrapper = ({
 
           // Handle original wardrobe selection
           if (item.bundle.ItemName === "2583987-Original") {
-            const originalProduct = productsData.products.find(
-              (p) => p.itemNumber === "2583987"
+            const originalProduct = products.find(
+              (p: any) => p.itemNumber === "2583987"
             );
             if (originalProduct) {
               targetProduct = originalProduct;
@@ -369,11 +373,13 @@ const AutoSaveIndicator = () => {
 };
 
 export default function Planner() {
-  const { customizeMode, wardrobeInstances } = useStore();
+  const { customizeMode, wardrobeInstances, getProducts } = useStore();
   const setCanvasScreenshotDataUrl = useStore(
     (s) => s.setCanvasScreenshotDataUrl
   );
   const setCurrentDesignCode = useStore((s) => s.setCurrentDesignCode);
+
+  const [products, setProducts] = useState<any[]>([]);
 
   // Enable keyboard shortcuts for undo/redo
   useKeyboardShortcuts();
@@ -392,6 +398,19 @@ export default function Planner() {
 
   // Enable auto-save for this component
   useAutoSave();
+
+  // Load products
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
 
   // Check for saved design on planner page load
   useEffect(() => {
@@ -553,7 +572,10 @@ export default function Planner() {
         onResumeDesign={handleResumeDesign}
       />
       <div className="flex w-full h-screen overflow-hidden">
-        <CanvasWrapper onCloseDetailSheet={() => setIsDetailOpen(false)} />
+        <CanvasWrapper
+          onCloseDetailSheet={() => setIsDetailOpen(false)}
+          products={products}
+        />
 
         {/* Leave Planner Button - positioned at top left corner */}
         {!customizeMode && (
@@ -571,6 +593,16 @@ export default function Planner() {
               <TooltipContent>Leave Planner</TooltipContent>
             </Tooltip>
           </div>
+        )}
+
+        {/* Tool Panel - fixed bottom left */}
+        <ToolPanel />
+
+        {/* Conditional bottom center panel - FocusedWardrobePanel or CustomiseRoomPanel */}
+        {focusedWardrobeInstance ? (
+          <FocusedWardrobePanel />
+        ) : (
+          <CustomiseRoomPanel />
         )}
 
         <section className="w-3/10 h-screen bg-primary-foreground flex flex-col overflow-hidden">

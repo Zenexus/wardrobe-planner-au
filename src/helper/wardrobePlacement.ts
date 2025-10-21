@@ -1,7 +1,7 @@
 // This file contains the logic for placing wardrobes in the room
 
 import { WardrobeInstance } from "../types";
-import productsData from "../products.json";
+// Products data will be passed as parameters to functions
 import { R3F_SCALE } from "../store";
 import {
   requiresWallAttachment,
@@ -65,10 +65,12 @@ export function wouldCollideWithExisting(
   productModel: string,
   position: [number, number, number],
   existingInstances: WardrobeInstance[],
-  padding: number = 0.2
+  padding: number = 0.2,
+  productsData?: any[]
 ): boolean {
+  if (!productsData) return false;
   // Get product dimensions
-  const product = productsData.products.find((p) => p.model === productModel);
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return false;
 
   // Create temporary instance to get bounding box
@@ -100,9 +102,11 @@ export function hasAvailableSpace(
   productModel: string,
   existingInstances: WardrobeInstance[],
   roomDimensions = { width: 5, depth: 4 },
-  wallRoomDimensions?: WallRoomDimensions
+  wallRoomDimensions?: WallRoomDimensions,
+  productsData?: any[]
 ): boolean {
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return false;
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return false;
 
   // Quick check: if no existing wardrobes, space is available
@@ -198,7 +202,13 @@ export function hasAvailableSpace(
     for (let z = -maxZ; z <= maxZ; z += stepSize) {
       const testPosition: [number, number, number] = [x, yPosition, z];
       if (
-        !wouldCollideWithExisting(productModel, testPosition, existingInstances)
+        !wouldCollideWithExisting(
+          productModel,
+          testPosition,
+          existingInstances,
+          0.2,
+          productsData
+        )
       ) {
         console.log(
           `Found available position for modern wardrobe at [${x.toFixed(
@@ -252,7 +262,13 @@ export function findWallPositions(
       ) {
         const testPos: [number, number, number] = [wallX, yPosition, z];
         if (
-          !wouldCollideWithExisting(product.model, testPos, existingInstances)
+          !wouldCollideWithExisting(
+            product.model,
+            testPos,
+            existingInstances,
+            0.2,
+            [product]
+          )
         ) {
           positions.push(testPos);
         }
@@ -274,7 +290,13 @@ export function findWallPositions(
       ) {
         const testPos: [number, number, number] = [x, yPosition, wallZ];
         if (
-          !wouldCollideWithExisting(product.model, testPos, existingInstances)
+          !wouldCollideWithExisting(
+            product.model,
+            testPos,
+            existingInstances,
+            0.2,
+            [product]
+          )
         ) {
           positions.push(testPos);
         }
@@ -293,9 +315,11 @@ function findSmartWallPosition(
   existingInstances: WardrobeInstance[],
   roomDimensions: { width: number; depth: number },
   yPosition: number,
-  passedWallRoomDimensions?: WallRoomDimensions
+  passedWallRoomDimensions?: WallRoomDimensions,
+  productsData?: any[]
 ): [number, number, number] | null {
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return null;
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return null;
 
   const wallRoomDimensions: WallRoomDimensions = passedWallRoomDimensions || {
@@ -409,9 +433,11 @@ export function findAvailablePosition(
   existingInstances: WardrobeInstance[],
   preferredPosition?: [number, number, number],
   roomDimensions = { width: 5, depth: 4 }, // Default room size in R3F units
-  wallRoomDimensions?: WallRoomDimensions // Optional detailed room dimensions for better placement
+  wallRoomDimensions?: WallRoomDimensions, // Optional detailed room dimensions for better placement
+  productsData?: any[]
 ): [number, number, number] | null {
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return null;
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) {
     console.warn(`Product not found: ${productModel}`);
     return null; // Return null instead of fallback position
@@ -487,7 +513,8 @@ export function findAvailablePosition(
       existingInstances,
       roomDimensions,
       yPosition,
-      wallRoomDimensions
+      wallRoomDimensions,
+      productsData
     );
 
     if (smartPosition) {
@@ -499,7 +526,135 @@ export function findAvailablePosition(
     }
   }
 
-  // Fallback to original spiral search for modern wardrobes or if smart placement fails
+  // For modern (freestanding) wardrobes, try to place beside existing wardrobes first
+  console.log(`Finding position for modern wardrobe ${productModel}`);
+
+  // If there are existing wardrobes, try positions adjacent to them first
+  if (existingInstances.length > 0) {
+    console.log(
+      `Trying positions adjacent to ${existingInstances.length} existing wardrobes`
+    );
+
+    // Get the most recently added wardrobe to place beside it
+    const recentWardrobe = existingInstances[existingInstances.length - 1];
+    const recentBox = getWardrobeBoundingBox(recentWardrobe);
+
+    const newWidth = product.width / R3F_SCALE;
+    const newDepth = product.depth / R3F_SCALE;
+    const spacing = 0.2; // Minimum gap between wardrobes
+
+    // Try positions in order: right, left, back, front of the most recent wardrobe
+    const adjacentPositions: [number, number, number][] = [
+      // Right side (positive X)
+      [
+        recentBox.maxX + newWidth / 2 + spacing,
+        yPosition,
+        recentWardrobe.position[2],
+      ],
+      // Left side (negative X)
+      [
+        recentBox.minX - newWidth / 2 - spacing,
+        yPosition,
+        recentWardrobe.position[2],
+      ],
+      // Back side (positive Z)
+      [
+        recentWardrobe.position[0],
+        yPosition,
+        recentBox.maxZ + newDepth / 2 + spacing,
+      ],
+      // Front side (negative Z)
+      [
+        recentWardrobe.position[0],
+        yPosition,
+        recentBox.minZ - newDepth / 2 - spacing,
+      ],
+    ];
+
+    for (const adjacentPos of adjacentPositions) {
+      // Check if position is within room bounds
+      const margin = 0.5;
+      if (
+        Math.abs(adjacentPos[0]) <= roomDimensions.width / 2 - margin &&
+        Math.abs(adjacentPos[2]) <= roomDimensions.depth / 2 - margin
+      ) {
+        // Check if this position would collide with any existing wardrobe
+        if (
+          !wouldCollideWithExisting(
+            productModel,
+            adjacentPos,
+            existingInstances,
+            0.2,
+            productsData
+          )
+        ) {
+          console.log(
+            `Found adjacent position beside most recent wardrobe at:`,
+            adjacentPos
+          );
+          return adjacentPos;
+        }
+      }
+    }
+
+    console.log(
+      `No adjacent positions available beside most recent wardrobe, trying other wardrobes`
+    );
+
+    // If no position found beside most recent, try beside other wardrobes
+    for (const existingInstance of existingInstances.slice(0, -1).reverse()) {
+      const existingBox = getWardrobeBoundingBox(existingInstance);
+
+      const nearbyPositions: [number, number, number][] = [
+        [
+          existingBox.maxX + newWidth / 2 + spacing,
+          yPosition,
+          existingInstance.position[2],
+        ],
+        [
+          existingBox.minX - newWidth / 2 - spacing,
+          yPosition,
+          existingInstance.position[2],
+        ],
+        [
+          existingInstance.position[0],
+          yPosition,
+          existingBox.maxZ + newDepth / 2 + spacing,
+        ],
+        [
+          existingInstance.position[0],
+          yPosition,
+          existingBox.minZ - newDepth / 2 - spacing,
+        ],
+      ];
+
+      for (const nearbyPos of nearbyPositions) {
+        const margin = 0.5;
+        if (
+          Math.abs(nearbyPos[0]) <= roomDimensions.width / 2 - margin &&
+          Math.abs(nearbyPos[2]) <= roomDimensions.depth / 2 - margin
+        ) {
+          if (
+            !wouldCollideWithExisting(
+              productModel,
+              nearbyPos,
+              existingInstances,
+              0.2,
+              productsData
+            )
+          ) {
+            console.log(
+              `Found position beside another wardrobe at:`,
+              nearbyPos
+            );
+            return nearbyPos;
+          }
+        }
+      }
+    }
+  }
+
+  // Fallback to spiral search for modern wardrobes if no adjacent positions found
   console.log(`Using fallback spiral search for ${productModel}`);
 
   // Start from preferred position or center
@@ -533,7 +688,13 @@ export function findAvailablePosition(
 
       // Check if this position would collide
       if (
-        !wouldCollideWithExisting(productModel, testPosition, existingInstances)
+        !wouldCollideWithExisting(
+          productModel,
+          testPosition,
+          existingInstances,
+          0.2,
+          productsData
+        )
       ) {
         return testPosition;
       }
@@ -551,14 +712,16 @@ export function findAvailablePosition(
 export function getSuggestedPositions(
   targetInstanceId: string,
   productModel: string,
-  existingInstances: WardrobeInstance[]
+  existingInstances: WardrobeInstance[],
+  productsData?: any[]
 ): [number, number, number][] {
   const targetInstance = existingInstances.find(
     (w) => w.id === targetInstanceId
   );
   if (!targetInstance) return [];
 
-  const product = productsData.products.find((p) => p.model === productModel);
+  if (!productsData) return [];
+  const product = productsData.find((p) => p.model === productModel);
   if (!product) return [];
 
   const [targetX, targetY, targetZ] = targetInstance.position;
@@ -583,6 +746,13 @@ export function getSuggestedPositions(
 
   // Filter out positions that would still collide
   return suggestions.filter(
-    (pos) => !wouldCollideWithExisting(productModel, pos, existingInstances)
+    (pos) =>
+      !wouldCollideWithExisting(
+        productModel,
+        pos,
+        existingInstances,
+        0.2,
+        productsData
+      )
   );
 }

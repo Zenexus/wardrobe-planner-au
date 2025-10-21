@@ -1,6 +1,5 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { ProductCard } from "./ui/product-card";
-import productsData from "../products.json";
 import { useStore } from "../store";
 import { Product } from "../types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -43,13 +42,13 @@ type ColorOption = (typeof COLORS)[keyof typeof COLORS];
  * Hook for filtering and memoizing products by category and color
  * Performance optimization: prevents re-filtering on every render
  */
-const useFilteredProducts = () => {
+const useFilteredProducts = (products: Product[]) => {
   return useMemo(() => {
-    const coreProducts = productsData.products.filter(
+    const coreProducts = products.filter(
       (product) => product.category === CATEGORIES.CORE
     );
 
-    const fourHundredProducts = productsData.products.filter(
+    const fourHundredProducts = products.filter(
       (product) => product.category === CATEGORIES.FOUR_HUNDRED_MM
     );
 
@@ -66,7 +65,7 @@ const useFilteredProducts = () => {
       fourHundredWhite: whiteProducts,
       fourHundredOak: oakProducts,
     };
-  }, []); // Empty dependency array since productsData is static
+  }, [products]);
 };
 
 /**
@@ -172,9 +171,24 @@ const ProductSelection = () => {
     setSelectedColor,
     depthTab,
     setDepthTab,
+    getProducts,
   } = useStore();
 
-  const filteredProducts = useFilteredProducts();
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
+
+  const filteredProducts = useFilteredProducts(products);
 
   // Memoized handlers for better performance
   const handleAddToDesign = useCallback(

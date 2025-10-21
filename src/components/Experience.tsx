@@ -44,13 +44,9 @@ import { Model as DoorModel } from "./Door";
 import { Model as TreeModel } from "./Tree";
 import { Model as CabinetModel } from "./Cabinet";
 
-import CustomiseRoomPanel from "@/components/CustomiseRoomPanel";
-import ToolPanel from "@/components/ToolPanel";
 import GroupedWardrobeMeasurements from "@/components/GroupedWardrobeMeasurements";
-import FocusedWardrobePanel from "./FocusedWardrobePanel";
 import {
   getClosestWall,
-  snapToWall,
   constrainMovementAlongWall,
   handleWallTransition,
   requiresWallAttachment,
@@ -145,6 +141,240 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
   const isCornerConstrained =
     modelPath && requiresCornerPlacement(modelPath) && roomDimensions;
 
+  // Helper function to check if wardrobe is blocked and calculate next available position
+  const checkBlockingAndCalculateJumpPosition = useCallback(
+    (
+      currentPos: { x: number; z: number },
+      intendedPos: { x: number; z: number },
+      wallConstraint: WallConstraint,
+      currentInstance: WardrobeInstance,
+      otherWardrobes: WardrobeInstance[]
+    ): {
+      isBlocked: boolean;
+      blockingId: string | null;
+      jumpPosition: [number, number, number] | null;
+    } => {
+      const isVerticalWall =
+        wallConstraint.wallIndex === 0 || wallConstraint.wallIndex === 1;
+      const currentWidth = currentInstance.product.width / 100;
+      const axis = isVerticalWall ? "z" : "x";
+
+      // Determine movement direction based on cursor position vs current position
+      const movementDirection = intendedPos[axis] > currentPos[axis] ? 1 : -1;
+
+      // Check if any wardrobe is blocking the path
+      const wardrobesOnSameWall = otherWardrobes.filter((w) => {
+        const otherWallConstraint = getClosestWall(w.position, roomDimensions!);
+        return otherWallConstraint.wallIndex === wallConstraint.wallIndex;
+      });
+
+      // Sort wardrobes by position along the axis
+      const sortedWardrobes = [...wardrobesOnSameWall].sort((a, b) => {
+        const aPos = isVerticalWall ? a.position[2] : a.position[0];
+        const bPos = isVerticalWall ? b.position[2] : b.position[0];
+        return movementDirection > 0 ? aPos - bPos : bPos - aPos;
+      });
+
+      // Find ALL blocking wardrobes in our path
+      const blockingWardrobes: WardrobeInstance[] = [];
+
+      // First, add wardrobes we're currently colliding with
+      for (const wardrobe of wardrobesOnSameWall) {
+        const wardrobePos = isVerticalWall
+          ? wardrobe.position[2]
+          : wardrobe.position[0];
+        const wardrobeWidth = wardrobe.product.width / 100;
+
+        // Check if we're colliding or very close to this wardrobe
+        const distanceToWardrobe = Math.abs(currentPos[axis] - wardrobePos);
+        const minDistance = (currentWidth + wardrobeWidth) / 2;
+
+        if (distanceToWardrobe < minDistance + 0.15) {
+          // 15cm buffer for immediate collision
+          blockingWardrobes.push(wardrobe);
+        }
+      }
+
+      // Then, check if there are wardrobes in the direction we're trying to move
+      // This handles the case where we want to move past adjacent wardrobes
+      const intendedDirection = intendedPos[axis] - currentPos[axis];
+      if (Math.abs(intendedDirection) > 0.1) {
+        // Only if we're trying to move significantly
+        const direction = Math.sign(intendedDirection);
+
+        for (const wardrobe of sortedWardrobes) {
+          // Skip if already in blocking list
+          if (blockingWardrobes.some((b) => b.id === wardrobe.id)) continue;
+
+          const wardrobePos = isVerticalWall
+            ? wardrobe.position[2]
+            : wardrobe.position[0];
+          const wardrobeWidth = wardrobe.product.width / 100;
+
+          // Check if this wardrobe is in the direction we're moving
+          const relativePos = wardrobePos - currentPos[axis];
+          const isInMovementDirection = Math.sign(relativePos) === direction;
+
+          if (isInMovementDirection) {
+            const distanceToWardrobe = Math.abs(relativePos);
+            // Check if it's close enough to be considered blocking
+            if (distanceToWardrobe < (currentWidth + wardrobeWidth) / 2 + 0.5) {
+              blockingWardrobes.push(wardrobe);
+            }
+          }
+        }
+      }
+
+      if (blockingWardrobes.length === 0) {
+        return { isBlocked: false, blockingId: null, jumpPosition: null };
+      }
+
+      // Sort blocking wardrobes by distance in movement direction
+      blockingWardrobes.sort((a, b) => {
+        const aPos = isVerticalWall ? a.position[2] : a.position[0];
+        const bPos = isVerticalWall ? b.position[2] : b.position[0];
+        return movementDirection > 0 ? aPos - bPos : bPos - aPos;
+      });
+
+      // Find the next available position past ALL blocking wardrobes
+      // Start from the position just past the last blocking wardrobe
+      const lastBlockingWardrobe =
+        blockingWardrobes[blockingWardrobes.length - 1];
+      const lastBlockingPos = isVerticalWall
+        ? lastBlockingWardrobe.position[2]
+        : lastBlockingWardrobe.position[0];
+      const lastBlockingWidth = lastBlockingWardrobe.product.width / 100;
+
+      // Start position: just past the last blocking wardrobe
+      let jumpPos =
+        lastBlockingPos +
+        movementDirection * (lastBlockingWidth / 2 + currentWidth / 2 + 0.05); // 5cm gap
+
+      // Now check if there are more wardrobes ahead and find first available gap
+      let foundAvailablePosition = false;
+      let maxIterations = 20; // Safety check to prevent infinite loops
+      let iterations = 0;
+
+      while (!foundAvailablePosition && iterations < maxIterations) {
+        iterations++;
+
+        // Check if jumpPos collides with any other wardrobe
+        let hasCollision = false;
+
+        for (const other of wardrobesOnSameWall) {
+          // Skip wardrobes we're already past
+          if (blockingWardrobes.some((b) => b.id === other.id)) continue;
+
+          const otherPos = isVerticalWall
+            ? other.position[2]
+            : other.position[0];
+          const otherWidth = other.product.width / 100;
+          const distance = Math.abs(jumpPos - otherPos);
+          const minDist = (currentWidth + otherWidth) / 2;
+
+          if (distance < minDist + 0.05) {
+            // Check with small buffer
+            hasCollision = true;
+            // Move jumpPos past this wardrobe too
+            jumpPos =
+              otherPos +
+              movementDirection * (otherWidth / 2 + currentWidth / 2 + 0.05);
+            // Add this wardrobe to blocking list so we don't check it again
+            blockingWardrobes.push(other);
+            break;
+          }
+        }
+
+        if (!hasCollision) {
+          foundAvailablePosition = true;
+        }
+      }
+
+      // Check if jump position is valid (within room bounds and not colliding with another wardrobe)
+      const isValidJumpPosition = (pos: number): boolean => {
+        // Check room bounds
+        if (isVerticalWall) {
+          const maxZ =
+            roomDimensions!.depth / 2 -
+            roomDimensions!.thickness / 2 -
+            currentWidth / 2;
+          const minZ =
+            -(roomDimensions!.depth / 2) +
+            roomDimensions!.thickness / 2 +
+            currentWidth / 2;
+          if (pos > maxZ || pos < minZ) return false;
+        } else {
+          const maxX =
+            roomDimensions!.width / 2 -
+            roomDimensions!.thickness / 2 -
+            currentWidth / 2;
+          const minX =
+            -(roomDimensions!.width / 2) +
+            roomDimensions!.thickness / 2 +
+            currentWidth / 2;
+          if (pos > maxX || pos < minX) return false;
+        }
+
+        // Check collision with other wardrobes (excluding the ones we're jumping over)
+        for (const other of wardrobesOnSameWall) {
+          // Skip the wardrobes we're jumping over
+          if (blockingWardrobes.some((b) => b.id === other.id)) continue;
+
+          const otherPos = isVerticalWall
+            ? other.position[2]
+            : other.position[0];
+          const otherWidth = other.product.width / 100;
+          const distance = Math.abs(pos - otherPos);
+          const minDist = (currentWidth + otherWidth) / 2;
+
+          if (distance < minDist) return false;
+        }
+
+        return true;
+      };
+
+      if (isValidJumpPosition(jumpPos)) {
+        const jumpPosition: [number, number, number] = isVerticalWall
+          ? [currentPos.x, currentInstance.position[1], jumpPos]
+          : [jumpPos, currentInstance.position[1], currentPos.z];
+
+        return {
+          isBlocked: true,
+          blockingId: blockingWardrobes[0].id, // Use first blocking wardrobe's ID
+          jumpPosition,
+        };
+      }
+
+      return {
+        isBlocked: true,
+        blockingId: blockingWardrobes[0].id, // Use first blocking wardrobe's ID
+        jumpPosition: null,
+      };
+    },
+    [roomDimensions]
+  );
+
+  // Snapping state to prevent flip-flopping
+  const [snappedToWardrobeId, setSnappedToWardrobeId] = useState<string | null>(
+    null
+  );
+  const [isCurrentlySnapped, setIsCurrentlySnapped] = useState<boolean>(false);
+
+  // IKEA-style jump through state
+  const [isBlocked, setIsBlocked] = useState<boolean>(false);
+  const [blockingWardrobeId, setBlockingWardrobeId] = useState<string | null>(
+    null
+  );
+  const [dwellStartTime, setDwellStartTime] = useState<number | null>(null);
+  const [cursorIntendedPosition, setCursorIntendedPosition] = useState<{
+    x: number;
+    z: number;
+  } | null>(null);
+  const [jumpTargetPosition, setJumpTargetPosition] = useState<
+    [number, number, number] | null
+  >(null);
+  const DWELL_TIME_MS = 100; // 0.1 second dwell time
+
   // Initialize wall constraint for traditional wardrobes
   useEffect(() => {
     if (isWallConstrained && roomDimensions) {
@@ -153,10 +383,67 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
     }
   }, [isWallConstrained, position, roomDimensions]);
 
+  // Force re-render during dwell time for visual feedback animation
+  const [, setForceUpdate] = useState(0);
+  useEffect(() => {
+    if (dwellStartTime && jumpTargetPosition) {
+      const interval = setInterval(() => {
+        setForceUpdate((prev) => prev + 1);
+      }, 50); // Update every 50ms for smooth progress animation
+
+      return () => clearInterval(interval);
+    }
+  }, [dwellStartTime, jumpTargetPosition]);
+
   // Sync rotation prop with internal state
   useEffect(() => {
     setCurrentRotation(rotation);
   }, [rotation]);
+
+  // CRITICAL: Re-enforce wall constraints when rigid body type changes
+  // This prevents sinking when grabbing or releasing the wardrobe
+  useEffect(() => {
+    if (
+      !rigidBodyRef.current ||
+      !isWallConstrained ||
+      !wallConstraint ||
+      !roomDimensions ||
+      !wardrobeInstances
+    )
+      return;
+
+    const currentInstance = wardrobeInstances.find((w) => w.id === id);
+    if (!currentInstance) return;
+
+    // Get current position from rigid body
+    const currentPos = rigidBodyRef.current.translation();
+
+    // Apply wall constraints with buffer
+    const constraintResult = constrainMovementAlongWall(
+      [currentPos.x, currentPos.y, currentPos.z],
+      wallConstraint,
+      currentInstance,
+      roomDimensions,
+      false
+    );
+
+    // Immediately set the constrained position to prevent sinking
+    rigidBodyRef.current.setTranslation(
+      {
+        x: constraintResult.position[0],
+        y: constraintResult.position[1],
+        z: constraintResult.position[2],
+      },
+      true
+    );
+  }, [
+    draggedObjectId,
+    isWallConstrained,
+    wallConstraint,
+    roomDimensions,
+    wardrobeInstances,
+    id,
+  ]); // Re-run when drag state changes
 
   const handlePointerDown = useCallback(
     (event: ThreeEvent<PointerEvent>) => {
@@ -282,167 +569,454 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       // Update raycaster
       raycaster.current.setFromCamera(mouse.current, camera);
 
-      // Find intersection with drag plane
-      if (
-        raycaster.current.ray.intersectPlane(
-          dragPlane.current,
-          intersectionPoint.current
-        )
-      ) {
-        // Calculate target position more precisely
-        let targetPosition = new THREE.Vector3(
-          intersectionPoint.current.x - dragOffset.x,
-          rigidBodyRef.current.translation().y, // Keep same Y
-          intersectionPoint.current.z - dragOffset.z
-        );
+      // Find intersection with drag plane - use more robust approach
+      const tempIntersection = new THREE.Vector3();
+      const intersected = raycaster.current.ray.intersectPlane(
+        dragPlane.current,
+        tempIntersection
+      );
 
-        // Apply wall constraints for traditional wardrobes
+      if (intersected) {
+        // Direct intersection - use it immediately for precise control
+        intersectionPoint.current.copy(tempIntersection);
+      } else {
+        // No direct intersection - project ray onto floor plane at Y=0 for better fallback
+        const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const floorIntersection = new THREE.Vector3();
         if (
-          isWallConstrained &&
-          wallConstraint &&
-          roomDimensions &&
-          wardrobeInstances
+          raycaster.current.ray.intersectPlane(floorPlane, floorIntersection)
         ) {
-          const currentInstance = wardrobeInstances.find((w) => w.id === id);
-          if (currentInstance) {
-            const constraintResult = constrainMovementAlongWall(
-              [targetPosition.x, targetPosition.y, targetPosition.z],
-              wallConstraint,
-              currentInstance,
-              roomDimensions,
-              isTransitioning
+          intersectionPoint.current.copy(floorIntersection);
+        }
+        // If both fail, keep last valid position (very rare edge case)
+      }
+
+      // Calculate target position with direct offset
+      // This ensures fast, responsive movement
+      let targetPosition = new THREE.Vector3(
+        intersectionPoint.current.x - dragOffset.x,
+        rigidBodyRef.current.translation().y, // Keep same Y
+        intersectionPoint.current.z - dragOffset.z
+      );
+
+      // Apply wall constraints for traditional wardrobes with transition support
+      // Wardrobes can slide left/right and transition to adjacent walls
+      if (
+        isWallConstrained &&
+        wallConstraint &&
+        roomDimensions &&
+        wardrobeInstances
+      ) {
+        const currentInstance = wardrobeInstances.find((w) => w.id === id);
+        if (currentInstance) {
+          const constraintResult = constrainMovementAlongWall(
+            [targetPosition.x, targetPosition.y, targetPosition.z],
+            wallConstraint,
+            currentInstance,
+            roomDimensions,
+            isTransitioning
+          );
+
+          // Check if wardrobe should transition to a new wall
+          if (
+            constraintResult.shouldTransition &&
+            constraintResult.newWallConstraint
+          ) {
+            // Start transition - update wall constraint and rotation
+            setWallConstraint(constraintResult.newWallConstraint);
+            setCurrentRotation(constraintResult.newWallConstraint.rotation);
+            setIsTransitioning(true);
+
+            // Immediately notify about rotation change
+            if (onRotationChange) {
+              onRotationChange(id, constraintResult.newWallConstraint.rotation);
+            }
+          }
+
+          // Apply the constrained position
+          targetPosition.set(
+            constraintResult.position[0],
+            constraintResult.position[1],
+            constraintResult.position[2]
+          );
+
+          // SNAPPING: Check for nearby wardrobes on the same wall and snap if within 20cm
+          // Use hysteresis: smaller distance to snap, larger distance to un-snap
+          const SNAP_ENGAGE_DISTANCE = 0.2; // 20cm - distance to engage snap
+          const SNAP_RELEASE_DISTANCE = 0.45; // 35cm - distance to release snap (hysteresis)
+          const otherWardrobes = wardrobeInstances.filter((w) => w.id !== id);
+
+          let closestSnapPosition: number | null = null;
+          let closestSnapWardrobeId: string | null = null;
+          let minSnapDistance = Infinity;
+          const isVerticalWall =
+            wallConstraint.wallIndex === 0 || wallConstraint.wallIndex === 1;
+
+          for (const other of otherWardrobes) {
+            // Check if the other wardrobe is on the same wall
+            const otherWallConstraint = getClosestWall(
+              other.position,
+              roomDimensions
             );
 
-            // Update wall constraint if transitioning
-            if (
-              constraintResult.shouldTransition &&
-              constraintResult.newWallConstraint
-            ) {
-              const wallNames = ["Right", "Left", "Back", "Front"];
+            if (otherWallConstraint.wallIndex === wallConstraint.wallIndex) {
+              // Same wall - check distance along the sliding axis
+              const currentWidth = currentInstance.product.width / 100;
+              const otherWidth = other.product.width / 100;
 
-              setWallConstraint(constraintResult.newWallConstraint);
+              if (isVerticalWall) {
+                // Sliding along Z-axis
+                const currentZ = targetPosition.z;
+                const otherZ = other.position[2];
 
-              // Update rotation immediately for smooth transition
-              const newRotation = constraintResult.newWallConstraint.rotation;
-              setCurrentRotation(newRotation);
-              if (onRotationChange) {
-                onRotationChange(id, newRotation);
+                // Calculate snap positions (left and right edges of the other wardrobe)
+                const snapToLeft = otherZ - otherWidth / 2 - currentWidth / 2;
+                const snapToRight = otherZ + otherWidth / 2 + currentWidth / 2;
+
+                // Check distance to left edge
+                const distToLeft = Math.abs(currentZ - snapToLeft);
+                if (distToLeft < minSnapDistance) {
+                  minSnapDistance = distToLeft;
+                  closestSnapPosition = snapToLeft;
+                  closestSnapWardrobeId = other.id;
+                }
+
+                // Check distance to right edge
+                const distToRight = Math.abs(currentZ - snapToRight);
+                if (distToRight < minSnapDistance) {
+                  minSnapDistance = distToRight;
+                  closestSnapPosition = snapToRight;
+                  closestSnapWardrobeId = other.id;
+                }
+              } else {
+                // Sliding along X-axis
+                const currentX = targetPosition.x;
+                const otherX = other.position[0];
+
+                // Calculate snap positions (left and right edges of the other wardrobe)
+                const snapToLeft = otherX - otherWidth / 2 - currentWidth / 2;
+                const snapToRight = otherX + otherWidth / 2 + currentWidth / 2;
+
+                // Check distance to left edge
+                const distToLeft = Math.abs(currentX - snapToLeft);
+                if (distToLeft < minSnapDistance) {
+                  minSnapDistance = distToLeft;
+                  closestSnapPosition = snapToLeft;
+                  closestSnapWardrobeId = other.id;
+                }
+
+                // Check distance to right edge
+                const distToRight = Math.abs(currentX - snapToRight);
+                if (distToRight < minSnapDistance) {
+                  minSnapDistance = distToRight;
+                  closestSnapPosition = snapToRight;
+                  closestSnapWardrobeId = other.id;
+                }
               }
-
-              setIsTransitioning(true);
-            } else if (isTransitioning && !constraintResult.shouldTransition) {
-              // Transition completed, wardrobe is now attached to the new wall
-
-              setIsTransitioning(false);
             }
+          }
 
+          // Hysteresis logic to prevent flip-flopping
+          let shouldSnap = false;
+
+          if (isCurrentlySnapped && snappedToWardrobeId) {
+            // Currently snapped - only release if we move far enough away
+            if (closestSnapWardrobeId === snappedToWardrobeId) {
+              // Still near the same wardrobe
+              if (minSnapDistance < SNAP_RELEASE_DISTANCE) {
+                shouldSnap = true; // Stay snapped
+              } else {
+                // Moved far enough away - release snap
+                setSnappedToWardrobeId(null);
+                setIsCurrentlySnapped(false);
+              }
+            } else {
+              // Different wardrobe is closer
+              if (minSnapDistance < SNAP_ENGAGE_DISTANCE) {
+                // Close enough to new wardrobe - switch snap
+                shouldSnap = true;
+                setSnappedToWardrobeId(closestSnapWardrobeId);
+              } else {
+                // Not close enough to any - release snap
+                setSnappedToWardrobeId(null);
+                setIsCurrentlySnapped(false);
+              }
+            }
+          } else {
+            // Not currently snapped - engage if close enough
+            if (minSnapDistance < SNAP_ENGAGE_DISTANCE) {
+              shouldSnap = true;
+              setSnappedToWardrobeId(closestSnapWardrobeId);
+              setIsCurrentlySnapped(true);
+            }
+          }
+
+          // Apply snapping if conditions are met
+          if (shouldSnap && closestSnapPosition !== null) {
+            if (isVerticalWall) {
+              targetPosition.z = closestSnapPosition;
+            } else {
+              targetPosition.x = closestSnapPosition;
+            }
+          }
+
+          // IKEA-style jump through logic: Check if blocked and track dwell time
+          const currentPosForBlocking = {
+            x: rigidBodyRef.current.translation().x,
+            z: rigidBodyRef.current.translation().z,
+          };
+          const intendedPosForBlocking = {
+            x: intersectionPoint.current.x - dragOffset.x,
+            z: intersectionPoint.current.z - dragOffset.z,
+          };
+
+          const blockingResult = checkBlockingAndCalculateJumpPosition(
+            currentPosForBlocking,
+            intendedPosForBlocking,
+            wallConstraint,
+            currentInstance,
+            otherWardrobes
+          );
+
+          if (blockingResult.isBlocked && blockingResult.jumpPosition) {
+            // We're blocked - check if cursor is on the other side
+            const axis = isVerticalWall ? "z" : "x";
+            const currentAxisPos = currentPosForBlocking[axis];
+            const blockingWardrobe = otherWardrobes.find(
+              (w) => w.id === blockingResult.blockingId
+            );
+
+            if (blockingWardrobe) {
+              const blockingAxisPos = isVerticalWall
+                ? blockingWardrobe.position[2]
+                : blockingWardrobe.position[0];
+              const cursorAxisPos = intendedPosForBlocking[axis];
+
+              // Check if cursor is on opposite side of blocking wardrobe from current position
+              const currentToBlocking = blockingAxisPos - currentAxisPos;
+              const currentToCursor = cursorAxisPos - currentAxisPos;
+              const isCursorBeyondBlocking =
+                Math.sign(currentToBlocking) === Math.sign(currentToCursor) &&
+                Math.abs(currentToCursor) > Math.abs(currentToBlocking);
+
+              if (isCursorBeyondBlocking) {
+                // Cursor is on the other side - start or continue dwell timer
+                if (!dwellStartTime) {
+                  setDwellStartTime(Date.now());
+                  setIsBlocked(true);
+                  setBlockingWardrobeId(blockingResult.blockingId);
+                  setJumpTargetPosition(blockingResult.jumpPosition);
+                  setCursorIntendedPosition(intendedPosForBlocking);
+                }
+                // Don't auto-jump during drag - wait for mouse release
+              } else {
+                // Cursor moved back - reset dwell timer
+                setDwellStartTime(null);
+                setIsBlocked(false);
+                setBlockingWardrobeId(null);
+                setJumpTargetPosition(null);
+                setCursorIntendedPosition(null);
+              }
+            }
+          } else {
+            // Not blocked - reset dwell state
+            if (dwellStartTime) {
+              setDwellStartTime(null);
+              setIsBlocked(false);
+              setBlockingWardrobeId(null);
+              setJumpTargetPosition(null);
+              setCursorIntendedPosition(null);
+            }
+          }
+        }
+      }
+
+      // SNAPPING for L-shaped wardrobes: Snap to nearby corner wardrobes during drag
+      if (isCornerConstrained && roomDimensions && wardrobeInstances) {
+        const currentInstance = wardrobeInstances.find((w) => w.id === id);
+        if (currentInstance) {
+          // Use hysteresis for L-shaped wardrobes too
+          const SNAP_ENGAGE_DISTANCE = 0.3; // 30cm - slightly larger for corner wardrobes
+          const SNAP_RELEASE_DISTANCE = 0.5; // 50cm - distance to release snap
+
+          // Find other corner-constrained wardrobes
+          const otherCornerWardrobes = wardrobeInstances.filter(
+            (w) => w.id !== id && requiresCornerPlacement(w.product.model)
+          );
+
+          let closestSnapPosition: [number, number, number] | null = null;
+          let closestSnapWardrobeId: string | null = null;
+          let minSnapDistance = Infinity;
+
+          // Check distance to each other corner wardrobe
+          for (const other of otherCornerWardrobes) {
+            const dx = targetPosition.x - other.position[0];
+            const dz = targetPosition.z - other.position[2];
+            const distance = Math.sqrt(dx * dx + dz * dz);
+
+            if (distance < minSnapDistance) {
+              minSnapDistance = distance;
+              // Calculate snap position near the other wardrobe
+              // Snap to a position offset by the combined dimensions
+              const currentWidth = currentInstance.product.width / 100;
+              const currentDepth = currentInstance.product.depth / 100;
+              const otherWidth = other.product.width / 100;
+              const otherDepth = other.product.depth / 100;
+
+              // Determine snap direction based on relative position
+              // Snap to the edge that's closest
+              const offsetDist =
+                Math.max(currentWidth, currentDepth) / 2 +
+                Math.max(otherWidth, otherDepth) / 2 +
+                0.1;
+
+              // Calculate normalized direction
+              const dirX = dx / distance;
+              const dirZ = dz / distance;
+
+              // Snap position: place current wardrobe offset from other wardrobe
+              closestSnapPosition = [
+                other.position[0] + dirX * offsetDist,
+                targetPosition.y,
+                other.position[2] + dirZ * offsetDist,
+              ];
+              closestSnapWardrobeId = other.id;
+            }
+          }
+
+          // Hysteresis logic for corner wardrobes
+          let shouldSnap = false;
+
+          if (isCurrentlySnapped && snappedToWardrobeId) {
+            // Currently snapped - only release if we move far enough away
+            if (closestSnapWardrobeId === snappedToWardrobeId) {
+              // Still near the same wardrobe
+              if (minSnapDistance < SNAP_RELEASE_DISTANCE) {
+                shouldSnap = true; // Stay snapped
+              } else {
+                // Moved far enough away - release snap
+                setSnappedToWardrobeId(null);
+                setIsCurrentlySnapped(false);
+              }
+            } else {
+              // Different wardrobe is closer
+              if (minSnapDistance < SNAP_ENGAGE_DISTANCE) {
+                // Close enough to new wardrobe - switch snap
+                shouldSnap = true;
+                setSnappedToWardrobeId(closestSnapWardrobeId);
+              } else {
+                // Not close enough to any - release snap
+                setSnappedToWardrobeId(null);
+                setIsCurrentlySnapped(false);
+              }
+            }
+          } else {
+            // Not currently snapped - engage if close enough
+            if (minSnapDistance < SNAP_ENGAGE_DISTANCE) {
+              shouldSnap = true;
+              setSnappedToWardrobeId(closestSnapWardrobeId);
+              setIsCurrentlySnapped(true);
+            }
+          }
+
+          // Apply snapping if conditions are met
+          if (shouldSnap && closestSnapPosition !== null) {
             targetPosition.set(
-              constraintResult.position[0],
-              constraintResult.position[1],
-              constraintResult.position[2]
+              closestSnapPosition[0],
+              closestSnapPosition[1],
+              closestSnapPosition[2]
             );
           }
         }
+      }
 
-        // Do not snap L-shaped wardrobes to corners during drag.
-        // Let the object follow the cursor; snapping happens on pointer up.
-        // (Keep block intentionally empty to preserve free movement.)
-        if (isCornerConstrained && roomDimensions && wardrobeInstances) {
-          // no-op during drag
-        }
+      // Get current position
+      const currentPos = rigidBodyRef.current.translation();
+      const direction = new THREE.Vector3(
+        targetPosition.x - currentPos.x,
+        0,
+        targetPosition.z - currentPos.z
+      );
 
-        // Get current position
-        const currentPos = rigidBodyRef.current.translation();
-        const direction = new THREE.Vector3(
-          targetPosition.x - currentPos.x,
-          0,
-          targetPosition.z - currentPos.z
+      // Use distance to determine if we should move directly or use velocity
+      const distance = direction.length();
+
+      // Adjust movement speed based on constraint type
+      let moveSpeedMultiplier = 1;
+      let dampingFactor = 1;
+
+      if (isWallConstrained) {
+        // Wall-constrained wardrobes: MUCH faster sliding along the wall for better UX
+        // Since they can only move in one direction, higher speed is safe and feels responsive
+        moveSpeedMultiplier = 1.3; // default is 2.5, I think 2.5 is too fast
+        dampingFactor = 0.3; // Lower damping for snappier response, default is 0.5
+      } else if (isCornerConstrained) {
+        // For L-shaped wardrobes, use faster movement to snap quickly to corners
+        moveSpeedMultiplier = 1.3;
+        dampingFactor = 0.3; // Higher damping for quicker settling
+      }
+
+      if (distance > 0.1) {
+        // For larger distances, use velocity-based movement
+        const baseMoveSpeed = 12 * moveSpeedMultiplier;
+        const moveSpeed = Math.max(
+          distance * 14 * moveSpeedMultiplier,
+          baseMoveSpeed
         );
 
-        // Use distance to determine if we should move directly or use velocity
-        const distance = direction.length();
+        direction.normalize();
+        rigidBodyRef.current.setLinvel(
+          {
+            x: direction.x * moveSpeed,
+            y: 0,
+            z: direction.z * moveSpeed,
+          },
+          true
+        );
 
-        // Adjust movement speed based on wall constraint state
-        let moveSpeedMultiplier = 1;
-        let dampingFactor = 1;
+        // Apply damping based on constraint type
+        if (dampingFactor !== 1) {
+          rigidBodyRef.current.setLinearDamping(10 * dampingFactor);
+        }
+      } else {
+        // For very small distances, move directly for precision
+        rigidBodyRef.current.setTranslation(
+          {
+            x: targetPosition.x,
+            y: currentPos.y,
+            z: targetPosition.z,
+          },
+          true
+        );
+        // Stop any residual movement
+        rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      }
 
-        if (isWallConstrained) {
-          if (isTransitioning) {
-            // During wall transitions, allow smoother, slower movement
-            moveSpeedMultiplier = 0.6;
-            dampingFactor = 2;
-          } else {
-            // When constrained to a wall, allow faster movement along the wall
-            moveSpeedMultiplier = 1.2;
+      // Real-time position update during drag for measurements (with threshold)
+      if (onPositionChange && !wasClick) {
+        const currentPosition = rigidBodyRef.current.translation();
+        // Avoid spamming updates if the movement is extremely small frame-to-frame
+        setLastReportedPosition((prev) => {
+          const threshold = 0.005; // ~5mm in R3F units if meters
+          if (
+            !prev ||
+            Math.abs(prev[0] - currentPosition.x) > threshold ||
+            Math.abs(prev[1] - currentPosition.y) > threshold ||
+            Math.abs(prev[2] - currentPosition.z) > threshold
+          ) {
+            onPositionChange(id, [
+              currentPosition.x,
+              currentPosition.y,
+              currentPosition.z,
+            ]);
+            return [
+              currentPosition.x,
+              currentPosition.y,
+              currentPosition.z,
+            ] as [number, number, number];
           }
-        } else if (isCornerConstrained) {
-          // For L-shaped wardrobes, use faster movement to snap quickly to corners
-          moveSpeedMultiplier = 2.0;
-          dampingFactor = 0.3; // Higher damping for quicker settling
-        }
-
-        if (distance > 0.1) {
-          // For larger distances, use velocity-based movement
-          const baseMoveSpeed = 12 * moveSpeedMultiplier;
-          const moveSpeed = Math.max(
-            distance * 14 * moveSpeedMultiplier,
-            baseMoveSpeed
-          );
-
-          direction.normalize();
-          rigidBodyRef.current.setLinvel(
-            {
-              x: direction.x * moveSpeed,
-              y: 0,
-              z: direction.z * moveSpeed,
-            },
-            true
-          );
-
-          // Apply additional damping during transitions
-          if (isTransitioning && isWallConstrained) {
-            rigidBodyRef.current.setLinearDamping(10 * dampingFactor);
-          }
-        } else {
-          // For very small distances, move directly for precision
-          rigidBodyRef.current.setTranslation(
-            {
-              x: targetPosition.x,
-              y: currentPos.y,
-              z: targetPosition.z,
-            },
-            true
-          );
-          // Stop any residual movement
-          rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        }
-
-        // Real-time position update during drag for measurements (with threshold)
-        if (onPositionChange && !wasClick) {
-          const currentPosition = rigidBodyRef.current.translation();
-          // Avoid spamming updates if the movement is extremely small frame-to-frame
-          setLastReportedPosition((prev) => {
-            const threshold = 0.005; // ~5mm in R3F units if meters
-            if (
-              !prev ||
-              Math.abs(prev[0] - currentPosition.x) > threshold ||
-              Math.abs(prev[1] - currentPosition.y) > threshold ||
-              Math.abs(prev[2] - currentPosition.z) > threshold
-            ) {
-              onPositionChange(id, [
-                currentPosition.x,
-                currentPosition.y,
-                currentPosition.z,
-              ]);
-              return [
-                currentPosition.x,
-                currentPosition.y,
-                currentPosition.z,
-              ] as [number, number, number];
-            }
-            return prev;
-          });
-        }
+          return prev;
+        });
       }
     },
     [
@@ -466,6 +1040,9 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       isTransitioning,
       setIsTransitioning,
       customizeMode,
+      dwellStartTime,
+      jumpTargetPosition,
+      checkBlockingAndCalculateJumpPosition,
     ]
   );
 
@@ -475,14 +1052,101 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       if (!isDragging || !rigidBodyRef.current) return;
 
       event.stopPropagation();
+
+      // IKEA-style jump through: Check if jump should be executed FIRST
+      let shouldExecuteJump = false;
+      let jumpPosition: [number, number, number] | null = null;
+
+      if (dwellStartTime && jumpTargetPosition) {
+        const dwellDuration = Date.now() - dwellStartTime;
+        if (dwellDuration >= DWELL_TIME_MS) {
+          // Dwell time completed - execute the jump!
+          shouldExecuteJump = true;
+          jumpPosition = jumpTargetPosition;
+        }
+      }
+
+      // Reset dragging state - but delay if jumping to ensure position locks in
       setIsDragging(false);
       setGlobalHasDragging(false);
-      setDraggedObjectId(null);
       setLastReportedPosition(null);
+
+      // Delay resetting draggedObjectId if we're executing a jump
+      // This keeps the RigidBody in "dynamic" mode longer so the jump position can lock in
+      if (!shouldExecuteJump) {
+        setDraggedObjectId(null);
+      }
+
+      // Reset snapping state when drag ends
+      setSnappedToWardrobeId(null);
+      setIsCurrentlySnapped(false);
+
+      // Reset IKEA-style jump through state when drag ends
+      setDwellStartTime(null);
+      setIsBlocked(false);
+      setBlockingWardrobeId(null);
+      setJumpTargetPosition(null);
+      setCursorIntendedPosition(null);
 
       // Completely stop all movement immediately
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+
+      // If jump should be executed, move to jump position immediately
+      if (shouldExecuteJump && jumpPosition) {
+        rigidBodyRef.current.setTranslation(
+          {
+            x: jumpPosition[0],
+            y: jumpPosition[1],
+            z: jumpPosition[2],
+          },
+          true
+        );
+
+        // Ensure velocity is zero after jump
+        rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+
+        // Update position in store immediately
+        if (onPositionChange) {
+          onPositionChange(id, jumpPosition);
+        }
+
+        // For wall-constrained wardrobes, ensure wall constraint is still applied
+        // This prevents the wardrobe from drifting after the jump
+        if (
+          isWallConstrained &&
+          wallConstraint &&
+          roomDimensions &&
+          wardrobeInstances
+        ) {
+          const currentInstance = wardrobeInstances.find((w) => w.id === id);
+          if (currentInstance) {
+            // Apply wall constraints to the jump position to ensure it's perfectly aligned
+            const constraintResult = constrainMovementAlongWall(
+              jumpPosition,
+              wallConstraint,
+              currentInstance,
+              roomDimensions,
+              false
+            );
+
+            // Apply the constrained position
+            rigidBodyRef.current.setTranslation(
+              {
+                x: constraintResult.position[0],
+                y: constraintResult.position[1],
+                z: constraintResult.position[2],
+              },
+              true
+            );
+
+            // Update store with the constrained position
+            if (onPositionChange) {
+              onPositionChange(id, constraintResult.position);
+            }
+          }
+        }
+      }
 
       // Set very high damping temporarily to prevent any residual movement
       rigidBodyRef.current.setLinearDamping(20);
@@ -496,16 +1160,26 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       }, 50); // Small delay to ensure smooth transition
 
       // After a short delay, restore normal physics properties
+      // Wait longer if we just executed a jump to ensure position is locked in
+      const physicsRestoreDelay = shouldExecuteJump ? 200 : 100;
       setTimeout(() => {
         if (rigidBodyRef.current) {
           rigidBodyRef.current.setGravityScale(1, true);
           rigidBodyRef.current.setLinearDamping(0.1);
           rigidBodyRef.current.setAngularDamping(0.1);
         }
-      }, 100);
+
+        // If we executed a jump, now we can safely reset draggedObjectId
+        // This switches the RigidBody back to kinematicPosition mode
+        if (shouldExecuteJump) {
+          setDraggedObjectId(null);
+        }
+      }, physicsRestoreDelay);
 
       // Handle wall snapping for traditional wardrobes when drag ends
+      // Skip if we just executed a jump
       if (
+        !shouldExecuteJump &&
         isWallConstrained &&
         wallConstraint &&
         roomDimensions &&
@@ -702,6 +1376,8 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
       setIsTransitioning,
       onRotationChange,
       currentRotation,
+      dwellStartTime,
+      jumpTargetPosition,
     ]
   );
 
@@ -754,8 +1430,35 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         cloneElement(children, { ref: childRef })
       : children;
 
+  // Calculate dwell progress for visual feedback
+  const dwellProgress = dwellStartTime
+    ? Math.min((Date.now() - dwellStartTime) / DWELL_TIME_MS, 1)
+    : 0;
+
   return (
     <>
+      {/* Ghost preview of jump destination */}
+      {jumpTargetPosition && dwellStartTime && (
+        <group position={jumpTargetPosition} rotation={[0, currentRotation, 0]}>
+          {/* Show the actual wardrobe model with green tint */}
+          <mesh scale={scale}>
+            {childWithRef && isValidElement(childWithRef) ? (
+              cloneElement(childWithRef as React.ReactElement<any>, {})
+            ) : (
+              <boxGeometry args={scale} />
+            )}
+            <meshStandardMaterial
+              color="#4CAF50"
+              transparent
+              opacity={0.3 + dwellProgress * 0.4} // Fade in as dwell progresses (30% to 70%)
+              emissive="#4CAF50"
+              emissiveIntensity={dwellProgress * 0.8}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      )}
+
       <RigidBody
         ref={rigidBodyRef}
         position={position}
@@ -766,12 +1469,16 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
         friction={0.8}
         ccd={true}
         lockRotations={true}
+        collisionGroups={isWallConstrained ? 0x00040006 : 0x00020007}
+        // Wall-constrained (bit 2): collides with groups 1,2 but NOT walls (bit 0)
+        // Normal wardrobes (bit 1): collides with walls (bit 0), and other wardrobes (bits 1,2)
       >
         <mesh
           castShadow
           receiveShadow
           ref={meshRef}
           scale={scale}
+          visible={!(jumpTargetPosition && dwellStartTime)} // Hide when ghost is showing
           onPointerDown={handlePointerDown}
           onClick={(event) => {
             // Handle click selection as backup if child components don't handle it
@@ -830,7 +1537,10 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
                 }
                 transparent
                 opacity={
-                  isDragging
+                  // If ghost is showing, make the dragging wardrobe very transparent
+                  jumpTargetPosition && dwellStartTime
+                    ? 0.1
+                    : isDragging
                     ? isTransitioning && isWallConstrained
                       ? 0.6 // More transparent during wall transition
                       : 0.8
@@ -958,7 +1668,8 @@ const Experience: React.FC = () => {
       });
     } else if (controlsRef.current) {
       // Smooth transition back to default view
-      const defaultPosition = new THREE.Vector3(5, 5, 5);
+      //FIXME: modify the camera position and lookAt position
+      const defaultPosition = new THREE.Vector3(0, 5.5, -6);
       const defaultLookAt = new THREE.Vector3(0, 0, 0);
 
       animateCamera(defaultPosition, defaultLookAt, 1200);
@@ -1246,6 +1957,8 @@ const Experience: React.FC = () => {
               roomDimensions.depth / 2,
             ]}
             position={[0, 0, 0]}
+            collisionGroups={0x00010002}
+            // Walls (bit 0): only collide with normal wardrobes (bit 1), not wall-constrained (bit 2)
           />
           {!hiddenWalls.includes(0) && (
             <WallPaper position={[0, 0, 0]} args={wallConfigs.right.args} />
@@ -1262,6 +1975,7 @@ const Experience: React.FC = () => {
               roomDimensions.depth / 2,
             ]}
             position={[0, 0, 0]}
+            collisionGroups={0x00010002}
           />
           {!hiddenWalls.includes(1) && (
             <WallPaper position={[0, 0, 0]} args={wallConfigs.left.args} />
@@ -1278,6 +1992,7 @@ const Experience: React.FC = () => {
               roomDimensions.thickness / 2,
             ]}
             position={[0, 0, 0]}
+            collisionGroups={0x00010002}
           />
           {!hiddenWalls.includes(2) && (
             <WallPaper position={[0, 0, 0]} args={wallConfigs.back.args} />
@@ -1294,6 +2009,7 @@ const Experience: React.FC = () => {
               roomDimensions.thickness / 2,
             ]}
             position={[0, 0, 0]}
+            collisionGroups={0x00010002}
           />
           {!hiddenWalls.includes(3) && (
             <WallPaper position={[0, 0, 0]} args={wallConfigs.front.args} />
@@ -1401,13 +2117,7 @@ const Experience: React.FC = () => {
         {/* <WallMeasurements walls={walls} /> */}
       </Physics>
 
-      {focusedWardrobeInstance ? (
-        <FocusedWardrobePanel />
-      ) : (
-        <CustomiseRoomPanel />
-      )}
-
-      <ToolPanel />
+      {/* ToolPanel and CustomiseRoomPanel moved to Planner.tsx for fixed positioning */}
 
       {!globalHasDragging && (
         <OrbitControls

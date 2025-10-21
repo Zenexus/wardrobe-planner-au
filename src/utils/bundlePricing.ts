@@ -1,17 +1,24 @@
-import accessoriesData from "@/accessories.json";
-import productsData from "@/products.json";
 import type { Bundle } from "@/types/bundle";
 
 /**
  * Calculate the dynamic price for a bundle based on base wardrobe + accessories
  * @param bundle - The bundle object
+ * @param productsData - Array of products data
+ * @param accessoriesData - Array of accessories data
  * @returns Calculated price (base wardrobe + accessories)
  */
-export function calculateBundlePrice(bundle: Bundle): number {
+export function calculateBundlePrice(
+  bundle: Bundle,
+  productsData?: any[],
+  accessoriesData?: any[]
+): number {
+  // If no data provided, return 0 as fallback
+  if (!productsData || !accessoriesData) {
+    return 0;
+  }
+
   // Get base wardrobe price (2583987)
-  const baseWardrobe = productsData.products.find(
-    (p) => p.itemNumber === "2583987"
-  );
+  const baseWardrobe = productsData.find((p) => p.itemNumber === "2583987");
   const basePrice = baseWardrobe?.price ?? 0;
 
   // If no packDetails, return base price
@@ -23,7 +30,7 @@ export function calculateBundlePrice(bundle: Bundle): number {
   let accessoriesTotal = 0;
 
   for (const accessoryItemNumber of bundle.packDetails) {
-    const accessory = accessoriesData.accessories.find(
+    const accessory = accessoriesData.find(
       (acc) => acc.itemNumber === accessoryItemNumber
     );
 
@@ -41,24 +48,35 @@ export function calculateBundlePrice(bundle: Bundle): number {
 
 /**
  * Calculate the price for the original wardrobe (no accessories)
+ * @param productsData - Array of products data
  * @returns Base wardrobe price
  */
-export function calculateOriginalWardrobePrice(): number {
-  const baseWardrobe = productsData.products.find(
-    (p) => p.itemNumber === "2583987"
-  );
+export function calculateOriginalWardrobePrice(productsData?: any[]): number {
+  if (!productsData) {
+    return 0;
+  }
+
+  const baseWardrobe = productsData.find((p) => p.itemNumber === "2583987");
   return baseWardrobe?.price ?? 0;
 }
 
 /**
  * Get accessory details for a bundle's packDetails
  * @param packDetails - Array of accessory item numbers
+ * @param accessoriesData - Array of accessories data
  * @returns Array of accessory objects with their details
  */
-export function getBundleAccessories(packDetails: string[]) {
+export function getBundleAccessories(
+  packDetails: string[],
+  accessoriesData?: any[]
+) {
+  if (!accessoriesData) {
+    return [];
+  }
+
   return packDetails
     .map((itemNumber) => {
-      const accessory = accessoriesData.accessories.find(
+      const accessory = accessoriesData.find(
         (acc) => acc.itemNumber === itemNumber
       );
 
@@ -75,11 +93,20 @@ export function getBundleAccessories(packDetails: string[]) {
 /**
  * Get price breakdown for a bundle
  * @param bundle - The bundle object
+ * @param productsData - Array of products data
+ * @param accessoriesData - Array of accessories data
  * @returns Object with base price, accessories total, and final total
  */
-export function getBundlePriceBreakdown(bundle: Bundle) {
-  const basePrice = calculateOriginalWardrobePrice();
-  const accessories = getBundleAccessories(bundle.packDetails || []);
+export function getBundlePriceBreakdown(
+  bundle: Bundle,
+  productsData?: any[],
+  accessoriesData?: any[]
+) {
+  const basePrice = calculateOriginalWardrobePrice(productsData);
+  const accessories = getBundleAccessories(
+    bundle.packDetails || [],
+    accessoriesData
+  );
   const accessoriesTotal = accessories.reduce(
     (sum, acc) => sum + (acc?.price || 0),
     0

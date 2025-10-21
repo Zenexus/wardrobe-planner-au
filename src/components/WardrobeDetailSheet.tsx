@@ -5,8 +5,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useStore } from "@/store";
 import { getBundlesForWardrobe } from "@/constants/wardrobeConfig";
 import { BundleCard } from "@/components/ui/bundle-card";
-import bundlesData from "@/bundles.json";
-import productsData from "@/products.json";
+import React, { useState, useEffect } from "react";
 import type { Bundle, BundleWithPrice } from "@/types/bundle";
 import type { Product } from "@/types";
 import {
@@ -25,6 +24,31 @@ const WardrobeDetailSheet = ({
 }: WardrobeDetailSheetProps) => {
   const focusedWardrobeInstance = useStore((s) => s.focusedWardrobeInstance);
   const updateWardrobeInstance = useStore((s) => s.updateWardrobeInstance);
+  const getBundles = useStore((s) => s.getBundles);
+  const getProducts = useStore((s) => s.getProducts);
+  const getAccessories = useStore((s) => s.getAccessories);
+
+  const [bundles, setBundles] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [accessories, setAccessories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [bundlesData, productsData, accessoriesData] = await Promise.all([
+          getBundles(),
+          getProducts(),
+          getAccessories(),
+        ]);
+        setBundles(bundlesData);
+        setProducts(productsData);
+        setAccessories(accessoriesData);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      }
+    };
+    loadData();
+  }, [getBundles, getProducts, getAccessories]);
 
   if (!focusedWardrobeInstance) return null;
 
@@ -32,14 +56,12 @@ const WardrobeDetailSheet = ({
 
   // Get bundles for this wardrobe
   const bundleItemNames = getBundlesForWardrobe(product.itemNumber);
-  const bundles = bundlesData.bundles.filter((bundle) =>
+  const filteredBundles = bundles.filter((bundle) =>
     bundleItemNames.includes(bundle.ItemName)
   );
 
   // Create original wardrobe as a bundle option
-  const originalProduct = productsData.products.find(
-    (p) => p.itemNumber === "2583987"
-  );
+  const originalProduct = products.find((p) => p.itemNumber === "2583987");
   const originalBundle: BundleWithPrice | null = originalProduct
     ? {
         ItemName: "2583987-Original",
@@ -49,17 +71,19 @@ const WardrobeDetailSheet = ({
         intro: originalProduct.intro,
         thumbnail: originalProduct.images[0],
         model: "components/W-01685",
-        price: calculateOriginalWardrobePrice(),
+        price: calculateOriginalWardrobePrice(products),
         packDetails: [], // No accessories for original
       }
     : null;
 
   // Combine original + bundles, with original first
   // Ensure all bundles have calculated prices
-  const bundlesWithPrices: BundleWithPrice[] = bundles.map((bundle) => ({
-    ...bundle,
-    price: calculateBundlePrice(bundle), // Always calculate price
-  }));
+  const bundlesWithPrices: BundleWithPrice[] = filteredBundles.map(
+    (bundle) => ({
+      ...bundle,
+      price: calculateBundlePrice(bundle, products, accessories), // Always calculate price
+    })
+  );
 
   const allOptions = originalBundle
     ? [originalBundle, ...bundlesWithPrices]
@@ -82,7 +106,11 @@ const WardrobeDetailSheet = ({
       targetProduct = originalProduct;
     } else {
       // Convert bundle to Product format with calculated price
-      const calculatedPrice = calculateBundlePrice(bundle);
+      const calculatedPrice = calculateBundlePrice(
+        bundle,
+        products,
+        accessories
+      );
       targetProduct = {
         itemNumber: bundle.ItemName,
         name: bundle.name,
@@ -158,6 +186,8 @@ const WardrobeDetailSheet = ({
                     <BundleCard
                       key={`${option.ItemName}-${index}`}
                       bundle={option}
+                      productsData={products}
+                      accessoriesData={accessories}
                       onAddToDesign={
                         isBlocked
                           ? undefined

@@ -8,8 +8,7 @@ import { useGLTF } from "@react-three/drei";
 import { ThreeElements } from "@react-three/fiber";
 import { GLTF } from "three-stdlib";
 import * as THREE from "three";
-import { forwardRef, useMemo } from "react";
-import productsData from "../products.json";
+import { forwardRef } from "react";
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -31,34 +30,9 @@ export const ClassicWardrobe = forwardRef<
     "/models/01684.gltf"
   ) as unknown as GLTFResult;
 
-  // Get real product dimensions from products.json
-  const { scaleFactor, yOffset } = useMemo(() => {
-    const product = productsData.products.find(
-      (p) => p.model === "components/W-01684"
-    );
-    if (!product) {
-      console.warn("Product dimensions not found for W-01684");
-      return { scaleFactor: 1.0, yOffset: 0 }; // Fallback
-    }
-
-    // Calculate scale factor based on actual product dimensions
-    // The model should be scaled to match the real-world dimensions
-    // Assuming the model is designed for 200cm height, we scale it to match the product height
-    const targetHeight = product.height / 100; // Convert cm to R3F units (1 R3F unit = 100cm)
-    const modelHeight = 2.0; // Assuming the model is 2 units tall in its original scale
-    const scaleFactor = targetHeight / modelHeight;
-
-    // Counteract the built-in Y translation in the GLTF model (0.8250895142555237)
-    // to place the wardrobe bottom at Y=0
-    const modelBuiltInYOffset = 0.8;
-    const yOffset = modelBuiltInYOffset * scaleFactor;
-
-    return { scaleFactor, yOffset };
-  }, []);
-
   return (
     <group {...props} dispose={null} onClick={props.onClick}>
-      <group scale={scaleFactor} position={[0, yOffset, 0]}>
+      <group position={[0.016, 0.82, 0.011]}>
         <mesh
           ref={ref}
           castShadow

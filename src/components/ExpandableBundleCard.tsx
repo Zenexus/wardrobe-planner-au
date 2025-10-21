@@ -1,4 +1,5 @@
 // ChevronDown removed - AccordionTrigger has its own built-in chevron
+import React, { useState, useEffect } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +11,7 @@ import {
   type CompositionItem,
 } from "@/utils/bundleComposition";
 import type { WardrobeInstance } from "@/types";
+import { useStore } from "@/store";
 
 type GroupedWardrobe = {
   product: WardrobeInstance["product"];
@@ -57,7 +59,35 @@ function CompositionItemCard({ item }: { item: CompositionItem }) {
 export default function ExpandableBundleCard({
   group,
 }: ExpandableBundleCardProps) {
-  const composition = getBundleComposition(group.firstInstance);
+  const { getBundles, getProducts, getAccessories } = useStore();
+  const [bundlesData, setBundlesData] = useState<any[]>([]);
+  const [productsData, setProductsData] = useState<any[]>([]);
+  const [accessoriesData, setAccessoriesData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [bundles, products, accessories] = await Promise.all([
+          getBundles(),
+          getProducts(),
+          getAccessories(),
+        ]);
+        setBundlesData(bundles);
+        setProductsData(products);
+        setAccessoriesData(accessories);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      }
+    };
+    loadData();
+  }, [getBundles, getProducts, getAccessories]);
+
+  const composition = getBundleComposition(
+    group.firstInstance,
+    bundlesData,
+    productsData,
+    accessoriesData
+  );
 
   // If not a bundle, render regular card
   if (!composition.isBundle) {
