@@ -1,8 +1,9 @@
 import { Info } from "lucide-react";
 import { Product } from "../../types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDrag } from "react-dnd";
-import ProductDetailSheet from "../ProductDetailSheet";
+import ProductDetailSheetContent from "../ProductDetailSheet";
+import { Sheet, SheetTrigger } from "./sheet";
 import { useStore } from "../../store";
 
 type ProductCardProps = {
@@ -18,7 +19,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const { globalSheetOpen } = useStore();
+  const { globalSheetOpen, setGlobalSheetOpen } = useStore();
 
   // Set up drag functionality
   const [{ isDragging }, drag] = useDrag({
@@ -30,10 +31,10 @@ export function ProductCard({
     }),
   });
 
-  const handleViewDetails = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsDetailOpen(true);
-  };
+  // Manage global sheet state
+  useEffect(() => {
+    setGlobalSheetOpen(isDetailOpen);
+  }, [isDetailOpen, setGlobalSheetOpen]);
 
   const handleCardClick = () => {
     // Only add to design if no sheet is open and there's space
@@ -42,18 +43,8 @@ export function ProductCard({
     }
   };
 
-  const handleSheetClose = () => {
-    // No delay needed - update state immediately
-    setIsDetailOpen(false);
-  };
-
   const handleSheetOpenChange = (newOpen: boolean) => {
     setIsDetailOpen(newOpen);
-
-    // If sheet is closing, ensure we update the state immediately
-    if (!newOpen) {
-      setIsDetailOpen(false);
-    }
   };
 
   return (
@@ -63,7 +54,9 @@ export function ProductCard({
         hasSpace
           ? "bg-background cursor-pointer"
           : "bg-secondary cursor-not-allowed opacity-75"
-      } ${isDragging ? "opacity-50" : ""}`}
+      } ${isDragging ? "opacity-50" : ""} ${
+        isDetailOpen ? "pointer-events-none" : ""
+      }`}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -95,22 +88,21 @@ export function ProductCard({
       <div className="text-sm font-semibold pt-4 h-20">{product.name}</div>
       <div className="mt-2 flex justify-between items-center">
         <span className="font-semibold">${product.price.toFixed(2)}</span>
-        <ProductDetailSheet
-          product={product}
-          open={isDetailOpen}
-          onOpenChange={handleSheetOpenChange}
-          onSheetClose={handleSheetClose}
-          trigger={
-            <button
-              type="button"
-              className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
-              aria-label="Product information"
-              onClick={handleViewDetails}
-            >
-              <Info className="w-4 h-4 text-primary" />
-            </button>
-          }
-        />
+        <div className="pointer-events-auto">
+          <Sheet open={isDetailOpen} onOpenChange={handleSheetOpenChange}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
+                aria-label="Product information"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Info className="w-4 h-4 text-primary" />
+              </button>
+            </SheetTrigger>
+            <ProductDetailSheetContent product={product} />
+          </Sheet>
+        </div>
       </div>
 
       <div className="flex items-center gap-1 mt-2">

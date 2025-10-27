@@ -196,10 +196,11 @@ export const useStore = create<StoreState>((set, get) => {
     }
   }, 100);
 
-  // Initialize products cache
+  // Initialize products cache (includes bundles for dimension lookup in placement/snapping)
   setTimeout(async () => {
     try {
-      const products = await WardrobePlannerProductService.getProducts();
+      const products =
+        await WardrobePlannerProductService.getAllWardrobeProducts();
       get().setProductsCache(products);
     } catch (error) {
       console.error("Failed to initialize products cache:", error);

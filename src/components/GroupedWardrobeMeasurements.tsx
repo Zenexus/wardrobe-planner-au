@@ -32,7 +32,7 @@ const GroupedWardrobeMeasurements: React.FC<
     wallsDimensions,
     draggedObjectId,
     selectedObjectId,
-    getProducts,
+    getAllWardrobeProducts,
   } = useStore();
 
   const [products, setProducts] = useState<any[]>([]);
@@ -40,14 +40,15 @@ const GroupedWardrobeMeasurements: React.FC<
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const productsData = await getProducts();
+        // Load all products including bundles for measurements
+        const productsData = await getAllWardrobeProducts();
         setProducts(productsData);
       } catch (error) {
         console.error("Failed to load products:", error);
       }
     };
     loadProducts();
-  }, [getProducts]);
+  }, [getAllWardrobeProducts]);
 
   const roomDimensions: WallRoomDimensions = useMemo(
     () => ({
