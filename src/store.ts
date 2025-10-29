@@ -446,7 +446,24 @@ export const useStore = create<StoreState>((set, get) => {
         const updatedInstance = { ...instance, position };
         const snapResult = snapToWall(updatedInstance, wallRoomDimensions);
         finalPosition = snapResult.position;
-        finalRotation = snapResult.rotation;
+
+        // IMPORTANT: Only update rotation from snapToWall if the rotation hasn't been explicitly set yet
+        // This prevents overriding rotations set during wall transitions
+        // If the instance already has a rotation close to a wall's rotation, keep it
+        // Otherwise use the snap result (for initial placement)
+        const wallRotations = [Math.PI * 0.5, -Math.PI * 0.5, 0, Math.PI];
+        const currentRotation = instance.rotation || 0;
+        const hasExplicitRotation = wallRotations.some(
+          (wallRot) => Math.abs(currentRotation - wallRot) < 0.01
+        );
+
+        if (hasExplicitRotation) {
+          // Keep the existing rotation during wall transitions
+          finalRotation = currentRotation;
+        } else {
+          // Use snap result for initial placement
+          finalRotation = snapResult.rotation;
+        }
       }
       // For L-shaped wardrobes, do NOT snap during drag; store raw position.
       // Corner snapping is handled on drag end in the component's pointer up handler.

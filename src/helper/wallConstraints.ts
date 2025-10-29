@@ -104,6 +104,7 @@ export function snapToWall(
   const wardrobeDepth = product.depth / 100; // Convert cm to R3F units
 
   // Add safety buffer to prevent sinking into walls
+  //FIXME:
   const WALL_CLEARANCE_BUFFER = 0.02; // 2cm safety margin
 
   let newX = x;
@@ -315,13 +316,48 @@ export function constrainMovementAlongWall(
  */
 export function handleWallTransition(
   instance: WardrobeInstance,
-  _newWallConstraint: WallConstraint,
-  roomDimensions: RoomDimensions
+  newWallConstraint: WallConstraint,
+  _roomDimensions: RoomDimensions // eslint-disable-line @typescript-eslint/no-unused-vars
 ): { position: [number, number, number]; rotation: number } {
-  const tempInstance = { ...instance };
-  tempInstance.position = instance.position;
+  // Use the new wall constraint that was determined during the drag
+  // This ensures the rotation matches the wall we transitioned to
+  const [x, y, z] = instance.position;
+  const product = instance.product;
+  const wardrobeDepth = product.depth / 100; // Convert cm to R3F units
+  const WALL_CLEARANCE_BUFFER = 0.02; // 2cm safety margin
 
-  return snapToWall(tempInstance, roomDimensions);
+  let newX = x;
+  let newZ = z;
+
+  // Calculate position based on the NEW wall constraint, not the closest wall
+  // The wardrobe back should be against the wall, front facing center
+  switch (newWallConstraint.wallIndex) {
+    case 0: // Right wall - wardrobe faces left (rotation = π/2)
+      newX =
+        newWallConstraint.wallPosition -
+        (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
+      break;
+    case 1: // Left wall - wardrobe faces right (rotation = -π/2)
+      newX =
+        newWallConstraint.wallPosition +
+        (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
+      break;
+    case 2: // Back wall - wardrobe faces forward (rotation = 0)
+      newZ =
+        newWallConstraint.wallPosition -
+        (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
+      break;
+    case 3: // Front wall - wardrobe faces backward (rotation = π)
+      newZ =
+        newWallConstraint.wallPosition +
+        (wardrobeDepth / 2 + WALL_CLEARANCE_BUFFER);
+      break;
+  }
+
+  return {
+    position: [newX, y, newZ],
+    rotation: newWallConstraint.rotation,
+  };
 }
 
 /**
@@ -376,33 +412,45 @@ export function getCornerPositions(
   const zOffset = wardrobeDepth / 2 - halfThickness;
 
   // model provided has offset
-  const modelOffset = 0.1;
+  const modelOffset = 0.05;
   return [
     {
       cornerIndex: 0,
       position: [
-        -halfWidth + xOffset,
+        -halfWidth + xOffset - 1.5 * modelOffset,
         0.05,
         -halfDepth + zOffset + modelOffset,
-      ], // Front-left
+      ], // Front-left, the first default position, from the front wall view to see the back
       rotation: Math.PI * 1.5, // 270 degree Facing inward
       isValid: true,
     },
     {
       cornerIndex: 1,
-      position: [halfWidth - xOffset - modelOffset, 0.05, -halfDepth + zOffset], // Front-right
+      position: [
+        halfWidth - xOffset - modelOffset,
+        0.05,
+        -halfDepth + zOffset - 1.5 * modelOffset,
+      ], // Front-right, from the front wall view to see the back
       rotation: Math.PI, // 180 degrees
       isValid: true,
     },
     {
       cornerIndex: 2,
-      position: [halfWidth - xOffset, 0.05, halfDepth - zOffset - modelOffset], // Back-right
+      position: [
+        halfWidth - xOffset + modelOffset,
+        0.05,
+        halfDepth - zOffset - modelOffset,
+      ], // Back-right, from the back wall view to see the front
       rotation: Math.PI * 0.5, // 90 degrees
       isValid: true,
     },
     {
       cornerIndex: 3,
-      position: [-halfWidth + xOffset + modelOffset, 0.05, halfDepth - zOffset], // Back-left
+      position: [
+        -halfWidth + xOffset + modelOffset,
+        0.05,
+        halfDepth - zOffset + 1.5 * modelOffset,
+      ], // Back-left,from the back wall view to see the front
       rotation: Math.PI * 2, // 360 degrees
       isValid: true,
     },
@@ -442,11 +490,13 @@ export function isCornerAvailable(
 
 /**
  * Finds the closest available corner for L-shaped wardrobes
+ * If preferredPosition is provided, finds the corner closest to that position
  */
 export function findAvailableCorner(
   instance: WardrobeInstance,
   roomDimensions: RoomDimensions,
-  existingInstances: WardrobeInstance[]
+  existingInstances: WardrobeInstance[],
+  preferredPosition?: [number, number, number]
 ): CornerConstraint | null {
   const product = instance.product;
   const wardrobeWidth = product.width / 100; // Convert cm to R3F units
@@ -458,10 +508,32 @@ export function findAvailableCorner(
     wardrobeDepth
   );
 
-  // Check each corner for availability
-  for (const corner of corners) {
-    if (isCornerAvailable(corner, instance, existingInstances)) {
-      return corner;
+  // If a preferred position is provided, sort corners by distance to that position
+  // the code here is user click the product card, then drag and drop to canvas
+  // the system will find the closet corner to the preferred position
+  if (preferredPosition) {
+    const cornersWithDistance = corners.map((corner) => {
+      const dx = corner.position[0] - preferredPosition[0];
+      const dz = corner.position[2] - preferredPosition[2];
+      const distance = Math.sqrt(dx * dx + dz * dz);
+      return { corner, distance };
+    });
+
+    // Sort by distance (closest first)
+    cornersWithDistance.sort((a, b) => a.distance - b.distance);
+
+    // Check each corner in order of distance (closest first)
+    for (const { corner } of cornersWithDistance) {
+      if (isCornerAvailable(corner, instance, existingInstances)) {
+        return corner;
+      }
+    }
+  } else {
+    // No preferred position - check each corner in default order
+    for (const corner of corners) {
+      if (isCornerAvailable(corner, instance, existingInstances)) {
+        return corner;
+      }
     }
   }
 
@@ -470,16 +542,22 @@ export function findAvailableCorner(
 
 /**
  * Snaps an L-shaped wardrobe to the closest available corner
+ * If the instance has a position, uses it as the preferred position
  */
 export function snapToCorner(
   instance: WardrobeInstance,
   roomDimensions: RoomDimensions,
-  existingInstances: WardrobeInstance[] = []
+  existingInstances: WardrobeInstance[] = [],
+  preferredPosition?: [number, number, number]
 ): { position: [number, number, number]; rotation: number } | null {
+  // Use preferredPosition if provided, otherwise use instance's position
+  const positionToUse = preferredPosition || instance.position;
+
   const availableCorner = findAvailableCorner(
     instance,
     roomDimensions,
-    existingInstances
+    existingInstances,
+    positionToUse
   );
 
   if (!availableCorner) {
