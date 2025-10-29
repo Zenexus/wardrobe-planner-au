@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Trash2, Info } from "lucide-react";
 import { useStore } from "@/store";
-import ProductDetailSheet from "./ProductDetailSheet";
+import ProductDetailSheetContent from "./ProductDetailSheet";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import {
   Tooltip,
@@ -15,6 +16,7 @@ const FocusedWardrobePanel = () => {
     setFocusedWardrobeInstance,
     removeWardrobeInstance,
     setSelectedObjectId,
+    setGlobalSheetOpen,
   } = useStore();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -25,6 +27,11 @@ const FocusedWardrobePanel = () => {
       setIsSheetOpen(false);
     }
   }, [focusedWardrobeInstance]);
+
+  // Manage global sheet state
+  useEffect(() => {
+    setGlobalSheetOpen(isSheetOpen);
+  }, [isSheetOpen, setGlobalSheetOpen]);
 
   if (!focusedWardrobeInstance) {
     return null;
@@ -37,10 +44,6 @@ const FocusedWardrobePanel = () => {
       setSelectedObjectId(null);
       setIsSheetOpen(false);
     }
-  };
-
-  const handleViewDetails = () => {
-    setIsSheetOpen(true);
   };
 
   const handleSheetOpenChange = (open: boolean) => {
@@ -71,28 +74,19 @@ const FocusedWardrobePanel = () => {
         <TooltipContent>Delete this wardrobe</TooltipContent>
       </Tooltip>
 
-      <ProductDetailSheet
-        product={product}
-        open={isSheetOpen}
-        onOpenChange={handleSheetOpenChange}
-        onSheetClose={() => {
-          // Prevent any unwanted actions when sheet closes
-          // The handleSheetOpenChange already handles the proper cleanup
-        }}
-        trigger={
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleViewDetails}
-                className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer"
-              >
+      <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SheetTrigger asChild>
+              <Button className="rounded-full text-white flex items-center justify-center p-2 w-[50px] h-[50px] cursor-pointer">
                 <Info />
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>View wardrobe details</TooltipContent>
-          </Tooltip>
-        }
-      />
+            </SheetTrigger>
+          </TooltipTrigger>
+          <TooltipContent>View wardrobe details</TooltipContent>
+        </Tooltip>
+        <ProductDetailSheetContent product={product} />
+      </Sheet>
     </div>
   );
 };

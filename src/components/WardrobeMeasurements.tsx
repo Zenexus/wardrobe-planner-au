@@ -19,7 +19,7 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
     draggedObjectId,
     selectedObjectId,
     getWardrobeInstance,
-    getProducts,
+    getAllWardrobeProducts,
   } = useStore();
 
   const [products, setProducts] = useState<any[]>([]);
@@ -27,14 +27,15 @@ const WardrobeMeasurements: React.FC<WardrobeMeasurementsProps> = ({
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const productsData = await getProducts();
+        // Load all products including bundles for accurate dimension lookup
+        const productsData = await getAllWardrobeProducts();
         setProducts(productsData);
       } catch (error) {
         console.error("Failed to load products:", error);
       }
     };
     loadProducts();
-  }, [getProducts]);
+  }, [getAllWardrobeProducts]);
 
   // Get wardrobe dimensions and type from products.json
   const wardrobeData = useMemo(() => {

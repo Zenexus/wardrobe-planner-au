@@ -43,7 +43,10 @@ export const Model = forwardRef<
   ) as unknown as GLTFResult;
   return (
     <group {...props} dispose={null} ref={ref} onClick={props.onClick}>
-      <group position={[-0.048, 0.399, 0]} rotation={[-Math.PI, 0, -Math.PI]}>
+      <group
+        position={[0.026, 0.399, 0.011]}
+        rotation={[-Math.PI, 0, -Math.PI]}
+      >
         <mesh
           castShadow
           receiveShadow
@@ -57,7 +60,10 @@ export const Model = forwardRef<
           material={materials["Gloss White"]}
         />
       </group>
-      <group position={[-0.048, 0.186, 0]} rotation={[-Math.PI, 0, -Math.PI]}>
+      <group
+        position={[0.026, 0.186, 0.011]}
+        rotation={[-Math.PI, 0, -Math.PI]}
+      >
         <mesh
           castShadow
           receiveShadow
@@ -76,7 +82,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Metal_Hanger_Bar.geometry}
         material={materials.Metal}
-        position={[-0.058, 1.618, 0]}
+        position={[0.016, 1.618, 0.011]}
         rotation={[-Math.PI, 0, -Math.PI]}
       />
       <mesh
@@ -84,7 +90,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Shelf.geometry}
         material={materials["Gloss White"]}
-        position={[-0.058, 1.708, 0]}
+        position={[0.016, 1.708, 0.011]}
         rotation={[-Math.PI, 0, -Math.PI]}
       />
       <mesh
@@ -92,7 +98,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Shelf_1.geometry}
         material={materials["Gloss White"]}
-        position={[-0.058, 0.565, 0]}
+        position={[0.016, 0.565, 0.011]}
         rotation={[-Math.PI, 0, -Math.PI]}
       />
       <mesh
@@ -100,7 +106,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Wardrobe_Base.geometry}
         material={materials["Gloss White"]}
-        position={[-0.058, 0.989, 0]}
+        position={[0.016, 0.989, 0.011]}
         rotation={[-Math.PI, 0, -Math.PI]}
       />
       <mesh
@@ -108,7 +114,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes["Shoes_1-Shoes_1"].geometry}
         material={materials.Shoes_1}
-        position={[0.072, 0.36, -0.098]}
+        position={[0.146, 0.36, -0.087]}
         rotation={[-2.793, 0, -Math.PI]}
       />
       <mesh
@@ -116,7 +122,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes["Shoe_2-Shoes_2"].geometry}
         material={materials.Shoes_2}
-        position={[-0.206, 0.149, -0.106]}
+        position={[-0.132, 0.149, -0.095]}
         rotation={[-2.793, 0, -Math.PI]}
       />
       <mesh
@@ -124,7 +130,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes["Shoe_3-Shoes_3"].geometry}
         material={materials.Shoes_3}
-        position={[0.079, 0.133, -0.068]}
+        position={[0.153, 0.133, -0.057]}
         rotation={[-2.793, 0, -Math.PI]}
       />
       <mesh
@@ -132,7 +138,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes["Shoe_4-Shoes_4"].geometry}
         material={materials.Shoes_4}
-        position={[-0.178, 0.359, -0.105]}
+        position={[-0.104, 0.359, -0.094]}
         rotation={[-2.722, 0, -Math.PI]}
       />
     </group>

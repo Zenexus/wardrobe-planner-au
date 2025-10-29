@@ -45,7 +45,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Clothing3.geometry}
         material={materials.Clothing}
-        position={[-0.024, 0.359, -0.066]}
+        position={[-0.008, 0.359, -0.055]}
         rotation={[0, 1.571, 0]}
       />
       <mesh
@@ -53,7 +53,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Clothing2.geometry}
         material={materials.Clothing_2}
-        position={[-0.159, 0.14, 0]}
+        position={[-0.143, 0.14, 0.011]}
         rotation={[-Math.PI, 0, -Math.PI]}
       />
       <mesh
@@ -61,7 +61,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Clothing1.geometry}
         material={materials.Clothing_2}
-        position={[0.067, 0.14, 0]}
+        position={[0.083, 0.14, 0.011]}
         rotation={[-Math.PI, 0, -Math.PI]}
       />
       <mesh
@@ -69,16 +69,16 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Shelf1.geometry}
         material={materials["Gloss White"]}
-        position={[0, 0.565, 0]}
+        position={[0.016, 0.565, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Shelf.geometry}
         material={materials["Gloss White"]}
-        position={[0, 1.708, 0]}
+        position={[0.016, 1.708, 0.011]}
       />
-      <group position={[-0.001, 0.095, 0]}>
+      <group position={[0.015, 0.095, 0.011]}>
         <mesh
           castShadow
           receiveShadow
@@ -92,7 +92,7 @@ export const Model = forwardRef<
           material={materials["Gloss White"]}
         />
       </group>
-      <group position={[-0.001, 0.313, 0]}>
+      <group position={[0.015, 0.313, 0.011]}>
         <mesh
           castShadow
           receiveShadow
@@ -111,14 +111,14 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Metal_Hanger_Bar.geometry}
         material={materials.Metal}
-        position={[0, 1.618, 0]}
+        position={[0.016, 1.618, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Wardrobe_Base.geometry}
         material={materials["Gloss White"]}
-        position={[0, 0.989, 0]}
+        position={[0.016, 0.989, 0.011]}
       />
     </group>
   );

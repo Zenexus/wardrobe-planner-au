@@ -10,6 +10,6 @@ initializeFirebaseApp(serviceAccount_au);
 ///////////////////////
 */
 // restore("au/accessories.json");
-// restore("au/bundles.json");
+restore("au/bundles.json");
 // restore("au/organisor.json");
-restore("au/products.json");
+// restore("au/products.json");

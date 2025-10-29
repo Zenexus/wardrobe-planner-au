@@ -63,23 +63,23 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Shelf_2.geometry}
         material={materials["Gloss White"]}
-        position={[0.048, 0.986, 0.018]}
+        position={[0.016, 0.986, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Shelf_1.geometry}
         material={materials["Gloss White"]}
-        position={[0.048, 1.367, 0.018]}
+        position={[0.016, 1.367, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Shelf.geometry}
         material={materials["Gloss White"]}
-        position={[0.048, 1.703, 0.018]}
+        position={[0.016, 1.703, 0.011]}
       />
-      <group position={[0.031, 0.544, -0.094]}>
+      <group position={[-0.001, 0.544, -0.083]}>
         <mesh
           castShadow
           receiveShadow
@@ -93,7 +93,7 @@ export const Model = forwardRef<
           material={materials.Glass}
         />
       </group>
-      <group position={[0.031, 0.765, -0.094]}>
+      <group position={[-0.001, 0.765, -0.083]}>
         <mesh
           castShadow
           receiveShadow
@@ -107,7 +107,7 @@ export const Model = forwardRef<
           material={materials.Glass}
         />
       </group>
-      <group position={[0.031, 0.102, -0.094]}>
+      <group position={[-0.001, 0.102, -0.083]}>
         <mesh
           castShadow
           receiveShadow
@@ -121,7 +121,7 @@ export const Model = forwardRef<
           material={materials.Glass}
         />
       </group>
-      <group position={[0.031, 0.323, -0.094]}>
+      <group position={[-0.001, 0.323, -0.083]}>
         <mesh
           castShadow
           receiveShadow
@@ -140,14 +140,14 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Wardrobe_Base.geometry}
         material={materials["Gloss White"]}
-        position={[0.048, 0.989, 0.015]}
+        position={[0.016, 0.989, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Clothing.geometry}
         material={materials.Clothing}
-        position={[0.023, 1.065, 0]}
+        position={[-0.009, 1.065, 0.011]}
         rotation={[0, -1.571, 0]}
       />
       <mesh
@@ -155,21 +155,21 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Clothing1.geometry}
         material={materials.Clothing_3}
-        position={[-0.046, 0.832, 0]}
+        position={[-0.078, 0.832, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Clothing2.geometry}
         material={materials.Clothing_2}
-        position={[0.176, 1.422, 0]}
+        position={[0.144, 1.422, 0.011]}
       />
       <mesh
         castShadow
         receiveShadow
         geometry={nodes.Clothing3.geometry}
         material={materials.Clothing_3}
-        position={[0.045, 0.171, 0]}
+        position={[0.013, 0.171, 0.011]}
         rotation={[0, 1.571, 0]}
       />
       <mesh
@@ -177,9 +177,9 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Tray.geometry}
         material={materials.Base_grey}
-        position={[0.017, 0.363, 0.023]}
+        position={[-0.015, 0.363, 0.034]}
       />
-      <group position={[-0.054, 0.409, 0]}>
+      <group position={[-0.086, 0.409, 0.011]}>
         <mesh
           castShadow
           receiveShadow
@@ -193,7 +193,7 @@ export const Model = forwardRef<
           material={materials.Base_gold}
         />
       </group>
-      <group position={[-0.011, 0.409, -0.04]}>
+      <group position={[-0.043, 0.409, -0.029]}>
         <mesh
           castShadow
           receiveShadow
@@ -207,7 +207,7 @@ export const Model = forwardRef<
           material={materials.Base_gold}
         />
       </group>
-      <group position={[0.077, 0.409, -0.009]}>
+      <group position={[0.045, 0.409, 0.002]}>
         <mesh
           castShadow
           receiveShadow
@@ -226,7 +226,7 @@ export const Model = forwardRef<
         receiveShadow
         geometry={nodes.Box.geometry}
         material={materials.Base_grey}
-        position={[0.128, 0.376, -0.011]}
+        position={[0.096, 0.376, 0]}
       />
     </group>
   );
