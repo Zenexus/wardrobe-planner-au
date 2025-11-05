@@ -5,6 +5,7 @@ export type Bundle = {
   description: string;
   intro?: string;
   thumbnail: string;
+  imageUrl?: string; // Cloud-hosted image URL from Firebase
   model: string;
   price?: number; // Optional for input, will be calculated
   packDetails?: string[];

@@ -13,6 +13,7 @@ export type Product = {
   thumbnail: string;
   model: string;
   images?: string[]; // Optional array of product images
+  imageUrl?: string; // Cloud-hosted image URL from Firebase
   packDetails?: string;
   included?: string;
   toolsRequired?: string;
@@ -40,6 +41,7 @@ export type Organizer = {
   desc: string;
   price: number;
   images: string[];
+  imageUrl?: string; // Cloud-hosted image URL from Firebase
 };
 
 export type SelectedOrganizer = {
