@@ -4,7 +4,8 @@
     "api/**/*.ts": {
       "runtime": "nodejs20.x",
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 30,
+      "includeFiles": "emails/**"
     }
   },
   "rewrites": [

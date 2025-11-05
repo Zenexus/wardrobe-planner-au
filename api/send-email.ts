@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { render } from "@react-email/components";
-import { DesignEmail } from "../emails";
+import DesignEmail from "../emails/DesignEmail";
 
 // Gmail SMTP configuration. Keep credentials in env.
 const SMTP_HOST = "smtp.gmail.com";
@@ -10,20 +10,20 @@ const SMTP_SECURE = false; // Use STARTTLS
 // Vercel Node.js Serverless Function handler
 // Do NOT use NEXT_PUBLIC_* for secrets. Use server-only env vars like EMAIL_USER, EMAIL_PASS, etc.
 export default async function handler(req: any, res: any) {
-  // Basic CORS headers to allow calling from your frontend
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
   try {
+    // Basic CORS headers to allow calling from your frontend
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      return res.status(200).end();
+    }
+
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
     console.log("[Email API] Request received");
 
     const {
@@ -134,8 +134,11 @@ export default async function handler(req: any, res: any) {
   } catch (error: any) {
     console.error("[Email API] Error:", error);
     console.error("[Email API] Error stack:", error?.stack);
-    return res
-      .status(500)
-      .json({ ok: false, error: error?.message || "Unknown error" });
+    console.error("[Email API] Error name:", error?.name);
+    return res.status(500).json({
+      ok: false,
+      error: error?.message || "Unknown error",
+      errorType: error?.name || "Error",
+    });
   }
 }
