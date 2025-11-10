@@ -11,7 +11,6 @@ import {
   Text,
   Hr,
 } from "@react-email/components";
-import * as React from "react";
 
 interface ProductItem {
   itemNumber: string;
@@ -42,7 +41,7 @@ interface DesignEmailProps {
 }
 
 export const DesignEmail = ({
-  url = "https://wardrobe-planner.flexistorage.com.au/",
+  url = "https://wardrobe-planner.flexistorage.com.au/", // eslint-disable-line @typescript-eslint/no-unused-vars
   showImage = false,
   products = [],
   organizers = [],
@@ -358,10 +357,10 @@ export const DesignEmail = ({
 
           {/* Help Section */}
           <Section style={helpSection}>
-            <Heading style={h3}>Need help? We're right here.</Heading>
+            <Heading style={h3}>Need help? We&apos;re right here.</Heading>
             <Text style={helpText}>
-              Whether you've a question or would like us to review your design
-              before you buy, we'd love to help.
+              Whether you&apos;ve a question or would like us to review your
+              design before you buy, we&apos;d love to help.
             </Text>
             <Text style={helpText}>
               <a href="https://flexistorage.com.au/contact-us/" style={link}>
