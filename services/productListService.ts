@@ -1,8 +1,9 @@
 import { collection, query, getDocs } from "firebase/firestore";
-import { db } from "@/db/firebase";
+import { getDb } from "@/db/firebase";
 
 // Get wardrobe planner products
 const getProducts = async (): Promise<any[]> => {
+  const db = getDb();
   const productsRef = query(
     collection(db, "products")
     //FIXME: add isAvailabled to the database, currently we don't have
@@ -16,6 +17,7 @@ const getProducts = async (): Promise<any[]> => {
 
 // Get wardrobe planner accessories
 const getAccessories = async (): Promise<any[]> => {
+  const db = getDb();
   const accessoriesRef = query(
     collection(db, "accessories")
     //FIXME: add isAvailabled to the database, currently we don't have
@@ -29,6 +31,7 @@ const getAccessories = async (): Promise<any[]> => {
 
 // Get wardrobe planner organisors
 const getOrganisors = async (): Promise<any[]> => {
+  const db = getDb();
   const organisorsRef = query(
     collection(db, "organisors")
     //FIXME: add isAvailabled to the database, currently we don't have
@@ -41,6 +44,7 @@ const getOrganisors = async (): Promise<any[]> => {
 };
 
 const getBundles = async (): Promise<any[]> => {
+  const db = getDb();
   const bundlesRef = query(
     collection(db, "bundles")
     //FIXME: add isAvailabled to the database, currently we don't have

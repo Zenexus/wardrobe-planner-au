@@ -189,23 +189,29 @@ type StoreState = {
 
 export const useStore = create<StoreState>((set, get) => {
   // Initialize history with the default state
-  setTimeout(() => {
-    const store = get();
-    if (store.history.length === 0) {
-      store.saveToHistory();
-    }
-  }, 100);
+  // Only initialize on client side
+  if (typeof window !== "undefined") {
+    setTimeout(() => {
+      const store = get();
+      if (store.history.length === 0) {
+        store.saveToHistory();
+      }
+    }, 100);
+  }
 
   // Initialize products cache (includes bundles for dimension lookup in placement/snapping)
-  setTimeout(async () => {
-    try {
-      const products =
-        await WardrobePlannerProductService.getAllWardrobeProducts();
-      get().setProductsCache(products);
-    } catch (error) {
-      console.error("Failed to initialize products cache:", error);
-    }
-  }, 0);
+  // Only initialize on client side
+  if (typeof window !== "undefined") {
+    setTimeout(async () => {
+      try {
+        const products =
+          await WardrobePlannerProductService.getAllWardrobeProducts();
+        get().setProductsCache(products);
+      } catch (error) {
+        console.error("Failed to initialize products cache:", error);
+      }
+    }, 0);
+  }
 
   return {
     globalHasDragging: false,

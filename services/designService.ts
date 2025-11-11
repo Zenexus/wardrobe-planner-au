@@ -10,7 +10,7 @@ import {
   orderBy,
   limit,
 } from "firebase/firestore";
-import { db } from "@/db/firebase";
+import { getDb } from "@/db/firebase";
 import { SavedDesignState } from "@/utils/memorySystem";
 
 export interface FirebaseDesignState extends SavedDesignState {
@@ -35,6 +35,7 @@ export const saveDesignToFirebase = async (
   firebaseId?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
+    const db = getDb();
     const currentUnixTimestamp = Math.floor(Date.now() / 1000);
     const designData: Omit<FirebaseDesignState, "id"> = {
       ...designState,
@@ -82,6 +83,7 @@ export const getDesignFromFirebase = async (
   error?: string;
 }> => {
   try {
+    const db = getDb();
     const docRef = doc(db, DESIGNS_COLLECTION, designId);
     const docSnap = await getDoc(docRef);
 
@@ -133,6 +135,7 @@ export const getLatestDesign = async (): Promise<{
   error?: string;
 }> => {
   try {
+    const db = getDb();
     const q = query(
       collection(db, DESIGNS_COLLECTION),
       orderBy("updatedAt", "desc"),
@@ -175,6 +178,7 @@ export const saveDesignToBunnings = async (
   firebaseId?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
+    const db = getDb();
     const currentUnixTimestamp = Math.floor(Date.now() / 1000);
     const designData: Omit<FirebaseDesignState, "id"> = {
       ...designState,
@@ -220,6 +224,7 @@ export const saveDesignToBunningsTrade = async (
   firebaseId?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
+    const db = getDb();
     const currentUnixTimestamp = Math.floor(Date.now() / 1000);
     const designData: Omit<FirebaseDesignState, "id"> = {
       ...designState,
@@ -263,6 +268,7 @@ export const deleteDesignFromFirebase = async (
   designId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    const db = getDb();
     const docRef = doc(db, DESIGNS_COLLECTION, designId);
     await updateDoc(docRef, {
       deleted: true,
