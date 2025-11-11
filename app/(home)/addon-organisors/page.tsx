@@ -109,26 +109,26 @@ const AddOnOrganisors = () => {
               </div>
 
               {/* <div className="flex items-center gap-2 pr-4">
-                <Sheet>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <SheetTrigger asChild>
-                        <button
-                          type="button"
-                          aria-label="Open menu"
-                          className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
-                        >
-                          <Menu size={24} />
-                        </button>
-                      </SheetTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Menu</TooltipContent>
-                  </Tooltip>
-                  <SheetContent side="right">
-                    <MenuSheetContent />
-                  </SheetContent>
-                </Sheet>
-              </div> */}
+                  <Sheet>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SheetTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Open menu"
+                            className="w-16 h-16 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
+                          >
+                            <Menu size={24} />
+                          </button>
+                        </SheetTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Menu</TooltipContent>
+                    </Tooltip>
+                    <SheetContent side="right">
+                      <MenuSheetContent />
+                    </SheetContent>
+                  </Sheet>
+                </div> */}
             </div>
           </div>
         </div>
