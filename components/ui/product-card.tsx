@@ -5,6 +5,7 @@ import { useDrag } from "react-dnd";
 import ProductDetailSheetContent from "../ProductDetailSheet";
 import { Sheet, SheetTrigger } from "./sheet";
 import { useStore } from "../../store";
+import Image from "next/image";
 
 type ProductCardProps = {
   product: Product;
@@ -61,12 +62,13 @@ export function ProductCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative w-full h-32">
+      <div className="relative w-full aspect-square">
         {/* Default image (first image) */}
-        <img
+        <Image
           src={product.images?.[0] || product.thumbnail}
           alt={product.name}
-          className={`w-full h-32 object-cover absolute inset-0 transition-opacity duration-300 ${
+          fill
+          className={`object-cover transition-opacity duration-300 ${
             isHovered && product.images && product.images.length > 1
               ? "opacity-0"
               : "opacity-100"
@@ -75,10 +77,11 @@ export function ProductCard({
 
         {/* Hover image (second image) - only render if we have multiple images */}
         {product.images && product.images.length > 1 && (
-          <img
+          <Image
             src={product.images[1]}
             alt={product.name}
-            className={`w-full h-32 object-cover absolute inset-0 transition-opacity duration-300 ${
+            fill
+            className={`object-cover transition-opacity duration-300 ${
               isHovered ? "opacity-100" : "opacity-0"
             }`}
           />

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Menu, Plus, Minus, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Minus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import {
@@ -13,6 +13,7 @@ import {
 import MenuSheetContent from "@/components/MenuSheetContent";
 import { useStore } from "@/store";
 import { Organizer } from "@/types";
+import Image from "next/image";
 
 const AddOnOrganisors = () => {
   const router = useRouter();
@@ -166,11 +167,12 @@ const AddOnOrganisors = () => {
                   }`}
                 >
                   {/* Product Image */}
-                  <div className="relative mb-4">
-                    <img
+                  <div className="relative mb-4 w-full aspect-square">
+                    <Image
                       src={organizer.images[0]}
                       alt={organizer.name}
-                      className="w-full h-48 object-cover"
+                      fill
+                      className="object-cover"
                     />
                     {isSelected && (
                       <div className="absolute top-2 right-2 bg-primary text-background rounded-full p-1">
