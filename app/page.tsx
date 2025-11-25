@@ -24,8 +24,8 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 px-10 py-10">
-        <div className="relative bg-gradient-to-br from-[var(--tertiary)] to-[var(--primary)]  h-120 hidden lg:block lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 px-10 py-10">
+        <div className="relative bg-gradient-to-br from-[var(--tertiary)] to-[var(--primary)] h-[520px] hidden lg:block lg:col-span-2">
           <div className="absolute top-[10%] left-[5%] w-40">
             <Image
               src={"/images/Design_Your_Wardrobe_Logo.png"}
@@ -35,16 +35,16 @@ export default function Home() {
             />
           </div>
           <p className="text-primary-foreground text-4xl lg:text-5xl font-bold absolute top-[40%] left-[6%] leading-20 z-100">
-            Design your
-            <br /> Wardrobe
+            Who designed this?
+            <br /> You designed this.
           </p>
         </div>
 
         <NavigationActionCard
-          imageSrc={"/images/Planning_Tool.avif"}
-          imageAlt={"Flexi Storage Wardrobe Planning Tool"}
-          title="Flexi Storage Wardrobe Planning Tool"
-          description="Create your own storage solution"
+          imageSrc={"/images/Wardrobe_Planner_Hero_Image.png"}
+          imageAlt={"Flexi Storage Wardrobe Planner"}
+          title="Flexi Storage Wardrobe Planner"
+          description="Design, customise and realise your dream wardrobe."
           bgColor="var(--primary)"
           textColor="var(--primary-foreground)"
           type="link"
@@ -52,9 +52,9 @@ export default function Home() {
 
         <NavigationActionCard
           imageSrc={"/images/Open_A_Saved_Design.webp"}
-          imageAlt={"Open a saved design"}
-          title="Open a saved design"
-          description="Enter a design code"
+          imageAlt={"Resume Design"}
+          title="Resume Design"
+          description="Enter your unique code to reopen a saved plan."
           bgColor="var(--secondary)"
           textColor="var(--tertiary)"
           type="openSheet"

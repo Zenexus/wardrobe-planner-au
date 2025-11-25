@@ -1501,6 +1501,19 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
     ? Math.min((Date.now() - dwellStartTime) / DWELL_TIME_MS, 1)
     : 0;
 
+  // Memoize cursor handlers to prevent render-phase issues
+  const handlePointerOver = useCallback(() => {
+    if (!isDragging && !customizeMode) {
+      gl.domElement.style.cursor = "grab";
+    }
+  }, [isDragging, customizeMode, gl.domElement.style]);
+
+  const handlePointerOutCursor = useCallback(() => {
+    if (!isDragging && !customizeMode) {
+      gl.domElement.style.cursor = "auto";
+    }
+  }, [isDragging, customizeMode, gl.domElement.style]);
+
   return (
     <>
       {/* Ghost preview of jump destination */}
@@ -1577,16 +1590,8 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
               }
             }
           }}
-          onPointerOver={() =>
-            !isDragging &&
-            !customizeMode &&
-            (gl.domElement.style.cursor = "grab")
-          }
-          onPointerOut={() =>
-            !isDragging &&
-            !customizeMode &&
-            (gl.domElement.style.cursor = "auto")
-          }
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOutCursor}
         >
           {children ? (
             childWithRef

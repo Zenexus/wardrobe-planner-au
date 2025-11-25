@@ -380,8 +380,9 @@ export const DesignEmail = ({
               and availability. Please note, products and sizes may not be
               available at all Bunnings stores. We recommend customers contact
               their local Bunnings store first and foremost for availability to
-              avoid disappointment. For more information on our Rack It range,
-              please consult a team member at your local Bunnings Warehouse.
+              avoid disappointment. For more information on our Home Solution
+              wardrobe range, please consult a team member at your local
+              Bunnings Warehouse.
             </Text>
             <Text style={disclaimerText}>
               * We have tried to be very specific with the dimensions here.
@@ -663,9 +664,9 @@ const bunningsButton = {
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  padding: "14px 32px",
-  width: "100%",
-  maxWidth: "320px",
+  padding: "14px 24px",
+  width: "auto",
+  maxWidth: "100%",
 };
 
 const bunningsTradeButton = {
@@ -677,9 +678,9 @@ const bunningsTradeButton = {
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  padding: "14px 32px",
-  width: "100%",
-  maxWidth: "320px",
+  padding: "14px 24px",
+  width: "auto",
+  maxWidth: "100%",
 };
 
 const buttonContainer = {

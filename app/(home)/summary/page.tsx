@@ -329,8 +329,9 @@ const Summary = () => {
               and availability. Please note, products and sizes may not be
               available at all Bunnings stores. We recommend customers contact
               their local Bunnings store first and foremost for availability to
-              avoid disappointment. For more information on our Rack It range,
-              please consult a team member at your local Bunnings Warehouse.
+              avoid disappointment. For more information on our Home Solution
+              wardrobe range, please consult a team member at your local
+              Bunnings Warehouse.
             </p>
             <p>
               * We have tried to be very specific with the dimensions here.

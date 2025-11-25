@@ -133,7 +133,7 @@ const ColorSelector = ({
 }: ColorSelectorProps) => (
   <section className="mt-4">
     <h3 id="color-selection-label" className="font-semibold mb-4">
-      Change colour
+      Colour
     </h3>
 
     <div
@@ -234,11 +234,9 @@ const ProductSelection = () => {
   }, [selectedColor, filteredProducts]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <header>
-        <h1 className="text-xl font-bold text-primary">
-          Design your Flexi Wardrobe
-        </h1>
+        <h1 className="text-xl font-bold text-primary">Frame module</h1>
       </header>
 
       <ColorSelector

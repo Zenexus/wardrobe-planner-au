@@ -1,7 +1,8 @@
 // This component is used to display bundle
 // if user clicks on a canvas wardrobe model
 
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { useStore } from "@/store";
 import { getBundlesForWardrobe } from "@/constants/wardrobeConfig";
 import { BundleCard } from "@/components/ui/bundle-card";
@@ -140,35 +141,37 @@ const WardrobeDetailSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="top-28 h-[calc(100%-7rem)] overflow-y-auto"
-      >
-        <div className="sticky top-0 h-4 bg-gradient-to-b from-black/10 to-transparent z-10" />
-        <div className="p-4 space-y-6">
+      <SheetContent side="right" className="overflow-y-auto p-4 sm:max-w-xl">
+        <VisuallyHidden>
+          <SheetTitle>Wardrobe Options</SheetTitle>
+        </VisuallyHidden>
+        <div className="flex flex-col gap-6 p-4">
           {/* Wardrobe Details */}
-          <div className="mt-4">
-            <div className="text-xl font-bold mb-2">{product.name}</div>
-            <div className="text-sm text-gray-600 mb-4">
-              Item #{product.itemNumber}
-            </div>
-            <div className="space-y-2">
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-600">Width</span>
-                  <div className="font-semibold">{product.width}cm</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Depth</span>
-                  <div className="font-semibold">{product.depth}cm</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Height</span>
-                  <div className="font-semibold">{product.height}cm</div>
-                </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-2xl font-bold">{product.name}</p>
+            <p className="text-sm text-secondary-foreground">
+              #{product.itemNumber}
+            </p>
+          </div>
+
+          {/* Dimensions */}
+          <section className="flex flex-col gap-2">
+            <p className="font-semibold text-lg">Dimensions:</p>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="flex items-center gap-2">
+                <p>Width: </p>
+                <p className="font-semibold">{product.width}cm</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <p>Depth: </p>
+                <p className="font-semibold">{product.depth}cm</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <p>Height: </p>
+                <p className="font-semibold">{product.height}cm</p>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* All Options (Original + Bundles) */}
           {allOptions.length > 0 && (
