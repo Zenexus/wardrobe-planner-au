@@ -123,9 +123,9 @@ export default function BunningsCard() {
       const baseURL = `${prefix}${domain}/share-cart?items=`;
       // FIXME: Update UTM parameters
       const utmWebsite =
-        "&utm_source=wardrobe-planner&utm_medium=supplier&utm_campaign=planner&utm_content=website";
+        "&utm_source=flexi-storage-wardrobe&utm_medium=supplier&utm_campaign=planner&utm_content=website";
       const utmEmail =
-        "&utm_source=wardrobe-planner&utm_medium=supplier&utm_campaign=planner&utm_content=email";
+        "&utm_source=flexi-storage-wardrobe&utm_medium=supplier&utm_campaign=planner&utm_content=email";
 
       const items = groupedCart
         .map((i) => `${i.itemNumber}:${i.qty}`)

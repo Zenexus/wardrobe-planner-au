@@ -359,8 +359,8 @@ export const DesignEmail = ({
           <Section style={helpSection}>
             <Heading style={h3}>Need help? We&apos;re right here.</Heading>
             <Text style={helpText}>
-              Whether you&apos;ve a question or would like us to review your
-              design before you buy, we&apos;d love to help.
+              Whether you have a question or would like us to review your design
+              before you buy, we&apos;d love to help.
             </Text>
             <Text style={helpText}>
               <a href="https://flexistorage.com.au/contact-us/" style={link}>
@@ -380,9 +380,9 @@ export const DesignEmail = ({
               and availability. Please note, products and sizes may not be
               available at all Bunnings stores. We recommend customers contact
               their local Bunnings store first and foremost for availability to
-              avoid disappointment. For more information on our Home Solution
-              wardrobe range, please consult a team member at your local
-              Bunnings Warehouse.
+              avoid disappointment. For more information on our Flexi Storage
+              range, please consult a team member at your local Bunnings
+              Warehouse.
             </Text>
             <Text style={disclaimerText}>
               * We have tried to be very specific with the dimensions here.
@@ -392,21 +392,17 @@ export const DesignEmail = ({
               quality of the product but may lead to slight differences between
               the Planner and the actual build dimensions.
             </Text>
-            <Text style={disclaimerText}>
-              * By providing your postcode here, you help us to better allocate
-              stock throughout our network.
-            </Text>
+
             <Text style={disclaimerText}>
               * All freestanding units 500mm or greater in height should be
               anchored to the ground, wall or other suitable surface to avoid
               serious injury or death. To help avoid any serious injury or
-              death, these products have been ﬁtted with a ground mounting
-              bracket to prevent toppling. We strongly recommend that these
-              products be permanently fixed to the ground or wall. Fixing
-              devices are not included since different surface materials require
-              different attachments. Please seek professional advice if you are
-              in doubt as to which fixing device to use. Regularly check your
-              fixing device.
+              death, these products include a bracket to prevent toppling. We
+              strongly recommend that these products be permanently fixed to the
+              wall or other suitable surface. Different surface materials
+              require different attachments. Please seek professional advice if
+              you are in doubt as to which fixing device to use. Regularly check
+              your fixing device.
             </Text>
           </Section>
 

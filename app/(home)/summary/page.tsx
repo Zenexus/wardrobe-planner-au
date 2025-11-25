@@ -274,7 +274,7 @@ const Summary = () => {
 
               <div>
                 <p className="text-secondary-foreground mb-4">
-                  Whether you&apos;ve a question or would like us to review your
+                  Whether you have a question or would like us to review your
                   design before you buy, we&apos;d love to help.
                 </p>
 
@@ -329,9 +329,9 @@ const Summary = () => {
               and availability. Please note, products and sizes may not be
               available at all Bunnings stores. We recommend customers contact
               their local Bunnings store first and foremost for availability to
-              avoid disappointment. For more information on our Home Solution
-              wardrobe range, please consult a team member at your local
-              Bunnings Warehouse.
+              avoid disappointment. For more information on our Flexi Storage
+              range, please consult a team member at your local Bunnings
+              Warehouse.
             </p>
             <p>
               * We have tried to be very specific with the dimensions here.
@@ -342,20 +342,15 @@ const Summary = () => {
               the Planner and the actual build dimensions.
             </p>
             <p>
-              * By providing your postcode here, you help us to better allocate
-              stock throughout our network.
-            </p>
-            <p>
               * All freestanding units 500mm or greater in height should be
               anchored to the ground, wall or other suitable surface to avoid
               serious injury or death. To help avoid any serious injury or
-              death, these products have been ﬁtted with a ground mounting
-              bracket to prevent toppling. We strongly recommend that these
-              products be permanently fixed to the ground or wall. Fixing
-              devices are not included since different surface materials require
-              different attachments. Please seek professional advice if you are
-              in doubt as to which fixing device to use. Regularly check your
-              fixing device.
+              death, these products include a bracket to prevent toppling. We
+              strongly recommend that these products be permanently fixed to the
+              wall or other suitable surface. Different surface materials
+              require different attachments. Please seek professional advice if
+              you are in doubt as to which fixing device to use. Regularly check
+              your fixing device.
             </p>
           </div>
         </div>

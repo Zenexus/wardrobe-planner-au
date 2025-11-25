@@ -246,7 +246,7 @@ const ContactEmailForm = () => {
           const isNZ = region === "NZ";
           const domain = isNZ ? "co.nz" : "com.au";
           const utmEmail =
-            "&utm_source=wardrobe-planner&utm_medium=supplier&utm_campaign=planner&utm_content=email";
+            "&utm_source=flexi-storage-wardrobe&utm_medium=supplier&utm_campaign=planner&utm_content=email";
 
           return {
             bunnings: `https://www.bunnings.${domain}/share-cart?items=${items}${utmEmail}`,
