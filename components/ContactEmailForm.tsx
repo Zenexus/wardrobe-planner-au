@@ -17,6 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/store";
 import { getBundleComposition } from "@/utils/bundleComposition";
+import { saveCustomerData } from "@/services/customerService";
 
 const ContactEmailSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -284,6 +285,20 @@ const ContactEmailForm = () => {
       const result = await response.json();
 
       if (response.ok && result.ok) {
+        // Save customer data to database
+        const customerResult = await saveCustomerData({
+          email: values.email,
+          name: values.name,
+          postcode: values.postcode || "",
+          acceptEmail: values.subscribe || false,
+          designId: designCode,
+        });
+
+        if (!customerResult.success) {
+          console.error("Failed to save customer data:", customerResult.error);
+          // Don't show error to user since email was sent successfully
+        }
+
         setStatus("success");
         form.reset();
       } else {

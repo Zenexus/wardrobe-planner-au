@@ -2,7 +2,13 @@
 
 import { CircleArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import MenuSheetContentHomePage from "@/components/MenuSheetContentHomePage";
 
 type NavigationActionCardProps = {
@@ -57,9 +63,15 @@ const NavigationActionCard = ({
             </div>
           </SheetTrigger>
           <SheetContent side="top" className="sm:hidden h-[50vh]">
+            <VisuallyHidden>
+              <SheetTitle>Open Design</SheetTitle>
+            </VisuallyHidden>
             <MenuSheetContentHomePage />
           </SheetContent>
           <SheetContent side="right" className="hidden sm:block">
+            <VisuallyHidden>
+              <SheetTitle>Open Design</SheetTitle>
+            </VisuallyHidden>
             <MenuSheetContentHomePage />
           </SheetContent>
         </Sheet>
@@ -69,11 +81,11 @@ const NavigationActionCard = ({
 
   return (
     <div
-      className="h-120 cursor-pointer border-[1px] border-primary"
+      className="flex flex-col cursor-pointer border border-primary h-full min-h-[400px] lg:h-[520px]"
       style={{ backgroundColor: bgColor }}
       onClick={handleCardClick}
     >
-      <div className="w-full h-[60%]">
+      <div className="w-full aspect-square flex-shrink-0">
         <img
           src={imageSrc}
           alt={imageAlt}
@@ -81,14 +93,14 @@ const NavigationActionCard = ({
         />
       </div>
       <div
-        className="p-6 flex flex-col justify-between items-start"
+        className="p-4 flex flex-col justify-between items-start flex-grow"
         style={{ color: textColor }}
       >
         <div className="pb-4">
-          <p className="text-lg font-bold pb-2 hover:underline h-16">{title}</p>
-          <p className="text-sm">{description}</p>
+          <p className="text-lg font-bold pb-2 hover:underline">{title}</p>
+          <p className="text-sm min-h-[3rem]">{description}</p>
         </div>
-        <div className="">{renderActionButton()}</div>
+        <div className="mt-auto">{renderActionButton()}</div>
       </div>
     </div>
   );

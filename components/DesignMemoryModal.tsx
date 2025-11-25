@@ -109,8 +109,9 @@ export default function DesignMemoryModal({
         {/* Content */}
         <div className="p-6">
           <div className="text-center mb-6">
-            <p className="text-secondary-foreground mb-2">
-              Looks like you started planning already!
+            <p>It looks like you’ve started designing.</p>
+            <p className="mb-2">
+              Would you like to reopen your most recent plan?
             </p>
             {savedDate && (
               <p className="text-sm text-secondary-foreground">
@@ -127,7 +128,7 @@ export default function DesignMemoryModal({
               }}
               className="w-full h-12 rounded-full bg-primary hover:bg-primary/80 text-primary-foreground cursor-pointer"
             >
-              Continue where you left off
+              YES, CONTINUE DESIGNING
             </Button>
 
             <Button
@@ -137,7 +138,7 @@ export default function DesignMemoryModal({
               variant="outline"
               className="w-full h-12 rounded-full border-border hover:bg-border cursor-pointer"
             >
-              Create new
+              NO, CREATE A NEW PLAN
             </Button>
           </div>
         </div>

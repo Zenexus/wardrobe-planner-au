@@ -1,4 +1,5 @@
-import { SheetContent } from "@/components/ui/sheet";
+import { SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import SheetThumbnailsCarousel from "./SheetThumbnailsCarousel";
 import { Product } from "../types";
 import { Check } from "lucide-react";
@@ -15,7 +16,10 @@ const ProductDetailSheetContent = ({
   };
 
   return (
-    <SheetContent className="overflow-y-auto p-4">
+    <SheetContent className="overflow-y-auto p-4 sm:max-w-xl">
+      <VisuallyHidden>
+        <SheetTitle>Wardrobe Details</SheetTitle>
+      </VisuallyHidden>
       <div className="flex flex-col gap-6 p-4">
         {/* Product Images Carousel */}
         <SheetThumbnailsCarousel
@@ -73,28 +77,24 @@ const ProductDetailSheetContent = ({
           <section className="mt-8">
             <p className="font-semibold text-lg mb-3">Description:</p>
             {product.desc && (
-              <div>
-                <p className="text-foreground leading-relaxed whitespace-pre-line">
-                  {product.desc.split("\n").map((line, index) => (
-                    <p key={index} className="mb-3">
-                      {line}
-                    </p>
-                  ))}
-                </p>
+              <div className="text-foreground leading-relaxed whitespace-pre-line">
+                {product.desc.split("\n").map((line, index) => (
+                  <p key={index} className="mb-3">
+                    {line}
+                  </p>
+                ))}
               </div>
             )}
           </section>
 
           {product.intro && (
-            <div>
-              <p className="text-foreground leading-relaxed">
-                {product.intro.split("\n").map((line, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-3">
-                    <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
-                    <p key={index}>{line}</p>
-                  </div>
-                ))}
-              </p>
+            <div className="text-foreground leading-relaxed">
+              {product.intro.split("\n").map((line, index) => (
+                <div key={index} className="flex items-center gap-2 mb-3">
+                  <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
+                  <p>{line}</p>
+                </div>
+              ))}
             </div>
           )}
 
