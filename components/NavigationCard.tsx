@@ -81,7 +81,7 @@ const NavigationActionCard = ({
 
   return (
     <div
-      className="flex flex-col cursor-pointer border border-primary h-full min-h-[400px] lg:h-[520px]"
+      className="flex flex-col cursor-pointer border border-primary h-full min-h-[50vh] lg:min-h-[55vh] 2xl:min-h-[60vh]"
       style={{ backgroundColor: bgColor }}
       onClick={handleCardClick}
     >

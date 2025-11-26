@@ -25,7 +25,7 @@ export default function Home() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 px-10 py-10">
-        <div className="relative bg-gradient-to-br from-[var(--tertiary)] to-[var(--primary)] h-[520px] hidden lg:block lg:col-span-2">
+        <div className="relative bg-gradient-to-br from-[var(--tertiary)] to-[var(--primary)] h-full min-h-[50vh] lg:min-h-[55vh] 2xl:min-h-[60vh] hidden lg:block lg:col-span-2">
           <div className="absolute top-[10%] left-[5%] w-40">
             <Image
               src={"/images/Design_Your_Wardrobe_Logo.png"}
