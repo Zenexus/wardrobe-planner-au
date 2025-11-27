@@ -143,6 +143,8 @@ const ColorSelector = ({
     >
       {availableColors.map((color) => {
         const config = COLOR_CONFIGS[color];
+        // FIXME: this will delete, because current we must hidden the oak color
+
         return (
           <ColorSwatch
             key={color}
@@ -223,7 +225,9 @@ const ProductSelection = () => {
     if (depthTab === DEPTH_TABS.CORE) {
       return [COLORS.WHITE];
     }
-    return [COLORS.WHITE, COLORS.OAK];
+    //FIXME: this will delete, because current we must hidden the oak color
+    // return [COLORS.WHITE, COLORS.OAK];
+    return [COLORS.WHITE];
   }, [depthTab]);
 
   // Get products for 400mm tab based on selected color
