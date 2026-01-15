@@ -11,26 +11,26 @@ export default function Home() {
     <div>
       <header>
         <div
-          className="px-10 py-5 cursor-pointer"
+          className="px-10 pt-5 pb-2 cursor-pointer"
           onClick={() => router.push("/")}
         >
           <Image
-            src={"/images/Brand_Logo_Wardrobe.png"}
+            src={"/logo/Flexi_Storage_Logo.png"}
             alt={"Home solution wardrobe planner logo"}
             width={160}
             height={48}
-            className="w-auto h-12 object-cover"
+            className="w-auto h-20 object-cover"
           />
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 px-10 py-10">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 px-10 pb-10 pt-2">
         <div className="relative bg-gradient-to-br from-[var(--tertiary)] to-[var(--primary)] h-full min-h-[50vh] lg:min-h-[55vh] 2xl:min-h-[60vh] hidden lg:block lg:col-span-2">
-          <div className="absolute top-[10%] left-[5%] w-40">
+          <div className="absolute top-[5%] left-[0%]">
             <Image
-              src={"/images/Design_Your_Wardrobe_Logo.png"}
+              src={"/logo/Flexi_Storage_Wardrobe_White_Logo.png"}
               alt="logo"
-              width={160}
+              width={380}
               height={100}
             />
           </div>
